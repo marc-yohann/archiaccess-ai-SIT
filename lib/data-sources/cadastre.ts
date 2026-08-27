@@ -10,6 +10,11 @@ const CADASTRE_URL = "https://apicarto.ign.fr/api/cadastre/parcelle"
 export interface Parcel {
   idu: string
   section: string
+  // Préfixe section (com_abs + section, ex: "000AP") — format attendu par
+  // l'API DVF (app.dvf.etalab.gouv.fr) pour retrouver les mutations d'une
+  // section, dérivable directement de idu (positions 5-9, vérifié contre
+  // le code source de l'app DVF).
+  sectionPrefixe: string
   numero: string
   contenanceM2: number
   codeInsee: string
@@ -63,6 +68,7 @@ export async function getParcelsNear(lon: number, lat: number, bufferMeters = 20
   return data.features.map((f) => ({
     idu: f.properties.idu,
     section: f.properties.section,
+    sectionPrefixe: f.properties.idu.slice(5, 10),
     numero: f.properties.numero,
     contenanceM2: f.properties.contenance,
     codeInsee: f.properties.code_insee,

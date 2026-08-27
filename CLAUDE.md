@@ -255,6 +255,31 @@ potentiel radon (ventilation/santé) — combinés en un seul appel
 `getRisksForCommune()`. Exposé via `app/api/sit/risks/route.ts`,
 affiché automatiquement dans `/sit` sous le cadastre.
 
+**Hub `/sit` — DVF (valeurs foncières) branché et testé en conditions
+réelles** : `lib/data-sources/dvf.ts`. **Aucune API DVF publique
+documentée et stable n'existe** — l'ancienne `api.cquest.org/dvf` est
+hors service (502 constaté), `app.dvf.etalab.gouv.fr` (le site officiel)
+n'expose pas d'API REST classique dans sa doc publique. Trouvé en
+inspectant le JS du site officiel (`js/data.js`, `js/index.js`) :
+l'endpoint interne qu'il utilise réellement,
+`app.dvf.etalab.gouv.fr/api/mutations3/{codeCommune}/{sectionPrefixe}`,
+avec `sectionPrefixe` = com_abs + section (ex: `000AP`) — format
+retrouvé en lisant `idSectionToCode()` dans leur code source. C'est
+l'API qui alimente le site officiel, donc fiable dans les faits, mais
+non documentée/non versionnée : à surveiller si elle change sans préavis.
+`lib/data-sources/cadastre.ts` expose maintenant `sectionPrefixe` sur
+chaque `Parcel` (dérivé de `idu`, vérifié cohérent avec le format DVF).
+Dédoublonnage par `id_mutation` côté client (l'API renvoie une ligne par
+lot/dépendance d'une même vente). Exposé via `app/api/sit/dvf/route.ts`,
+affiché sous Géorisques dans `/sit` (section de la première parcelle
+trouvée).
+
+**Les trois connecteurs de données prévus initialement (cadastre,
+Géorisques, DVF) sont posés.** `/sit` enchaîne maintenant : recherche
+d'adresse → parcelle cadastrale → risques réglementaires → historique
+des ventes DVF sur la même section, plus l'ingestion de documents
+Markdown indexés (pgvector) pour le copilote.
+
 Prochaines étapes :
 1. Clarifier avec l'utilisateur où/si `archiaccess-pro/aeo-password`
    existe, puis ajouter la permission `secretsmanager:GetSecretValue`
@@ -263,17 +288,16 @@ Prochaines étapes :
    que des identifiants AWS valides sont disponibles.
 3. Résoudre l'accès à `mistral-large-latest` (voir ci-dessus).
 4. Tester l'auth, le chat Mistral (avec contexte SIT), la recherche
-   d'adresse, le cadastre, Géorisques et l'ingestion de documents bout
-   en bout — nécessite soit un déploiement réel, soit un nouveau
+   d'adresse, le cadastre, Géorisques, DVF et l'ingestion de documents
+   bout en bout — nécessite soit un déploiement réel, soit un nouveau
    passage par bastion.
-5. Continuer le hub de données : DVF (valeurs foncières) — à brancher
-   sur l'adresse/parcelle sélectionnée dans `/sit`, même principe que
-   le cadastre et Géorisques.
-6. Une fois le hub de données avancé, décider de l'architecture de
-   déploiement (Lambda/ECS dans le VPC, ou autre) — l'utilisateur a un
-   nom de domaine prêt à pointer dessus, à paramétrer en DNS une fois
-   qu'il y a une adresse réelle à laquelle le pointer (pas encore le
-   cas).
+5. Décider de l'architecture de déploiement (Lambda/ECS dans le VPC, ou
+   autre) — l'utilisateur a un nom de domaine prêt à pointer dessus, à
+   paramétrer en DNS une fois qu'il y a une adresse réelle à laquelle le
+   pointer (pas encore le cas).
+6. Au-delà des trois connecteurs initiaux, d'autres sources restent
+   possibles selon les besoins concrets des études (SIRENE/INSEE,
+   BODACC...) — à choisir avec l'utilisateur plutôt qu'anticipées.
 
 L'utilisateur veut avancer **pas à pas** — ne pas se lancer dans plusieurs
 chantiers en parallèle, mais il a aussi demandé de procéder "de manière

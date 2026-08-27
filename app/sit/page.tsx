@@ -6,11 +6,13 @@ import { AuthGate } from "@/components/auth-gate"
 import type { AddressResult } from "@/lib/data-sources/ban"
 import type { Parcel } from "@/lib/data-sources/cadastre"
 import type { CommuneRisks } from "@/lib/data-sources/georisques"
+import type { Mutation } from "@/lib/data-sources/dvf"
 
 // Connecteurs du hub SIT : recherche d'adresse (Base Adresse Nationale),
-// cadastre/parcelles (API Carto IGN), Géorisques (risques réglementaires)
-// — tous s'articulent autour d'une adresse sélectionnée. DVF (prochain
-// connecteur) suivra le même principe — voir CLAUDE.md.
+// cadastre/parcelles (API Carto IGN), Géorisques (risques réglementaires),
+// DVF (valeurs foncières) — tous s'articulent autour d'une adresse
+// sélectionnée (DVF a en plus besoin de la section cadastrale, fournie
+// par ParcelList) — voir CLAUDE.md.
 export default function SitPage() {
   return (
     <AuthGate>
@@ -36,6 +38,7 @@ function AddressSearch() {
   const [selected, setSelected] = useState<AddressResult | null>(null)
   const [isSearching, setIsSearching] = useState(false)
   const [error, setError] = useState("")
+  const [parcels, setParcels] = useState<Parcel[]>([])
 
   async function search(e: React.FormEvent) {
     e.preventDefault()
@@ -43,6 +46,7 @@ function AddressSearch() {
     setIsSearching(true)
     setError("")
     setSelected(null)
+    setParcels([])
     try {
       const res = await fetch(`/api/sit/search-address?q=${encodeURIComponent(query)}`)
       const data = await res.json()
@@ -83,7 +87,10 @@ function AddressSearch() {
         {results.map((r) => (
           <button
             key={`${r.citycode}-${r.label}`}
-            onClick={() => setSelected(r)}
+            onClick={() => {
+              setSelected(r)
+              setParcels([])
+            }}
             className="liquid-glass-soft block w-full rounded-xl p-3 text-left text-sm transition-shadow hover:shadow-md"
           >
             <p className="font-medium">{r.label}</p>
@@ -107,18 +114,16 @@ function AddressSearch() {
             <dt>Score de fiabilité</dt>
             <dd>{Math.round(selected.score * 100)}%</dd>
           </dl>
-          <ParcelList lon={selected.coordinates[0]} lat={selected.coordinates[1]} />
+          <ParcelList lon={selected.coordinates[0]} lat={selected.coordinates[1]} onLoaded={setParcels} />
           <RiskList codeInsee={selected.citycode} />
-          <p className="mt-3 text-xs text-muted-foreground">
-            DVF (valeurs foncières) arrivera ici pour cette localisation — pas encore construit.
-          </p>
+          {parcels[0] && <DvfList codeCommune={parcels[0].codeInsee} sectionPrefixe={parcels[0].sectionPrefixe} />}
         </div>
       )}
     </div>
   )
 }
 
-function ParcelList({ lon, lat }: { lon: number; lat: number }) {
+function ParcelList({ lon, lat, onLoaded }: { lon: number; lat: number; onLoaded: (parcels: Parcel[]) => void }) {
   const [parcels, setParcels] = useState<Parcel[] | null>(null)
   const [error, setError] = useState("")
 
@@ -132,6 +137,7 @@ function ParcelList({ lon, lat }: { lon: number; lat: number }) {
         if (cancelled) return
         if (data.success) {
           setParcels(data.parcels)
+          onLoaded(data.parcels)
         } else {
           setError(data.error ?? "Recherche de parcelle impossible.")
         }
@@ -142,7 +148,7 @@ function ParcelList({ lon, lat }: { lon: number; lat: number }) {
     return () => {
       cancelled = true
     }
-  }, [lon, lat])
+  }, [lon, lat, onLoaded])
 
   return (
     <div className="mt-3 border-t border-border/50 pt-3">
@@ -156,6 +162,53 @@ function ParcelList({ lon, lat }: { lon: number; lat: number }) {
             <li key={p.idu} className="text-xs text-muted-foreground">
               Section {p.section}, parcelle {p.numero} — {p.contenanceM2} m² (
               <span className="font-mono">{p.idu}</span>)
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function DvfList({ codeCommune, sectionPrefixe }: { codeCommune: string; sectionPrefixe: string }) {
+  const [mutations, setMutations] = useState<Mutation[] | null>(null)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    let cancelled = false
+    setMutations(null)
+    setError("")
+    fetch(`/api/sit/dvf?codeCommune=${codeCommune}&sectionPrefixe=${sectionPrefixe}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return
+        if (data.success) {
+          setMutations(data.mutations)
+        } else {
+          setError(data.error ?? "Recherche DVF impossible.")
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setError("Recherche DVF impossible.")
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [codeCommune, sectionPrefixe])
+
+  return (
+    <div className="mt-3 border-t border-border/50 pt-3">
+      <h4 className="mb-1 text-xs font-medium text-muted-foreground">DVF — ventes récentes (section {sectionPrefixe.slice(3)})</h4>
+      {error && <p className="text-xs text-red-600">{error}</p>}
+      {!error && mutations === null && <p className="text-xs text-muted-foreground">Recherche…</p>}
+      {mutations?.length === 0 && <p className="text-xs text-muted-foreground">Aucune vente répertoriée dans cette section.</p>}
+      {mutations && mutations.length > 0 && (
+        <ul className="custom-scrollbar max-h-40 space-y-1 overflow-y-auto">
+          {mutations.slice(0, 10).map((m) => (
+            <li key={m.idMutation} className="text-xs text-muted-foreground">
+              {m.date} — {m.nature} — {m.adresse}
+              {m.valeurFonciere !== null && ` — ${m.valeurFonciere.toLocaleString("fr-FR")} €`}
+              {m.surfaceReelleBati !== null && ` (${m.surfaceReelleBati} m²)`}
             </li>
           ))}
         </ul>
