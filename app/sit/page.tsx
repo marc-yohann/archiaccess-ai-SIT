@@ -7,16 +7,18 @@ import { AuthGate } from "@/components/auth-gate"
 export default function SitPage() {
   return (
     <AuthGate>
-      <main className="mx-auto flex min-h-screen max-w-2xl flex-col p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-lg font-medium">Système d'Information Technique</h1>
-          <Link href="/" className="text-sm text-muted-foreground hover:underline">
-            Accueil
-          </Link>
+      <main className="glass-scene flex min-h-screen justify-center p-4">
+        <div className="liquid-glass w-full max-w-2xl rounded-3xl p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h1 className="text-lg font-medium">Système d'Information Technique</h1>
+            <Link href="/" className="text-sm text-muted-foreground hover:underline">
+              Accueil
+            </Link>
+          </div>
+          <p className="liquid-glass-soft rounded-xl p-4 text-sm text-muted-foreground">
+            Pas encore construit — hub de données (foncier, financier, réglementaire) et études en cours arriveront ici.
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Pas encore construit — hub de données (foncier, financier, réglementaire) et études en cours arriveront ici.
-        </p>
       </main>
     </AuthGate>
   )

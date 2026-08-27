@@ -20,7 +20,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <main className="flex min-h-screen items-center justify-center">
+      <main className="glass-scene flex min-h-screen items-center justify-center">
         <p className="text-sm text-muted-foreground">Chargement…</p>
       </main>
     )
@@ -56,22 +56,22 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
-      <form onSubmit={submit} className="flex w-full max-w-sm flex-col gap-3 rounded-xl border p-8">
+    <main className="glass-scene flex min-h-screen items-center justify-center p-4">
+      <form onSubmit={submit} className="liquid-glass flex w-full max-w-sm flex-col gap-3 rounded-3xl p-8">
         <h1 className="text-lg font-medium">Archiaccess</h1>
         <p className="text-sm text-muted-foreground">Mot de passe d'équipe AEO</p>
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded-lg border px-3 py-2 text-sm"
+          className="liquid-glass-inset rounded-xl px-3 py-2 text-sm outline-none"
           autoFocus
         />
         {error && <p className="text-xs text-red-600">{error}</p>}
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-lg bg-black px-4 py-2 text-sm text-white disabled:opacity-50"
+          className="chrome-black rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
         >
           Se connecter
         </button>

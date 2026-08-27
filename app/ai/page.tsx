@@ -49,35 +49,45 @@ function Chat() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-lg font-medium">Archiaccess AI</h1>
-        <Link href="/" className="text-sm text-muted-foreground hover:underline">
-          Accueil
-        </Link>
+    <main className="glass-scene flex min-h-screen justify-center p-4">
+      <div className="liquid-glass flex w-full max-w-2xl flex-col rounded-3xl p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-lg font-medium">Archiaccess AI</h1>
+          <Link href="/" className="text-sm text-muted-foreground hover:underline">
+            Accueil
+          </Link>
+        </div>
+        <div className="custom-scrollbar flex-1 space-y-3 overflow-y-auto">
+          {messages.map((m, i) => (
+            <div key={i} className={m.role === "user" ? "text-right" : "text-left"}>
+              <span
+                className={
+                  m.role === "user"
+                    ? "chrome-black inline-block max-w-[80%] rounded-2xl px-3 py-2 text-sm text-white"
+                    : "liquid-glass-soft inline-block max-w-[80%] rounded-2xl px-3 py-2 text-sm"
+                }
+              >
+                {m.content}
+              </span>
+            </div>
+          ))}
+        </div>
+        <form onSubmit={send} className="mt-4 flex gap-2">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Poser une question…"
+            className="liquid-glass-inset flex-1 rounded-xl px-3 py-2 text-sm outline-none"
+          />
+          <button
+            type="submit"
+            disabled={isSending}
+            className="chrome-black rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
+          >
+            Envoyer
+          </button>
+        </form>
       </div>
-      <div className="flex-1 space-y-3 overflow-y-auto">
-        {messages.map((m, i) => (
-          <div key={i} className={m.role === "user" ? "text-right" : "text-left"}>
-            <span className="inline-block max-w-[80%] rounded-lg border px-3 py-2 text-sm">{m.content}</span>
-          </div>
-        ))}
-      </div>
-      <form onSubmit={send} className="mt-4 flex gap-2">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Poser une question…"
-          className="flex-1 rounded-lg border px-3 py-2 text-sm"
-        />
-        <button
-          type="submit"
-          disabled={isSending}
-          className="rounded-lg bg-black px-4 py-2 text-sm text-white disabled:opacity-50"
-        >
-          Envoyer
-        </button>
-      </form>
     </main>
   )
 }

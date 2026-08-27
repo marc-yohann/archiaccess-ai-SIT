@@ -7,17 +7,19 @@ import { AuthGate } from "@/components/auth-gate"
 export default function Page() {
   return (
     <AuthGate>
-      <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center gap-6 p-4">
-        <h1 className="text-lg font-medium">Archiaccess</h1>
-        <div className="grid w-full gap-4 sm:grid-cols-2">
-          <Link href="/sit" className="rounded-xl border p-6 hover:bg-gray-50">
-            <h2 className="font-medium">Système d'Information Technique</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Études, documents, données foncières/financières/réglementaires.</p>
-          </Link>
-          <Link href="/ai" className="rounded-xl border p-6 hover:bg-gray-50">
-            <h2 className="font-medium">Archiaccess AI</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Copilote conversationnel pour vos études AMO/OPC.</p>
-          </Link>
+      <main className="glass-scene flex min-h-screen items-center justify-center p-4">
+        <div className="liquid-glass w-full max-w-2xl rounded-3xl p-8">
+          <h1 className="mb-6 text-xl font-medium">Archiaccess</h1>
+          <div className="grid w-full gap-4 sm:grid-cols-2">
+            <Link href="/sit" className="liquid-glass-panel block rounded-2xl p-6 transition-shadow hover:shadow-lg">
+              <h2 className="font-medium">Système d'Information Technique</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Études, documents, données foncières/financières/réglementaires.</p>
+            </Link>
+            <Link href="/ai" className="liquid-glass-panel block rounded-2xl p-6 transition-shadow hover:shadow-lg">
+              <h2 className="font-medium">Archiaccess AI</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Copilote conversationnel pour vos études AMO/OPC.</p>
+            </Link>
+          </div>
         </div>
       </main>
     </AuthGate>
