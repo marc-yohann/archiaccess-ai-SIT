@@ -61,21 +61,24 @@ restrictive évoquée dans les versions précédentes de ce fichier ne
 s'est pas vérifiée — à re-tester si un futur environnement se comporte
 différemment, mais ne plus la supposer par défaut.
 
-**Testé en conditions réelles avec une vraie clé API Mistral** :
+**Testé en conditions réelles avec deux clés API Mistral différentes** (la
+seconde fournie spécifiquement pour écarter un souci de tier/quota
+propre à la première) — même résultat dans les deux cas :
 - `mistral-small-latest` et `mistral-medium-latest` répondent
   correctement (< 1s, HTTP 200).
 - **`mistral-large-latest` (et `mistral-large-2512`) timeout
   systématiquement** — 0 octet reçu après 30-45s, alors que la requête
   est strictement identique à celle qui fonctionne pour les autres
-  modèles, et que le proxy sortant ne signale aucune erreur de relais.
-  Ça pointe vers un problème côté compte Mistral (accès au modèle
-  `large` non provisionné, quota/tier insuffisant) plutôt qu'un souci
-  réseau ou de code. **`lib/mistral.ts` appelle encore
-  `mistral-large-latest`** — jusqu'à résolution, le chat en usage réel
-  timeout. À vérifier avec l'utilisateur (tier de la clé API,
-  éventuellement demander l'accès à `mistral-large` sur la console
-  Mistral) avant de rebasculer `/ai` dessus, ou de choisir un modèle de
-  repli (`mistral-medium-latest`) en attendant.
+  modèles, que le proxy sortant ne signale aucune erreur de relais, et
+  que le problème persiste avec une clé API neuve. Ça pointe vers un
+  souci côté infrastructure Mistral pour ce modèle précis (surcharge,
+  incident sur `large`) plutôt qu'un problème de compte/quota/réseau/code.
+  **`lib/mistral.ts` bascule temporairement sur `mistral-medium-latest`**
+  (repli documenté en commentaire dans le fichier) pour que `/ai` reste
+  utilisable — à rebasculer sur `mistral-large-latest` une fois
+  confirmé que l'API répond de nouveau pour ce modèle (retester
+  périodiquement, ou demander à l'utilisateur de vérifier le statut sur
+  status.mistral.ai / la console Mistral).
 - AWS **pas encore testé** : les premiers identifiants (session
   temporaire via `aws configure export-credentials` depuis CloudShell)
   ont expiré avant d'avoir pu être utilisés (le conteneur a redémarré
