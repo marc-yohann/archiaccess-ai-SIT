@@ -54,10 +54,19 @@ qui précède compile mais n'a jamais tourné en conditions réelles.
 
 Prochaines étapes à faire depuis un environnement à accès réseau ouvert :
 1. Provisionner les vraies ressources AWS (secrets, base Postgres, rôle
-   IAM) — aucun accès AWS valide n'existe encore, demander à l'utilisateur.
+   IAM), **région eu-west-3 (Paris)** — cohérent avec le choix Mistral pour
+   la souveraineté des données. Aucun accès AWS valide n'existe encore,
+   demander à l'utilisateur.
 2. Tester l'auth et le chat Mistral en conditions réelles.
 3. Construire le hub de données (études foncières/financières/
    réglementaires, API data.gouv.fr) — pas commencé du tout.
+4. "Second cerveau" (mémoire/connaissance accumulée pour le copilote) :
+   extension **pgvector** sur la même base Postgres (pas de service séparé)
+   + **S3** pour les documents. PAS agentmemory (outil pensé pour donner de
+   la mémoire à un agent codeur sur une machine locale — serveur local,
+   stockage sur le poste — inadapté à un backend de production partagé par
+   toute une équipe, et de toute façon impossible à héberger localement ici
+   faute de stockage/machine dédiée).
 
 L'utilisateur veut avancer **pas à pas** — ne pas se lancer dans plusieurs
 chantiers en parallèle, mais il a aussi demandé de procéder "de manière
