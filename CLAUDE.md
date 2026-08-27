@@ -131,17 +131,36 @@ clarifié, `getAeoSharedPassword()` dans `lib/secrets.ts` échouera en
 conditions réelles — l'authentification par mot de passe d'équipe reste
 non testable de bout en bout.
 
+**Hub `/sit` démarré** — premier connecteur data.gouv.fr branché et testé
+en conditions réelles : `lib/data-sources/ban.ts` (API Adresse / Base
+Adresse Nationale, geocoding, pas de clé requise), exposé via
+`app/api/sit/search-address/route.ts` (même pattern d'auth par cookie de
+session que `/api/mistral/chat`), UI de recherche dans `app/sit/page.tsx`
+(recherche → liste de résultats → détail avec coordonnées/code
+INSEE/score). Choisi comme point d'entrée parce que cadastre, Géorisques
+et DVF (prochains connecteurs) ont tous besoin d'une adresse géocodée ou
+d'un code commune en entrée. Pas encore de persistance (pas de modèle
+Prisma) : la BDD n'est pas encore accessible (voir ci-dessus, host
+placeholder), donc rien à sauvegarder pour l'instant — recherche
+uniquement, pas d'historique. La route `/api/sit/search-address` n'a pas
+pu être testée bout en bout (elle passe par `isValidSession()` →
+Postgres, indisponible), mais le connecteur BAN lui-même a été validé
+par appels directs à l'API réelle avant d'écrire le code.
+
 Prochaines étapes :
 1. Clarifier avec l'utilisateur où/si `archiaccess-pro/aeo-password`
    existe, puis ajouter la permission `secretsmanager:GetSecretValue`
    correspondante à la politique du rôle `archiaccess-ai-sit-app`.
-2. Une fois l'instance RDS disponible, mettre à jour le secret
+2. Une fois l'instance RDS disponible (identifiants AWS à redemander,
+   ceux du provisioning initial ont expiré), mettre à jour le secret
    `archiaccess-ai-sit/database` avec le vrai endpoint, activer
    `pgvector`, lancer les migrations Prisma.
 3. Résoudre l'accès à `mistral-large-latest` (voir ci-dessus).
-4. Tester l'auth et le chat Mistral bout en bout avec ces ressources.
-5. Construire le hub de données (études foncières/financières/
-   réglementaires, API data.gouv.fr) — pas commencé du tout.
+4. Tester l'auth, le chat Mistral et la recherche d'adresse bout en bout
+   avec ces ressources.
+5. Continuer le hub de données : cadastre/parcelles (GPU/apicarto),
+   Géorisques (risques réglementaires), DVF (valeurs foncières) — à
+   brancher sur l'adresse sélectionnée dans `/sit`.
 6. Brancher pgvector pour que le copilote s'appuie sur le contenu du SIT.
 
 L'utilisateur veut avancer **pas à pas** — ne pas se lancer dans plusieurs
