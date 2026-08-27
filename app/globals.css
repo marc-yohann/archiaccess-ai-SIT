@@ -1,14 +1,468 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 
-:root {
-  --background: #ffffff;
-  --foreground: #1a1a1c;
-  --muted: #6b7280;
-  --border: #e5e7eb;
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-inter), 'Inter', system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), 'Geist Mono Fallback';
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: system-ui, sans-serif;
+:root {
+  --background: oklch(0.94 0.018 135);
+  --foreground: oklch(0.13 0.005 130);
+  --card: oklch(0.97 0.012 135);
+  --card-foreground: oklch(0.13 0.005 130);
+  --popover: oklch(0.98 0.01 135);
+  --popover-foreground: oklch(0.13 0.005 130);
+  --primary: oklch(0.11 0.004 130);
+  --primary-foreground: oklch(0.98 0.005 135);
+  --secondary: oklch(0.92 0.014 135);
+  --secondary-foreground: oklch(0.22 0.01 130);
+  --muted: oklch(0.91 0.012 135);
+  --muted-foreground: oklch(0.48 0.01 130);
+  --accent: oklch(0.9 0.015 135);
+  --accent-foreground: oklch(0.13 0.005 130);
+  --destructive: oklch(0.58 0.18 25);
+  --border: oklch(0.86 0.012 135);
+  --input: oklch(0.88 0.012 135);
+  --ring: oklch(0.65 0.02 135);
+  --chart-1: oklch(0.7 0.18 50);
+  --chart-2: oklch(0.5 0.2 280);
+  --chart-3: oklch(0.7 0.01 130);
+  --chart-4: oklch(0.65 0.15 25);
+  --chart-5: oklch(0.65 0.2 145);
+  --radius: 0.9rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-light;
+  }
+  html {
+    @apply font-sans;
+  }
+  h1, h2, h3 {
+    @apply font-light tracking-tight;
+  }
+}
+
+@layer components {
+  /* ── Ambient scene: neutral depth for backdrop-filter to refract ── */
+  .glass-scene {
+    position: relative;
+    isolation: isolate;
+    background:
+      radial-gradient(ellipse 68% 54% at 106% 108%, oklch(0.5 0.02 250) 0%, transparent 72%),
+      oklch(0.9 0.012 255);
+  }
+
+  .glass-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(72px);
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  /* Shared glass pseudo-layers */
+  .liquid-glass,
+  .liquid-glass-panel,
+  .liquid-glass-soft,
+  .liquid-glass-pill,
+  .liquid-glass-inset,
+  .liquid-glass-btn {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .liquid-glass > *,
+  .liquid-glass-panel > *,
+  .liquid-glass-soft > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Specular rim light on edges */
+  .liquid-glass::before,
+  .liquid-glass-panel::before,
+  .liquid-glass-soft::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(255, 255, 255, 0.35) 18%,
+      rgba(255, 255, 255, 0) 42%,
+      rgba(255, 255, 255, 0) 62%,
+      rgba(255, 255, 255, 0.25) 82%,
+      rgba(255, 255, 255, 0.65) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Caustic sheen + micro-noise texture */
+  .liquid-glass::after,
+  .liquid-glass-panel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        ellipse 80% 45% at 12% -8%,
+        rgba(255, 255, 255, 0.55) 0%,
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse 60% 35% at 88% 108%,
+        rgba(200, 205, 215, 0.14) 0%,
+        transparent 50%
+      ),
+      url("/noise.png");
+    background-size: auto, auto, 128px 128px;
+    opacity: 0.35;
+    mix-blend-mode: overlay;
+  }
+
+  /* Main dashboard shell */
+  .liquid-glass {
+    overflow: hidden;
+    background: linear-gradient(
+      168deg,
+      rgba(255, 255, 255, 0.62) 0%,
+      rgba(255, 255, 255, 0.28) 42%,
+      rgba(255, 255, 255, 0.14) 100%
+    );
+    backdrop-filter: blur(40px) saturate(115%) brightness(1.02);
+    -webkit-backdrop-filter: blur(40px) saturate(115%) brightness(1.02);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    box-shadow:
+      0 0 0 1px rgba(20, 24, 28, 0.16),
+      0 1px 0 0 rgba(255, 255, 255, 0.85) inset,
+      0 -1px 0 0 rgba(255, 255, 255, 0.2) inset,
+      0 12px 40px -12px rgba(30, 35, 45, 0.14),
+      0 40px 80px -24px rgba(30, 35, 45, 0.12);
+  }
+
+  /* Modificateur "relief renforcé" — même verre, mais bord plus lumineux
+     et ombre plus profonde. Réservé à des surfaces ciblées (barre
+     latérale) plutôt qu'appliqué à .liquid-glass en général. */
+  .liquid-glass-deep {
+    background: linear-gradient(
+      168deg,
+      rgba(255, 255, 255, 0.72) 0%,
+      rgba(255, 255, 255, 0.34) 42%,
+      rgba(255, 255, 255, 0.18) 100%
+    );
+    backdrop-filter: blur(44px) saturate(130%) brightness(1.05);
+    -webkit-backdrop-filter: blur(44px) saturate(130%) brightness(1.05);
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    box-shadow:
+      0 0 0 1px rgba(20, 24, 28, 0.18),
+      0 1.5px 0 0 rgba(255, 255, 255, 0.95) inset,
+      0 -1.5px 0 0 rgba(20, 24, 28, 0.06) inset,
+      0 16px 44px -12px rgba(30, 35, 45, 0.22),
+      0 44px 88px -22px rgba(30, 35, 45, 0.18);
+  }
+
+  /* Card panels */
+  .liquid-glass-panel {
+    overflow: hidden;
+    background: linear-gradient(
+      155deg,
+      rgba(255, 255, 255, 0.52) 0%,
+      rgba(255, 255, 255, 0.22) 50%,
+      rgba(255, 255, 255, 0.1) 100%
+    );
+    backdrop-filter: blur(32px) saturate(112%) brightness(1.02);
+    -webkit-backdrop-filter: blur(32px) saturate(112%) brightness(1.02);
+    border: 1px solid rgba(255, 255, 255, 0.58);
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.75) inset,
+      0 8px 28px -10px rgba(30, 35, 45, 0.08);
+  }
+
+  /* Inner list rows & nested items */
+  .liquid-glass-soft {
+    overflow: hidden;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.45) 0%,
+      rgba(255, 255, 255, 0.14) 100%
+    );
+    backdrop-filter: blur(20px) saturate(110%);
+    -webkit-backdrop-filter: blur(20px) saturate(110%);
+    border: 1px solid rgba(255, 255, 255, 0.48);
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.65) inset,
+      0 4px 16px -6px rgba(30, 35, 45, 0.06);
+  }
+
+  /* Stats grid cells */
+  .liquid-glass-inset {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.38) 0%,
+      rgba(255, 255, 255, 0.12) 100%
+    );
+    backdrop-filter: blur(16px) saturate(108%);
+    -webkit-backdrop-filter: blur(16px) saturate(108%);
+    box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.5) inset;
+  }
+
+  /* Nav pill & segmented controls — léger effet chromé (bandes métal
+     brossé) en plus du verre translucide habituel. */
+  .liquid-glass-pill {
+    background:
+      linear-gradient(
+        100deg,
+        rgba(255, 255, 255, 0.55) 0%,
+        rgba(200, 200, 202, 0.22) 38%,
+        rgba(255, 255, 255, 0.5) 52%,
+        rgba(190, 190, 192, 0.2) 68%,
+        rgba(255, 255, 255, 0.42) 100%
+      ),
+      linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.42) 0%,
+        rgba(255, 255, 255, 0.16) 100%
+      );
+    backdrop-filter: blur(24px) saturate(110%);
+    -webkit-backdrop-filter: blur(24px) saturate(110%);
+    border: 1px solid rgba(255, 255, 255, 0.52);
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.7) inset,
+      0 2px 12px -4px rgba(30, 35, 45, 0.06);
+  }
+
+  /* Modificateur "relief renforcé" pour .liquid-glass-pill — même logique
+     que .liquid-glass-deep, réservé à la pill de navigation principale. */
+  .liquid-glass-pill-deep {
+    background:
+      linear-gradient(
+        100deg,
+        rgba(255, 255, 255, 0.65) 0%,
+        rgba(200, 200, 202, 0.26) 38%,
+        rgba(255, 255, 255, 0.6) 52%,
+        rgba(190, 190, 192, 0.24) 68%,
+        rgba(255, 255, 255, 0.52) 100%
+      ),
+      linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.52) 0%,
+        rgba(255, 255, 255, 0.22) 100%
+      );
+    backdrop-filter: blur(26px) saturate(130%) brightness(1.04);
+    -webkit-backdrop-filter: blur(26px) saturate(130%) brightness(1.04);
+    border: 1px solid rgba(255, 255, 255, 0.68);
+    box-shadow:
+      0 1.5px 0 0 rgba(255, 255, 255, 0.95) inset,
+      0 -1px 0 0 rgba(20, 24, 28, 0.05) inset,
+      0 10px 24px -8px rgba(30, 35, 45, 0.22),
+      0 2px 6px -2px rgba(30, 35, 45, 0.12);
+  }
+
+  /* Icon & ghost buttons — même léger effet chromé que .liquid-glass-pill */
+  .liquid-glass-btn {
+    background:
+      linear-gradient(
+        100deg,
+        rgba(255, 255, 255, 0.6) 0%,
+        rgba(200, 200, 202, 0.24) 40%,
+        rgba(255, 255, 255, 0.55) 55%,
+        rgba(190, 190, 192, 0.2) 72%,
+        rgba(255, 255, 255, 0.48) 100%
+      ),
+      linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.5) 0%,
+        rgba(255, 255, 255, 0.18) 100%
+      );
+    backdrop-filter: blur(20px) saturate(110%);
+    -webkit-backdrop-filter: blur(20px) saturate(110%);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.65) inset,
+      0 2px 8px -2px rgba(30, 35, 45, 0.05);
+    transition: box-shadow 0.2s ease, background 0.2s ease;
+  }
+
+  .liquid-glass-btn:hover {
+    background: linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.62) 0%,
+      rgba(255, 255, 255, 0.28) 100%
+    );
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.8) inset,
+      0 4px 14px -4px rgba(30, 35, 45, 0.08);
+  }
+
+  /* Bouton noir "chromé" — remplace les fonds noirs plats (envoyer,
+     publier...) par un dégradé métal sombre avec liseré spéculaire. */
+  .chrome-black {
+    background: linear-gradient(
+      150deg,
+      rgba(70, 70, 72, 0.96) 0%,
+      rgba(13, 13, 14, 0.94) 45%,
+      rgba(28, 28, 30, 0.96) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.22) inset,
+      0 3px 10px -3px rgba(0, 0, 0, 0.4);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+  }
+
+  .chrome-black:hover {
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.3) inset,
+      0 4px 14px -3px rgba(0, 0, 0, 0.45);
+  }
+
+  /* Bouton blanc "chromé" — équivalent clair de .chrome-black, façon
+     nacre douce, pour les actions secondaires à côté d'un bouton noir. */
+  .chrome-white {
+    background: linear-gradient(
+      150deg,
+      rgba(255, 255, 255, 0.96) 0%,
+      rgba(237, 233, 242, 0.88) 40%,
+      rgba(250, 248, 252, 0.95) 100%
+    );
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    color: #1a1a1c;
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.95) inset,
+      0 3px 10px -3px rgba(20, 24, 28, 0.12);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+  }
+
+  .chrome-white:hover {
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 1) inset,
+      0 4px 14px -3px rgba(20, 24, 28, 0.16);
+  }
+
+  /* Ascenseur discret pour les listes scrollables (sidebar, menus
+     déroulants…) — la classe était référencée sans jamais être définie,
+     d'où l'ascenseur natif du navigateur affiché par défaut. */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(20, 24, 28, 0.22) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(20, 24, 28, 0.22);
+    border-radius: 999px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(20, 24, 28, 0.35);
+  }
 }
