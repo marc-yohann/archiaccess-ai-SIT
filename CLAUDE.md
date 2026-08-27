@@ -179,16 +179,53 @@ morceau par morceau :
   grâce à `postgresqlExtensions`, mais ce n'est vérifié nulle part
   encore.
 
+**RDS disponible, secret `database` à jour, mais migrations toujours pas
+lancées — blocage réseau, pas AWS** (2026-08-27) : une fois l'instance
+RDS prête (endpoint `archiaccess-ai-sit-db.cnucuimmuzrc.eu-west-3.rds.amazonaws.com`,
+secret `archiaccess-ai-sit/database` mis à jour avec ce vrai host), tentative
+de connexion directe depuis cet environnement Claude Code pour lancer
+`prisma migrate dev` — échec en TCP. Cause identifiée : **cet
+environnement route les requêtes HTTPS via un proxy applicatif, mais le
+TCP brut (bases de données) n'est pas supporté du tout** — documenté
+explicitement dans `/root/.ccr/README.md` ("raw-TCP databases... report,
+do not work around"), ce n'est pas une histoire de security group ou
+d'accès public. Test fait : RDS basculé temporairement en
+`--publicly-accessible` + security group ouvert à l'IP sortante de cet
+environnement (avec l'accord explicite de l'utilisateur) — toujours
+injoignable en TCP, confirmant que c'est le réseau de l'environnement
+qui bloque, pas AWS. **Annulé immédiatement après ce constat** : RDS
+repassé en `--no-publicly-accessible`, règle de security group
+temporaire retirée (seul le CIDR du VPC reste autorisé en entrée).
+
+**Cette limite (pas de TCP brut vers bases de données) est structurelle
+à cet environnement, pas à AWS ni au code** — inutile de refaire cette
+tentative depuis un futur environnement Claude Code on the web tant
+qu'il a la même politique réseau. Options pour lancer les migrations
+malgré tout, à trancher avec l'utilisateur :
+1. Un bastion/instance EC2 dans le VPC, piloté via `aws ssm send-command`
+   (API HTTPS, donc compatible avec le proxy de cet environnement) —
+   installe psql sur l'instance et exécute le DDL (extension vector +
+   tables `Document`/`DocumentChunk`/`Session`/`Conversation`/`Message`)
+   sans avoir besoin du toolchain Node/Prisma complet sur le bastion.
+   Coût marginal (instance à durée de vie courte), complexité de mise en
+   place la plus haute des trois options.
+2. L'utilisateur lance `npx prisma migrate dev` lui-même depuis un poste
+   qui a un accès réseau normal (son AWS CloudShell actuel peut
+   probablement atteindre le RDS si celui-ci est temporairement rendu
+   public, ou depuis sa machine locale une fois le repo cloné).
+3. Attendre que l'architecture de déploiement de l'app soit tranchée
+   (Lambda/ECS dans le même VPC) — le compute applicatif lui-même aura
+   un accès réseau normal au RDS, donc les migrations pourront tourner
+   depuis là (ex: une migration au démarrage, ou un job one-shot) sans
+   ce problème.
+
 Prochaines étapes :
 1. Clarifier avec l'utilisateur où/si `archiaccess-pro/aeo-password`
    existe, puis ajouter la permission `secretsmanager:GetSecretValue`
    correspondante à la politique du rôle `archiaccess-ai-sit-app`.
-2. Une fois l'instance RDS disponible (identifiants AWS à redemander,
-   ceux du provisioning initial puis d'une deuxième tentative ont
-   expiré), mettre à jour le secret `archiaccess-ai-sit/database` avec
-   le vrai endpoint, lancer `prisma migrate dev` (crée l'extension
-   vector + les tables), tester indexation + recherche pgvector pour de
-   vrai.
+2. Décider avec l'utilisateur laquelle des 3 options ci-dessus pour
+   lancer les migrations Prisma (crée l'extension vector + les tables),
+   puis tester indexation + recherche pgvector pour de vrai.
 3. Résoudre l'accès à `mistral-large-latest` (voir ci-dessus).
 4. Tester l'auth, le chat Mistral (avec contexte SIT), la recherche
    d'adresse et l'ingestion de documents bout en bout avec ces
