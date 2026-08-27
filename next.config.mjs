@@ -1,0 +1,7 @@
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  devIndicators: false,
+  serverExternalPackages: ["@prisma/client"],
+}
+
+export default nextConfig

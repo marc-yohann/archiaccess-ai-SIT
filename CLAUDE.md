@@ -32,9 +32,38 @@ individuel — trivial à réutiliser sans coupler les deux applications).
 
 ## Où on en est
 
-Dépôt tout juste créé, vide. Rien n'est encore construit. L'utilisateur
-veut avancer **pas à pas** — ne pas se lancer dans plusieurs chantiers en
-parallèle, attendre ses instructions à chaque étape plutôt que d'anticiper.
+Premier squelette construit et poussé sur `main` :
+- Next.js 16 + Prisma 7 (adapter-pg) + Tailwind, mêmes versions
+  qu'archiaccess-pro pour rester dans un stack connu.
+- Auth par mot de passe d'équipe partagé (`lib/session.ts`,
+  `app/api/auth/*`) — lit `archiaccess-pro/aeo-password` dans AWS Secrets
+  Manager (voir `lib/secrets.ts`). C'est la SEULE dépendance volontaire
+  vers archiaccess-pro : le rôle IAM de ce projet doit avoir un accès en
+  lecture seule à ce secret précis, rien d'autre côté Pro (pas de base de
+  données partagée, pas d'accès à ses autres secrets).
+- Copilote conversationnel minimal (`app/api/mistral/chat/route.ts`,
+  `lib/mistral.ts`) — appelle l'API Mistral (`mistral-large-latest`),
+  historique de conversation persisté (`Conversation`/`Message` dans
+  `prisma/schema.prisma`).
+- `tsc --noEmit` et `next build` passent tous les deux.
+
+**Non testé** : aucun appel réseau réel n'a pu être fait depuis
+l'environnement où ce squelette a été écrit (politique réseau restrictive,
+voir plus bas) — ni Mistral, ni AWS Secrets Manager, ni Postgres. Tout ce
+qui précède compile mais n'a jamais tourné en conditions réelles.
+
+Prochaines étapes à faire depuis un environnement à accès réseau ouvert :
+1. Provisionner les vraies ressources AWS (secrets, base Postgres, rôle
+   IAM) — aucun accès AWS valide n'existe encore, demander à l'utilisateur.
+2. Tester l'auth et le chat Mistral en conditions réelles.
+3. Construire le hub de données (études foncières/financières/
+   réglementaires, API data.gouv.fr) — pas commencé du tout.
+
+L'utilisateur veut avancer **pas à pas** — ne pas se lancer dans plusieurs
+chantiers en parallèle, mais il a aussi demandé de procéder "de manière
+automatique" une fois le contexte compris : agis, ne redemande pas la
+permission à chaque petite étape, mais documente et committe au fur et à
+mesure pour rester traçable.
 
 ## Contrainte réseau probable
 

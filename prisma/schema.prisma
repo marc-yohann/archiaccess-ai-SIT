@@ -1,0 +1,54 @@
+// Archiaccess AI — Système d'Information Technique Fédéré
+// Schéma volontairement minimal pour le premier chantier (auth par mot de
+// passe d'équipe partagé + copilote conversationnel). Les modèles pour le
+// hub de données (études foncières/financières/réglementaires) seront
+// ajoutés au fur et à mesure des chantiers suivants, pas anticipés ici.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Un seul mot de passe d'équipe partagé (réutilisé de l'AEO d'Archiaccess
+// Pro) — pas de comptes individuels pour l'instant. Chaque connexion crée
+// une session, ce qui permet une vraie révocation côté serveur.
+model Session {
+  id        String   @id
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  conversations Conversation[]
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages Message[]
+
+  @@index([sessionId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  content        String
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
