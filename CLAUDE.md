@@ -247,6 +247,14 @@ autour du point plutôt que le point exact. Exposé via
 qu'une adresse est sélectionnée (section, numéro, contenance, identifiant
 IDU).
 
+**Hub `/sit` — Géorisques branché et testé en conditions réelles** :
+`lib/data-sources/georisques.ts`, trois endpoints à l'échelle de la
+commune (code INSEE, pas besoin de parcelle) : risques naturels/
+technologiques (PPR), zonage sismique (réglementation parasismique),
+potentiel radon (ventilation/santé) — combinés en un seul appel
+`getRisksForCommune()`. Exposé via `app/api/sit/risks/route.ts`,
+affiché automatiquement dans `/sit` sous le cadastre.
+
 Prochaines étapes :
 1. Clarifier avec l'utilisateur où/si `archiaccess-pro/aeo-password`
    existe, puis ajouter la permission `secretsmanager:GetSecretValue`
@@ -255,12 +263,12 @@ Prochaines étapes :
    que des identifiants AWS valides sont disponibles.
 3. Résoudre l'accès à `mistral-large-latest` (voir ci-dessus).
 4. Tester l'auth, le chat Mistral (avec contexte SIT), la recherche
-   d'adresse, le cadastre et l'ingestion de documents bout en bout —
-   nécessite soit un déploiement réel, soit un nouveau passage par
-   bastion.
-5. Continuer le hub de données : Géorisques (risques réglementaires),
-   DVF (valeurs foncières) — à brancher sur l'adresse/parcelle
-   sélectionnée dans `/sit`, même principe que le cadastre.
+   d'adresse, le cadastre, Géorisques et l'ingestion de documents bout
+   en bout — nécessite soit un déploiement réel, soit un nouveau
+   passage par bastion.
+5. Continuer le hub de données : DVF (valeurs foncières) — à brancher
+   sur l'adresse/parcelle sélectionnée dans `/sit`, même principe que
+   le cadastre et Géorisques.
 6. Une fois le hub de données avancé, décider de l'architecture de
    déploiement (Lambda/ECS dans le VPC, ou autre) — l'utilisateur a un
    nom de domaine prêt à pointer dessus, à paramétrer en DNS une fois

@@ -5,11 +5,12 @@ import Link from "next/link"
 import { AuthGate } from "@/components/auth-gate"
 import type { AddressResult } from "@/lib/data-sources/ban"
 import type { Parcel } from "@/lib/data-sources/cadastre"
+import type { CommuneRisks } from "@/lib/data-sources/georisques"
 
-// Connecteurs du hub SIT : recherche d'adresse (Base Adresse Nationale)
-// puis cadastre/parcelles (API Carto IGN), qui s'articulent tous les
-// deux autour d'une adresse sélectionnée. Géorisques et DVF (prochains
-// connecteurs) suivront le même principe — voir CLAUDE.md.
+// Connecteurs du hub SIT : recherche d'adresse (Base Adresse Nationale),
+// cadastre/parcelles (API Carto IGN), Géorisques (risques réglementaires)
+// — tous s'articulent autour d'une adresse sélectionnée. DVF (prochain
+// connecteur) suivra le même principe — voir CLAUDE.md.
 export default function SitPage() {
   return (
     <AuthGate>
@@ -107,8 +108,9 @@ function AddressSearch() {
             <dd>{Math.round(selected.score * 100)}%</dd>
           </dl>
           <ParcelList lon={selected.coordinates[0]} lat={selected.coordinates[1]} />
+          <RiskList codeInsee={selected.citycode} />
           <p className="mt-3 text-xs text-muted-foreground">
-            Géorisques et DVF arriveront ici pour cette localisation — pas encore construits.
+            DVF (valeurs foncières) arrivera ici pour cette localisation — pas encore construit.
           </p>
         </div>
       )}
@@ -157,6 +159,57 @@ function ParcelList({ lon, lat }: { lon: number; lat: number }) {
             </li>
           ))}
         </ul>
+      )}
+    </div>
+  )
+}
+
+function RiskList({ codeInsee }: { codeInsee: string }) {
+  const [risks, setRisks] = useState<CommuneRisks | null>(null)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    let cancelled = false
+    setRisks(null)
+    setError("")
+    fetch(`/api/sit/risks?codeInsee=${codeInsee}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return
+        if (data.success) {
+          setRisks(data.risks)
+        } else {
+          setError(data.error ?? "Recherche de risques impossible.")
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setError("Recherche de risques impossible.")
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [codeInsee])
+
+  return (
+    <div className="mt-3 border-t border-border/50 pt-3">
+      <h4 className="mb-1 text-xs font-medium text-muted-foreground">Géorisques (échelle commune)</h4>
+      {error && <p className="text-xs text-red-600">{error}</p>}
+      {!error && risks === null && <p className="text-xs text-muted-foreground">Recherche…</p>}
+      {risks && (
+        <div className="space-y-1 text-xs text-muted-foreground">
+          <p>
+            Zone sismique : {risks.seismicZone ?? "non renseignée"} · Potentiel radon : {risks.radonPotential ?? "non renseigné"}
+          </p>
+          {risks.risks.length > 0 ? (
+            <ul className="list-inside list-disc">
+              {risks.risks.map((r) => (
+                <li key={r.code}>{r.label}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>Aucun risque répertorié pour cette commune.</p>
+          )}
+        </div>
       )}
     </div>
   )
