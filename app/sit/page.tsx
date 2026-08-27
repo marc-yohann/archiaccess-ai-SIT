@@ -12,7 +12,18 @@ import type { AddressResult } from "@/lib/data-sources/ban"
 export default function SitPage() {
   return (
     <AuthGate>
-      <AddressSearch />
+      <main className="glass-scene flex min-h-screen justify-center p-4">
+        <div className="flex w-full max-w-2xl flex-col gap-4 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-lg font-medium">Système d'Information Technique</h1>
+            <Link href="/" className="text-sm text-muted-foreground hover:underline">
+              Accueil
+            </Link>
+          </div>
+          <AddressSearch />
+          <DocumentUpload />
+        </div>
+      </main>
     </AuthGate>
   )
 }
@@ -45,67 +56,125 @@ function AddressSearch() {
   }
 
   return (
-    <main className="glass-scene flex min-h-screen justify-center p-4">
-      <div className="liquid-glass w-full max-w-2xl rounded-3xl p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-lg font-medium">Système d'Information Technique</h1>
-          <Link href="/" className="text-sm text-muted-foreground hover:underline">
-            Accueil
-          </Link>
-        </div>
+    <div className="liquid-glass w-full rounded-3xl p-6">
+      <h2 className="mb-3 text-sm font-medium text-muted-foreground">Recherche d'adresse</h2>
 
-        <form onSubmit={search} className="flex gap-2">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher une adresse (ex: 8 boulevard du Port, Amiens)…"
-            className="liquid-glass-inset flex-1 rounded-xl px-3 py-2 text-sm outline-none"
-          />
+      <form onSubmit={search} className="flex gap-2">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Rechercher une adresse (ex: 8 boulevard du Port, Amiens)…"
+          className="liquid-glass-inset flex-1 rounded-xl px-3 py-2 text-sm outline-none"
+        />
+        <button
+          type="submit"
+          disabled={isSearching}
+          className="chrome-black rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
+        >
+          {isSearching ? "…" : "Rechercher"}
+        </button>
+      </form>
+
+      {error && <p className="mt-3 text-xs text-red-600">{error}</p>}
+
+      <div className="custom-scrollbar mt-4 max-h-[50vh] space-y-2 overflow-y-auto">
+        {results.map((r) => (
+          <button
+            key={`${r.citycode}-${r.label}`}
+            onClick={() => setSelected(r)}
+            className="liquid-glass-soft block w-full rounded-xl p-3 text-left text-sm transition-shadow hover:shadow-md"
+          >
+            <p className="font-medium">{r.label}</p>
+            <p className="text-xs text-muted-foreground">{r.context}</p>
+          </button>
+        ))}
+      </div>
+
+      {selected && (
+        <div className="liquid-glass-panel mt-4 rounded-2xl p-4 text-sm">
+          <h3 className="mb-2 font-medium">{selected.label}</h3>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <dt>Code commune (INSEE)</dt>
+            <dd>{selected.citycode}</dd>
+            <dt>Code postal</dt>
+            <dd>{selected.postcode}</dd>
+            <dt>Coordonnées (lon, lat)</dt>
+            <dd>
+              {selected.coordinates[0].toFixed(5)}, {selected.coordinates[1].toFixed(5)}
+            </dd>
+            <dt>Score de fiabilité</dt>
+            <dd>{Math.round(selected.score * 100)}%</dd>
+          </dl>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Cadastre, Géorisques, DVF et les autres sources arriveront ici pour cette localisation — pas encore construits.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function DocumentUpload() {
+  const [title, setTitle] = useState("")
+  const [content, setContent] = useState("")
+  const [isSaving, setIsSaving] = useState(false)
+  const [feedback, setFeedback] = useState("")
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!title.trim() || !content.trim() || isSaving) return
+    setIsSaving(true)
+    setFeedback("")
+    try {
+      const res = await fetch("/api/sit/documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, sourceType: "etude", content }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setFeedback("Étude indexée — le copilote Archiaccess AI peut s'en servir de contexte.")
+        setTitle("")
+        setContent("")
+      } else {
+        setFeedback(`Erreur : ${data.error}`)
+      }
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  return (
+    <div className="liquid-glass w-full rounded-3xl p-6">
+      <h2 className="mb-1 text-sm font-medium text-muted-foreground">Ajouter une étude (Markdown)</h2>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Indexée pour que le copilote Archiaccess AI puisse s'en servir comme contexte (recherche par similarité, pgvector).
+      </p>
+      <form onSubmit={submit} className="flex flex-col gap-2">
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Titre de l'étude"
+          className="liquid-glass-inset rounded-xl px-3 py-2 text-sm outline-none"
+        />
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Contenu en Markdown…"
+          rows={6}
+          className="liquid-glass-inset custom-scrollbar rounded-xl px-3 py-2 text-sm outline-none"
+        />
+        <div className="flex items-center justify-between">
+          {feedback && <p className="text-xs text-muted-foreground">{feedback}</p>}
           <button
             type="submit"
-            disabled={isSearching}
-            className="chrome-black rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
+            disabled={isSaving}
+            className="chrome-black ml-auto rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
           >
-            {isSearching ? "…" : "Rechercher"}
+            {isSaving ? "Indexation…" : "Ajouter au SIT"}
           </button>
-        </form>
-
-        {error && <p className="mt-3 text-xs text-red-600">{error}</p>}
-
-        <div className="custom-scrollbar mt-4 max-h-[50vh] space-y-2 overflow-y-auto">
-          {results.map((r) => (
-            <button
-              key={`${r.citycode}-${r.label}`}
-              onClick={() => setSelected(r)}
-              className="liquid-glass-soft block w-full rounded-xl p-3 text-left text-sm transition-shadow hover:shadow-md"
-            >
-              <p className="font-medium">{r.label}</p>
-              <p className="text-xs text-muted-foreground">{r.context}</p>
-            </button>
-          ))}
         </div>
-
-        {selected && (
-          <div className="liquid-glass-panel mt-4 rounded-2xl p-4 text-sm">
-            <h2 className="mb-2 font-medium">{selected.label}</h2>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
-              <dt>Code commune (INSEE)</dt>
-              <dd>{selected.citycode}</dd>
-              <dt>Code postal</dt>
-              <dd>{selected.postcode}</dd>
-              <dt>Coordonnées (lon, lat)</dt>
-              <dd>
-                {selected.coordinates[0].toFixed(5)}, {selected.coordinates[1].toFixed(5)}
-              </dd>
-              <dt>Score de fiabilité</dt>
-              <dd>{Math.round(selected.score * 100)}%</dd>
-            </dl>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Cadastre, Géorisques, DVF et les autres sources arriveront ici pour cette localisation — pas encore construits.
-            </p>
-          </div>
-        )}
-      </div>
-    </main>
+      </form>
+    </div>
   )
 }

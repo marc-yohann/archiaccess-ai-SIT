@@ -1,16 +1,20 @@
 // Archiaccess AI — Système d'Information Technique Fédéré
-// Schéma volontairement minimal pour le premier chantier (auth par mot de
-// passe d'équipe partagé + copilote conversationnel). Les modèles pour le
-// hub de données (études foncières/financières/réglementaires) seront
-// ajoutés au fur et à mesure des chantiers suivants, pas anticipés ici.
+// Auth par mot de passe d'équipe partagé + copilote conversationnel +
+// "second cerveau" du copilote (Document/DocumentChunk indexés via
+// pgvector, voir CLAUDE.md). Le hub de données structurées (foncier,
+// financier, réglementaire par adresse/parcelle) n'a pas encore de
+// modèle — pas anticipé tant que les connecteurs eux-mêmes n'existent
+// pas.
 
 generator client {
-  provider = "prisma-client"
-  output   = "../lib/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../lib/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [vector]
 }
 
 // Un seul mot de passe d'équipe partagé (réutilisé de l'AEO d'Archiaccess
@@ -51,4 +55,37 @@ model Message {
 enum MessageRole {
   USER
   ASSISTANT
+}
+
+// "Second cerveau" du copilote — voir CLAUDE.md : pgvector sur cette même
+// base + S3 pour le contenu brut, pas de service de base vectorielle
+// séparé. Le Markdown reste le format de sortie des études ; ces modèles
+// ne font qu'indexer ce contenu pour la recherche par similarité, jamais
+// ne le remplacent.
+model Document {
+  id         String   @id @default(cuid())
+  title      String
+  sourceType String // ex: "etude", "reglementaire", "note" — pas d'enum figé tant que le hub de données n'a pas défini ses propres catégories
+  s3Key      String // chemin du fichier Markdown source dans le bucket documents
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  chunks DocumentChunk[]
+}
+
+model DocumentChunk {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  chunkIndex Int
+  content    String
+  // Dimension 1024 = celle de mistral-embed, vérifiée par appel réel à
+  // l'API (voir CLAUDE.md) plutôt que supposée. Prisma ne modélise pas
+  // nativement le type vector : Unsupported() le laisse de côté côté
+  // client, les insertions/recherches par similarité passeront par du
+  // SQL brut ($queryRaw / $executeRaw) avec l'opérateur pgvector <=>.
+  embedding Unsupported("vector(1024)")?
+  createdAt DateTime @default(now())
+
+  @@index([documentId])
 }

@@ -147,21 +147,55 @@ pu être testée bout en bout (elle passe par `isValidSession()` →
 Postgres, indisponible), mais le connecteur BAN lui-même a été validé
 par appels directs à l'API réelle avant d'écrire le code.
 
+**"Second cerveau" (pgvector + S3) câblé, pas encore testé** — schéma,
+connecteurs et route branchés en une fois puisque tout dépend de la même
+ressource (RDS) qui n'est pas encore disponible, pour éviter d'y revenir
+morceau par morceau :
+- `prisma/schema.prisma` : extension `postgresqlExtensions` +
+  `extensions = [vector]`, modèles `Document`/`DocumentChunk`.
+  `DocumentChunk.embedding` est `Unsupported("vector(1024)")` — Prisma ne
+  modélise pas le type vector nativement, donc insertion/recherche
+  passent par `$executeRaw`/`$queryRaw` (voir `lib/rag.ts`). Dimension
+  1024 **vérifiée par un appel réel** à `mistral-embed` (pas supposée) —
+  ce modèle répond correctement (HTTP 200), contrairement à
+  `mistral-large-latest`.
+- `lib/embeddings.ts` — client `mistral-embed`.
+- `lib/chunking.ts` — découpage Markdown en paragraphes (~1500 caractères).
+- `lib/storage.ts` — upload/download S3 (bucket créé au provisioning).
+- `lib/rag.ts` — `indexDocument()` (S3 + Postgres + embeddings) et
+  `searchSimilarChunks()` (distance cosinus `<=>`).
+- `app/api/sit/documents/route.ts` + panneau "Ajouter une étude" dans
+  `/sit` — ingestion manuelle d'une étude Markdown.
+- `/api/mistral/chat` interroge `searchSimilarChunks()` avant chaque
+  réponse et injecte les extraits pertinents en contexte système ; un
+  échec de la recherche (base indisponible, rien d'indexé) est absorbé
+  silencieusement, la conversation continue sans ce contexte plutôt que
+  d'échouer.
+- **Rien de tout ça n'a pu tourner contre une vraie base** — `npx prisma
+  generate` valide la syntaxe du schéma, `tsc`/`next build` valident le
+  code, mais aucune requête pgvector réelle n'a été exécutée (RDS pas
+  encore accessible). À tester dès que possible : `CREATE EXTENSION
+  vector` doit se faire automatiquement au premier `prisma migrate dev`
+  grâce à `postgresqlExtensions`, mais ce n'est vérifié nulle part
+  encore.
+
 Prochaines étapes :
 1. Clarifier avec l'utilisateur où/si `archiaccess-pro/aeo-password`
    existe, puis ajouter la permission `secretsmanager:GetSecretValue`
    correspondante à la politique du rôle `archiaccess-ai-sit-app`.
 2. Une fois l'instance RDS disponible (identifiants AWS à redemander,
-   ceux du provisioning initial ont expiré), mettre à jour le secret
-   `archiaccess-ai-sit/database` avec le vrai endpoint, activer
-   `pgvector`, lancer les migrations Prisma.
+   ceux du provisioning initial puis d'une deuxième tentative ont
+   expiré), mettre à jour le secret `archiaccess-ai-sit/database` avec
+   le vrai endpoint, lancer `prisma migrate dev` (crée l'extension
+   vector + les tables), tester indexation + recherche pgvector pour de
+   vrai.
 3. Résoudre l'accès à `mistral-large-latest` (voir ci-dessus).
-4. Tester l'auth, le chat Mistral et la recherche d'adresse bout en bout
-   avec ces ressources.
+4. Tester l'auth, le chat Mistral (avec contexte SIT), la recherche
+   d'adresse et l'ingestion de documents bout en bout avec ces
+   ressources.
 5. Continuer le hub de données : cadastre/parcelles (GPU/apicarto),
    Géorisques (risques réglementaires), DVF (valeurs foncières) — à
    brancher sur l'adresse sélectionnée dans `/sit`.
-6. Brancher pgvector pour que le copilote s'appuie sur le contenu du SIT.
 
 L'utilisateur veut avancer **pas à pas** — ne pas se lancer dans plusieurs
 chantiers en parallèle, mais il a aussi demandé de procéder "de manière
