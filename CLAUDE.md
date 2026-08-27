@@ -32,8 +32,7 @@ individuel — trivial à réutiliser sans coupler les deux applications).
 
 ## Où on en est
 
-Premier squelette construit et poussé sur `main` :
-- Next.js 16 + Prisma 7 (adapter-pg) + Tailwind, mêmes versions
+- Next.js 16 + Prisma 7 (adapter-pg) + Tailwind v4, mêmes versions
   qu'archiaccess-pro pour rester dans un stack connu.
 - Auth par mot de passe d'équipe partagé (`lib/session.ts`,
   `app/api/auth/*`) — lit `archiaccess-pro/aeo-password` dans AWS Secrets
@@ -42,42 +41,62 @@ Premier squelette construit et poussé sur `main` :
   lecture seule à ce secret précis, rien d'autre côté Pro (pas de base de
   données partagée, pas d'accès à ses autres secrets).
 - Copilote conversationnel minimal (`app/api/mistral/chat/route.ts`,
-  `lib/mistral.ts`) — appelle l'API Mistral (`mistral-large-latest`),
-  historique de conversation persisté (`Conversation`/`Message` dans
-  `prisma/schema.prisma`).
+  `lib/mistral.ts`) — appelle l'API Mistral, historique de conversation
+  persisté (`Conversation`/`Message` dans `prisma/schema.prisma`).
+- Deux écrans séparés (`/sit`, `/ai`) + accueil, protégés par `AuthGate` —
+  voir contrainte UI plus haut.
+- **Identité visuelle reprise d'archiaccess-pro** (effet "verre liquide",
+  boutons "chromé métal", police Inter + Geist Mono auto-hébergées) :
+  `app/globals.css`, `app/fonts/*.woff2`, `public/noise.png`,
+  `postcss.config.mjs`. Appliquée aux quatre écrans (accueil, `/sit`,
+  `/ai`, formulaire de connexion) via les classes `.liquid-glass*` /
+  `.chrome-black` / `.chrome-white` / `.glass-scene`. Dépendances npm
+  ajoutées : `tw-animate-css`, `shadcn`.
 - `tsc --noEmit` et `next build` passent tous les deux.
 
-**Non testé** : aucun appel réseau réel n'a pu être fait depuis
-l'environnement où ce squelette a été écrit (politique réseau restrictive,
-voir plus bas) — ni Mistral, ni AWS Secrets Manager, ni Postgres. Tout ce
-qui précède compile mais n'a jamais tourné en conditions réelles.
+**Réseau sortant testé et fonctionnel** (2026-08-27, depuis un
+environnement Claude Code on the web) : Mistral et data.gouv.fr
+répondent tous les deux, aucun 403 de proxy. La contrainte réseau
+restrictive évoquée dans les versions précédentes de ce fichier ne
+s'est pas vérifiée — à re-tester si un futur environnement se comporte
+différemment, mais ne plus la supposer par défaut.
 
-Prochaines étapes à faire depuis un environnement à accès réseau ouvert :
-1. Provisionner les vraies ressources AWS (secrets, base Postgres, rôle
-   IAM), **région eu-west-3 (Paris)** — cohérent avec le choix Mistral pour
-   la souveraineté des données. Aucun accès AWS valide n'existe encore,
-   demander à l'utilisateur.
-2. Tester l'auth et le chat Mistral en conditions réelles.
-3. Construire le hub de données (études foncières/financières/
+**Testé en conditions réelles avec une vraie clé API Mistral** :
+- `mistral-small-latest` et `mistral-medium-latest` répondent
+  correctement (< 1s, HTTP 200).
+- **`mistral-large-latest` (et `mistral-large-2512`) timeout
+  systématiquement** — 0 octet reçu après 30-45s, alors que la requête
+  est strictement identique à celle qui fonctionne pour les autres
+  modèles, et que le proxy sortant ne signale aucune erreur de relais.
+  Ça pointe vers un problème côté compte Mistral (accès au modèle
+  `large` non provisionné, quota/tier insuffisant) plutôt qu'un souci
+  réseau ou de code. **`lib/mistral.ts` appelle encore
+  `mistral-large-latest`** — jusqu'à résolution, le chat en usage réel
+  timeout. À vérifier avec l'utilisateur (tier de la clé API,
+  éventuellement demander l'accès à `mistral-large` sur la console
+  Mistral) avant de rebasculer `/ai` dessus, ou de choisir un modèle de
+  repli (`mistral-medium-latest`) en attendant.
+- AWS **pas encore testé** : les premiers identifiants (session
+  temporaire via `aws configure export-credentials` depuis CloudShell)
+  ont expiré avant d'avoir pu être utilisés (le conteneur a redémarré
+  entre l'envoi des identifiants et leur usage). Le CLI `aws` est
+  maintenant installé dans l'environnement de session. Prochaine étape :
+  redemander l'export à l'utilisateur juste avant de provisionner, pour
+  limiter le risque d'expiration.
+
+Prochaines étapes :
+1. Résoudre l'accès à `mistral-large-latest` (voir ci-dessus).
+2. Provisionner les vraies ressources AWS (secrets, RDS Postgres +
+   pgvector, bucket S3, rôle IAM), **région eu-west-3 (Paris)** —
+   identifiants à redemander à l'utilisateur (temporaires, expirent
+   vite).
+3. Tester l'auth et le chat Mistral bout en bout avec ces ressources.
+4. Construire le hub de données (études foncières/financières/
    réglementaires, API data.gouv.fr) — pas commencé du tout.
-4. "Second cerveau" (mémoire/connaissance accumulée pour le copilote) :
-   extension **pgvector** sur la même base Postgres (pas de service séparé)
-   + **S3** pour les documents. PAS agentmemory (outil pensé pour donner de
-   la mémoire à un agent codeur sur une machine locale — serveur local,
-   stockage sur le poste — inadapté à un backend de production partagé par
-   toute une équipe, et de toute façon impossible à héberger localement ici
-   faute de stockage/machine dédiée).
+5. Brancher pgvector pour que le copilote s'appuie sur le contenu du SIT.
 
 L'utilisateur veut avancer **pas à pas** — ne pas se lancer dans plusieurs
 chantiers en parallèle, mais il a aussi demandé de procéder "de manière
 automatique" une fois le contexte compris : agis, ne redemande pas la
 permission à chaque petite étape, mais documente et committe au fur et à
 mesure pour rester traçable.
-
-## Contrainte réseau probable
-
-Ce projet appellera l'API Mistral et plusieurs API gouvernementales
-françaises (data.gouv.fr et sources institutionnelles). Si les requêtes
-sortantes échouent avec un 403 du proxy, c'est une politique réseau
-d'environnement trop restrictive — voir `/root/.ccr/README.md` pour le
-diagnostic, ne jamais contourner, en parler à l'utilisateur.
