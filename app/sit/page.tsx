@@ -1,14 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { AuthGate } from "@/components/auth-gate"
 import type { AddressResult } from "@/lib/data-sources/ban"
+import type { Parcel } from "@/lib/data-sources/cadastre"
 
-// Premier connecteur du hub SIT : recherche d'adresse (Base Adresse
-// Nationale). Les futurs connecteurs (cadastre, Géorisques, DVF...)
-// s'articuleront autour d'une adresse/parcelle sélectionnée ici — voir
-// CLAUDE.md, "Prochaines étapes".
+// Connecteurs du hub SIT : recherche d'adresse (Base Adresse Nationale)
+// puis cadastre/parcelles (API Carto IGN), qui s'articulent tous les
+// deux autour d'une adresse sélectionnée. Géorisques et DVF (prochains
+// connecteurs) suivront le même principe — voir CLAUDE.md.
 export default function SitPage() {
   return (
     <AuthGate>
@@ -105,10 +106,57 @@ function AddressSearch() {
             <dt>Score de fiabilité</dt>
             <dd>{Math.round(selected.score * 100)}%</dd>
           </dl>
+          <ParcelList lon={selected.coordinates[0]} lat={selected.coordinates[1]} />
           <p className="mt-3 text-xs text-muted-foreground">
-            Cadastre, Géorisques, DVF et les autres sources arriveront ici pour cette localisation — pas encore construits.
+            Géorisques et DVF arriveront ici pour cette localisation — pas encore construits.
           </p>
         </div>
+      )}
+    </div>
+  )
+}
+
+function ParcelList({ lon, lat }: { lon: number; lat: number }) {
+  const [parcels, setParcels] = useState<Parcel[] | null>(null)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    let cancelled = false
+    setParcels(null)
+    setError("")
+    fetch(`/api/sit/parcels?lon=${lon}&lat=${lat}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return
+        if (data.success) {
+          setParcels(data.parcels)
+        } else {
+          setError(data.error ?? "Recherche de parcelle impossible.")
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setError("Recherche de parcelle impossible.")
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [lon, lat])
+
+  return (
+    <div className="mt-3 border-t border-border/50 pt-3">
+      <h4 className="mb-1 text-xs font-medium text-muted-foreground">Cadastre</h4>
+      {error && <p className="text-xs text-red-600">{error}</p>}
+      {!error && parcels === null && <p className="text-xs text-muted-foreground">Recherche…</p>}
+      {parcels?.length === 0 && <p className="text-xs text-muted-foreground">Aucune parcelle trouvée à proximité.</p>}
+      {parcels && parcels.length > 0 && (
+        <ul className="space-y-1">
+          {parcels.map((p) => (
+            <li key={p.idu} className="text-xs text-muted-foreground">
+              Section {p.section}, parcelle {p.numero} — {p.contenanceM2} m² (
+              <span className="font-mono">{p.idu}</span>)
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   )

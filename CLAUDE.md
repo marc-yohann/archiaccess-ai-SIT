@@ -200,39 +200,72 @@ temporaire retirée (seul le CIDR du VPC reste autorisé en entrée).
 **Cette limite (pas de TCP brut vers bases de données) est structurelle
 à cet environnement, pas à AWS ni au code** — inutile de refaire cette
 tentative depuis un futur environnement Claude Code on the web tant
-qu'il a la même politique réseau. Options pour lancer les migrations
-malgré tout, à trancher avec l'utilisateur :
-1. Un bastion/instance EC2 dans le VPC, piloté via `aws ssm send-command`
-   (API HTTPS, donc compatible avec le proxy de cet environnement) —
-   installe psql sur l'instance et exécute le DDL (extension vector +
-   tables `Document`/`DocumentChunk`/`Session`/`Conversation`/`Message`)
-   sans avoir besoin du toolchain Node/Prisma complet sur le bastion.
-   Coût marginal (instance à durée de vie courte), complexité de mise en
-   place la plus haute des trois options.
-2. L'utilisateur lance `npx prisma migrate dev` lui-même depuis un poste
-   qui a un accès réseau normal (son AWS CloudShell actuel peut
-   probablement atteindre le RDS si celui-ci est temporairement rendu
-   public, ou depuis sa machine locale une fois le repo cloné).
-3. Attendre que l'architecture de déploiement de l'app soit tranchée
-   (Lambda/ECS dans le même VPC) — le compute applicatif lui-même aura
-   un accès réseau normal au RDS, donc les migrations pourront tourner
-   depuis là (ex: une migration au démarrage, ou un job one-shot) sans
-   ce problème.
+qu'il a la même politique réseau.
+
+**Migrations Prisma appliquées avec succès via bastion EC2 + SSM**
+(2026-08-27) — option 1 retenue et exécutée : instance EC2 temporaire
+(t3.micro, spot) dans le VPC, rôle IAM dédié (SSM + lecture du secret
+`archiaccess-ai-sit/database` + lecture/écriture du préfixe `ops/` du
+bucket S3), pilotée via `aws ssm send-command` (API HTTPS, compatible
+avec le proxy de cet environnement — aucune connexion TCP directe
+nécessaire depuis ici). Bundle (`prisma/`, `prisma.config.ts`,
+`package.json` minimal) uploadé sur S3, `nodejs22` installé sur le
+bastion (le `nodejs` par défaut d'Amazon Linux 2023 est en v18,
+insuffisant — Prisma 7 exige Node 20.19+/22.12+/24+), `npx prisma
+migrate deploy` exécuté avec succès. **Vérifié en direct via `psql`** :
+extension `vector 0.8.1` active, les 6 tables (`Session`,
+`Conversation`, `Message`, `Document`, `DocumentChunk`,
+`_prisma_migrations`) existent. Toutes les ressources temporaires de
+cette étape (instance, rôle IAM `archiaccess-ai-sit-migration-bastion`,
+fichier S3 `ops/migration-bundle.tar.gz`) ont été nettoyées après usage.
+
+Script bastion prêt à être réutilisé pour d'autres opérations
+ponctuelles nécessitant un accès réseau au VPC (le motif : upload d'un
+petit bundle sur S3, instance EC2 spot avec rôle IAM scoping minimal,
+`aws ssm send-command`, cleanup systématique après usage) — pas besoin
+de repartir de zéro à chaque fois.
+
+**Reste à nettoyer** : une deuxième instance bastion (lancée pour un
+test bout-en-bout du pipeline RAG complet — embedding→pgvector→recherche
+→réponse Mistral avec contexte) et son rôle IAM
+`archiaccess-ai-sit-smoketest-bastion` sont restés provisionnés, les
+identifiants AWS ayant expiré pendant l'attente de l'enregistrement SSM.
+À terminer/supprimer dès la prochaine session avec des identifiants
+valides (coût négligeable en attendant, instance spot t3.micro). Ce test
+bout-en-bout du RAG complet lui-même reste à refaire si jugé utile — pas
+bloquant, la brique pgvector a déjà été validée au niveau SQL (`psql`)
+et le connecteur Mistral testé séparément.
+
+**Hub `/sit` — cadastre/parcelles branché et testé en conditions
+réelles** : `lib/data-sources/cadastre.ts` (API Carto de l'IGN, pas de
+clé requise). Point important découvert en testant contre l'API réelle :
+interroger le point exact d'une adresse géocodée renvoie souvent aucune
+parcelle (le géocodage BAN place le point sur la voirie, côté rue, pas
+sur le bâtiment) — on interroge donc une petite emprise (bbox ~20m)
+autour du point plutôt que le point exact. Exposé via
+`app/api/sit/parcels/route.ts`, affiché automatiquement dans `/sit` dès
+qu'une adresse est sélectionnée (section, numéro, contenance, identifiant
+IDU).
 
 Prochaines étapes :
 1. Clarifier avec l'utilisateur où/si `archiaccess-pro/aeo-password`
    existe, puis ajouter la permission `secretsmanager:GetSecretValue`
    correspondante à la politique du rôle `archiaccess-ai-sit-app`.
-2. Décider avec l'utilisateur laquelle des 3 options ci-dessus pour
-   lancer les migrations Prisma (crée l'extension vector + les tables),
-   puis tester indexation + recherche pgvector pour de vrai.
+2. Nettoyer la deuxième instance bastion oubliée (voir ci-dessus) dès
+   que des identifiants AWS valides sont disponibles.
 3. Résoudre l'accès à `mistral-large-latest` (voir ci-dessus).
 4. Tester l'auth, le chat Mistral (avec contexte SIT), la recherche
-   d'adresse et l'ingestion de documents bout en bout avec ces
-   ressources.
-5. Continuer le hub de données : cadastre/parcelles (GPU/apicarto),
-   Géorisques (risques réglementaires), DVF (valeurs foncières) — à
-   brancher sur l'adresse sélectionnée dans `/sit`.
+   d'adresse, le cadastre et l'ingestion de documents bout en bout —
+   nécessite soit un déploiement réel, soit un nouveau passage par
+   bastion.
+5. Continuer le hub de données : Géorisques (risques réglementaires),
+   DVF (valeurs foncières) — à brancher sur l'adresse/parcelle
+   sélectionnée dans `/sit`, même principe que le cadastre.
+6. Une fois le hub de données avancé, décider de l'architecture de
+   déploiement (Lambda/ECS dans le VPC, ou autre) — l'utilisateur a un
+   nom de domaine prêt à pointer dessus, à paramétrer en DNS une fois
+   qu'il y a une adresse réelle à laquelle le pointer (pas encore le
+   cas).
 
 L'utilisateur veut avancer **pas à pas** — ne pas se lancer dans plusieurs
 chantiers en parallèle, mais il a aussi demandé de procéder "de manière
