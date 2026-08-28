@@ -6,12 +6,11 @@
 import { getMistralApiKey } from "@/lib/secrets"
 
 const MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
-// Repli temporaire sur "medium" : mistral-large-latest timeout
-// systématiquement (0 octet reçu après 30-45s, testé avec deux clés API
-// différentes) alors que small/medium répondent en <1s — voir CLAUDE.md.
-// À rebasculer sur mistral-large-latest une fois le blocage résolu côté
-// compte Mistral.
-const MODEL = "mistral-medium-latest"
+// mistral-large-latest a timeout systématiquement pendant plusieurs jours
+// (incident côté infrastructure Mistral, voir CLAUDE.md) — repli temporaire
+// sur medium, revérifié périodiquement. Résolu le 2026-08-29 (retesté en
+// direct : HTTP 200, ~1s), rebasculé sur le modèle cible du projet.
+const MODEL = "mistral-large-latest"
 
 export interface MistralMessage {
   role: "system" | "user" | "assistant"
