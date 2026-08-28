@@ -353,24 +353,68 @@ ressemble pas à du contenu AWS légitime — possible injection de prompt
 dans le contenu de la page. Signalé à l'utilisateur, jamais exécuté. À
 rester vigilant si retrouvé ailleurs.
 
+**`archiaccess-pro/aeo-password` créé, connexion + chat + recherche
+d'adresse testés avec succès en conditions réelles** (2026-08-28) —
+l'utilisateur a fourni la valeur directement (le secret n'a jamais été
+créé côté archiaccess-pro), créé dans `archiaccess-pro/aeo-password`
+(eu-west-3), permission `secretsmanager:GetSecretValue` ajoutée à la
+policy du rôle `archiaccess-ai-sit-app`. **Corrigé au passage** :
+`lib/secrets.ts` — RDS impose SSL (`rds.force_ssl`) mais le driver `pg`
+ne l'active pas sans configuration explicite (`P1010 "User was denied
+access"`, message trompeur qui n'a rien à voir avec le mot de passe) ;
+`sslmode=require` seul échoue ensuite sur "self-signed certificate in
+certificate chain" (certificat RDS absent du magasin de confiance par
+défaut de Node) — `uselibpqcompat=true` (suggéré par l'avertissement du
+driver lui-même) retrouve le comportement libpq/psql (chiffré, sans
+vérification stricte du CA). Testé avec succès : connexion, chat
+Mistral (persistance conversation), recherche d'adresse.
+
+**Tentative de remplacer le NAT Gateway par une NAT instance
+(t4g.nano) — échec, annulé proprement, NAT Gateway toujours en place**
+(2026-08-28) : suite à la sensibilité au coût de l'utilisateur (~33-40
+$/mois du NAT Gateway jugé trop élevé, cumulé aux ~25 $/mois déjà
+payés pour archiaccess-pro), tentative de bascule vers une instance
+EC2 minimale faisant NAT (iptables MASQUERADE + IP forwarding via
+user-data). Route de la table privée basculée vers l'instance → plus
+aucun trafic sortant ne passait (timeout Lambda à 30s sur les appels
+Mistral). Tentative de debug via SSM échouée : l'instance ne s'est
+jamais enregistrée auprès de SSM même après association d'un profil
+IAM dédié (~100s d'attente). **Route immédiatement restaurée vers le
+NAT Gateway** pour ne pas laisser l'app cassée — service rétabli et
+revérifié. Instance NAT cassée + rôle IAM de debug supprimés. Cause
+racine non identifiée (soupçon : `iptables` absent par défaut sur
+Amazon Linux 2023, ou `set -e` du script user-data ayant avorté
+silencieusement au premier échec) — à reprendre avec un script plus
+robuste (logs explicites, pas de `set -e` sur les étapes non
+critiques) et idéalement une paire de clés SSH ou un accès EC2 Instance
+Connect pour déboguer en direct plutôt que de dépendre de
+l'enregistrement SSM. **Le NAT Gateway reste donc en place pour
+l'instant** — coût à assumer le temps de retenter proprement, ou
+explorer une autre option (voir la discussion sur RDS public /
+Aurora Data API évoquée plus tôt, jamais retenue).
+
 Prochaines étapes :
-1. Clarifier avec l'utilisateur où/si `archiaccess-pro/aeo-password`
-   existe, puis ajouter la permission `secretsmanager:GetSecretValue`
-   correspondante à la politique du rôle `archiaccess-ai-sit-app`. Seul
-   blocage restant pour un test de connexion complet.
-2. Nettoyer la deuxième instance bastion oubliée (déjà vérifié : elle
-   n'a en fait jamais été fulfilled, rien à nettoyer côté EC2 — le rôle
-   IAM orphelin a été supprimé). Fait.
-3. Résoudre l'accès à `mistral-large-latest` (voir ci-dessus) — non
+1. Reprendre la bascule NAT Gateway → NAT instance avec un script
+   user-data plus robuste et un moyen de déboguer en direct (SSH ou
+   attendre l'enregistrement SSM plus longtemps avant de rebasculer la
+   route) — ne plus rebasculer le trafic de prod tant que l'instance
+   n'a pas été validée indépendamment.
+2. Résoudre l'accès à `mistral-large-latest` (voir ci-dessus) — non
    testé depuis le déploiement réel, à revérifier périodiquement.
-4. Pour un vrai usage (pas juste des tests manuels) : redéploiement à
+3. Pour un vrai usage (pas juste des tests manuels) : redéploiement à
    chaque changement de code (actuellement manuel via CLI depuis cette
-   session — pas de CI/CD), nom de domaine + certificat + éventuellement
-   CloudFront devant la Function URL, décider si l'app doit vivre sur
-   `main` ou rester sur la branche de travail.
-5. Au-delà des trois connecteurs initiaux, d'autres sources restent
+   session — pas de CI/CD), nom de domaine (`archiaccess.com`, sous-
+   domaine à définir) + certificat ACM + CloudFront devant la Function
+   URL (une Function URL ne prend pas un domaine personnalisé
+   directement), décider si l'app doit vivre sur `main` ou rester sur
+   la branche de travail.
+4. Au-delà des trois connecteurs initiaux, d'autres sources restent
    possibles selon les besoins concrets des études (SIRENE/INSEE,
    BODACC...) — à choisir avec l'utilisateur plutôt qu'anticipées.
+5. Nettoyer le security group `archiaccess-ai-sit-nat-instance` (orphelin
+   après la tentative annulée, dépendance ENI pas encore libérée au
+   moment du nettoyage — sans coût, mais à supprimer au prochain accès
+   AWS).
 
 L'utilisateur veut avancer **pas à pas** — ne pas se lancer dans plusieurs
 chantiers en parallèle, mais il a aussi demandé de procéder "de manière
