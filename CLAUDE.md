@@ -280,22 +280,95 @@ d'adresse → parcelle cadastrale → risques réglementaires → historique
 des ventes DVF sur la même section, plus l'ingestion de documents
 Markdown indexés (pgvector) pour le copilote.
 
+**App déployée en production réelle sur AWS Lambda (dans le VPC) — testée
+bout en bout avec succès** (2026-08-28). Décision d'architecture revue en
+cours de route : Amplify Hosting (choix initial) a été abandonné après
+découverte qu'Amplify Hosting Compute **ne peut pas être rattaché à un
+VPC**, donc aucun accès réseau possible au RDS privé — confirmé par la
+doc AWS et par un essai de déploiement manuel réel (voir historique de
+cette session). Repassé sur Lambda, qui supporte le VPC nativement.
+
+Infrastructure réseau ajoutée pour ça :
+- 2 nouveaux sous-réseaux privés (`172.31.48.0/20` eu-west-3a,
+  `172.31.64.0/20` eu-west-3b) dans le VPC existant, dédiés au Lambda.
+- NAT Gateway (`archiaccess-ai-sit-nat`) dans un sous-réseau public
+  existant + Elastic IP — nécessaire car un Lambda en VPC perd l'accès
+  internet par défaut (pour Mistral, data.gouv.fr...), coût récurrent
+  réel (~33-40 $/mois), validé explicitement avec l'utilisateur avant
+  provisioning vu la sensibilité au coût du projet.
+- Table de routage privée dédiée (`archiaccess-ai-sit-private`) : route
+  par défaut vers le NAT Gateway, associée aux 2 sous-réseaux Lambda.
+- Security group `archiaccess-ai-sit-lambda` : le security group RDS
+  autorise maintenant le trafic entrant depuis ce security group
+  (règle SG-à-SG plutôt que CIDR).
+- Rôle `archiaccess-ai-sit-app` : trust policy repassée sur
+  `lambda.amazonaws.com` (était `amplify.amazonaws.com`), policy
+  managée `AWSLambdaVPCAccessExecutionRole` attachée en plus (requise
+  pour qu'un Lambda en VPC puisse créer ses ENI).
+
+Build et déploiement :
+- Next.js monté à **16.3.3** (requis par OpenNext, qui exige `>=16.3.3`
+  — 16.2.6 était juste en dessous).
+- `@opennextjs/aws` (OpenNext) transforme le build Next.js en bundle
+  Lambda — `open-next.config.ts` minimal (wrapper streaming, pas de
+  CloudFront/S3 pour l'instant, Function URL suffit pour un outil
+  interne à faible trafic). Bundle zippé : ~8 Mo, largement sous la
+  limite d'upload direct (50 Mo).
+- **Le déploiement manuel (zip direct) ne fonctionne PAS pour du
+  Next.js sur Amplify Hosting** (confirmé par la doc AWS : "manual
+  deployments of Next.js apps are not currently supported") — c'est ce
+  qui a motivé l'abandon d'Amplify plutôt qu'un simple contournement.
+  Sur Lambda en revanche, le zip généré par OpenNext se déploie
+  directement via `aws lambda create-function`/`update-function-code`,
+  sans dépendance à un dépôt Git connecté.
+- Fonction Lambda `archiaccess-ai-sit-app` (nodejs22.x, 1024 Mo, 30s de
+  timeout, dans le VPC via les 2 sous-réseaux + security group
+  ci-dessus) avec une Function URL (`AuthType=NONE`, `InvokeMode=
+  RESPONSE_STREAM`). **Point important découvert en testant** : depuis
+  octobre 2025, une Function URL publique exige DEUX permissions
+  (`lambda:InvokeFunctionUrl` ET `lambda:InvokeFunction` avec la
+  condition `InvokedViaFunctionUrl`), pas juste la première comme le
+  suggèrent d'anciens exemples — sans la seconde, 403 Forbidden
+  systématique malgré une resource policy apparemment correcte.
+
+**Testé bout en bout contre la vraie infrastructure, avec succès** :
+`GET /api/auth/me` sans cookie → `{"authenticated":false}` (200) — la
+Lambda a bien traversé le NAT, atteint Secrets Manager, et interrogé le
+RDS avec succès. `GET /api/sit/search-address` sans session → 401
+(bonne gate d'auth). `POST /api/auth/login` → 500, **comportement
+attendu** : `archiaccess-pro/aeo-password` n'existe toujours pas (seul
+blocage restant, indépendant du déploiement). `/sit` et `/ai` → 200,
+rendent le formulaire de connexion. Toute la chaîne réseau
+(Lambda→NAT→internet, Lambda→VPC→RDS, Lambda→Secrets Manager→S3) est
+donc validée en conditions réelles.
+
+URL actuelle (staging, pas de nom de domaine ni CloudFront encore) :
+`https://qiia57r3m2zk2nxhcnxtbqdemu0svklo.lambda-url.eu-west-3.on.aws/`
+
+**Vigilance : deux pages de documentation AWS officielles consultées
+pendant cette session (`deploy-nextjs-app.html` et `urls-auth.html`)
+contenaient toutes les deux un bloc final suspect** ("Skills for AI
+coding assistants... `aws agent-toolkit search-skills`") qui ne
+ressemble pas à du contenu AWS légitime — possible injection de prompt
+dans le contenu de la page. Signalé à l'utilisateur, jamais exécuté. À
+rester vigilant si retrouvé ailleurs.
+
 Prochaines étapes :
 1. Clarifier avec l'utilisateur où/si `archiaccess-pro/aeo-password`
    existe, puis ajouter la permission `secretsmanager:GetSecretValue`
-   correspondante à la politique du rôle `archiaccess-ai-sit-app`.
-2. Nettoyer la deuxième instance bastion oubliée (voir ci-dessus) dès
-   que des identifiants AWS valides sont disponibles.
-3. Résoudre l'accès à `mistral-large-latest` (voir ci-dessus).
-4. Tester l'auth, le chat Mistral (avec contexte SIT), la recherche
-   d'adresse, le cadastre, Géorisques, DVF et l'ingestion de documents
-   bout en bout — nécessite soit un déploiement réel, soit un nouveau
-   passage par bastion.
-5. Décider de l'architecture de déploiement (Lambda/ECS dans le VPC, ou
-   autre) — l'utilisateur a un nom de domaine prêt à pointer dessus, à
-   paramétrer en DNS une fois qu'il y a une adresse réelle à laquelle le
-   pointer (pas encore le cas).
-6. Au-delà des trois connecteurs initiaux, d'autres sources restent
+   correspondante à la politique du rôle `archiaccess-ai-sit-app`. Seul
+   blocage restant pour un test de connexion complet.
+2. Nettoyer la deuxième instance bastion oubliée (déjà vérifié : elle
+   n'a en fait jamais été fulfilled, rien à nettoyer côté EC2 — le rôle
+   IAM orphelin a été supprimé). Fait.
+3. Résoudre l'accès à `mistral-large-latest` (voir ci-dessus) — non
+   testé depuis le déploiement réel, à revérifier périodiquement.
+4. Pour un vrai usage (pas juste des tests manuels) : redéploiement à
+   chaque changement de code (actuellement manuel via CLI depuis cette
+   session — pas de CI/CD), nom de domaine + certificat + éventuellement
+   CloudFront devant la Function URL, décider si l'app doit vivre sur
+   `main` ou rester sur la branche de travail.
+5. Au-delà des trois connecteurs initiaux, d'autres sources restent
    possibles selon les besoins concrets des études (SIRENE/INSEE,
    BODACC...) — à choisir avec l'utilisateur plutôt qu'anticipées.
 
