@@ -44,7 +44,15 @@ export async function getDatabaseUrl(): Promise<string> {
     port: number
     dbname: string
   }
-  return `postgresql://${username}:${encodeURIComponent(password)}@${host}:${port}/${dbname}`
+  // RDS impose SSL par défaut (rds.force_ssl=1 sur les instances récentes) ;
+  // psql l'utilise silencieusement (sslmode=prefer par défaut, sans
+  // vérifier le certificat), mais le driver pg le refuse sans configuration
+  // explicite : sslmode=require seul échoue avec "self-signed certificate
+  // in certificate chain" (le certificat RDS n'est pas dans le magasin de
+  // confiance par défaut de Node) — uselibpqcompat=true retrouve le
+  // comportement libpq/psql (chiffré, sans vérification stricte du CA).
+  // Constaté en conditions réelles, voir CLAUDE.md.
+  return `postgresql://${username}:${encodeURIComponent(password)}@${host}:${port}/${dbname}?sslmode=require&uselibpqcompat=true`
 }
 
 export async function getMistralApiKey(): Promise<string> {
