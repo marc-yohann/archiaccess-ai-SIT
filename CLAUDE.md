@@ -393,28 +393,41 @@ l'instant** — coût à assumer le temps de retenter proprement, ou
 explorer une autre option (voir la discussion sur RDS public /
 Aurora Data API évoquée plus tôt, jamais retenue).
 
+**NAT instance en place avec succès — NAT Gateway supprimé, coût
+récurrent réduit d'environ 33-40 $/mois à ~3 $/mois** (2026-08-28,
+deuxième tentative) : cause racine du premier échec identifiée —
+**le paquet s'appelle `iptables-legacy` sur Amazon Linux 2023, pas
+`iptables`** (`dnf install -y iptables` ne trouve rien, échoue
+silencieusement ; `dnf list available 'iptables*'` l'a révélé). Cette
+fois : rôle IAM SSM attaché **dès le lancement** de l'instance (pas
+après coup) → enregistrement SSM en ~10s au lieu de ne jamais
+s'enregistrer. Diagnostic complet via SSM AVANT de toucher au trafic de
+prod : `iptables-legacy` installé, règle MASQUERADE sur l'interface
+`ens5` (pas `eth0`), `net.ipv4.ip_forward=1`, unité systemd pour
+persistance au redémarrage. Route de la table privée basculée vers
+l'instance (`t4g.nano`) seulement après validation, testée
+immédiatement (chat Mistral + recherche d'adresse → 200 tous les deux),
+**puis** NAT Gateway supprimé et son Elastic IP libérée. Plus aucune
+dépendance au NAT Gateway managé.
+
 Prochaines étapes :
-1. Reprendre la bascule NAT Gateway → NAT instance avec un script
-   user-data plus robuste et un moyen de déboguer en direct (SSH ou
-   attendre l'enregistrement SSM plus longtemps avant de rebasculer la
-   route) — ne plus rebasculer le trafic de prod tant que l'instance
-   n'a pas été validée indépendamment.
-2. Résoudre l'accès à `mistral-large-latest` (voir ci-dessus) — non
+1. Résoudre l'accès à `mistral-large-latest` (voir ci-dessus) — non
    testé depuis le déploiement réel, à revérifier périodiquement.
-3. Pour un vrai usage (pas juste des tests manuels) : redéploiement à
+2. Pour un vrai usage (pas juste des tests manuels) : redéploiement à
    chaque changement de code (actuellement manuel via CLI depuis cette
    session — pas de CI/CD), nom de domaine (`archiaccess.com`, sous-
    domaine à définir) + certificat ACM + CloudFront devant la Function
    URL (une Function URL ne prend pas un domaine personnalisé
    directement), décider si l'app doit vivre sur `main` ou rester sur
    la branche de travail.
-4. Au-delà des trois connecteurs initiaux, d'autres sources restent
+3. Au-delà des trois connecteurs initiaux, d'autres sources restent
    possibles selon les besoins concrets des études (SIRENE/INSEE,
    BODACC...) — à choisir avec l'utilisateur plutôt qu'anticipées.
-5. Nettoyer le security group `archiaccess-ai-sit-nat-instance` (orphelin
-   après la tentative annulée, dépendance ENI pas encore libérée au
-   moment du nettoyage — sans coût, mais à supprimer au prochain accès
-   AWS).
+4. La NAT instance n'a pas de haute disponibilité (contrairement au NAT
+   Gateway managé) — point de défaillance unique assumé pour l'instant
+   vu la sensibilité au coût ; à revoir si la fiabilité devient un
+   problème concret (ex: une deuxième instance dans une autre AZ avec
+   bascule manuelle/scriptée, toujours moins cher qu'un NAT Gateway).
 
 L'utilisateur veut avancer **pas à pas** — ne pas se lancer dans plusieurs
 chantiers en parallèle, mais il a aussi demandé de procéder "de manière
