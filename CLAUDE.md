@@ -428,24 +428,35 @@ côté Hostinger, propagation + validation ACM en quelques minutes).
 Distribution CloudFront (`E1A2P5LIOXBTN1`,
 `d25lgmry3zntt3.cloudfront.net`) créée avec la Function URL Lambda comme
 origine HTTPS, cache désactivé (managed policy `CachingDisabled` — app
-dynamique/authentifiée, jamais de cache), toutes les méthodes HTTP
-autorisées et tous les en-têtes/cookies/query-strings transmis (managed
-policy `AllViewer`, nécessaire pour le cookie de session). Enregistrements
-finaux côté Hostinger : `sit` et `ai` en CNAME vers
-`d25lgmry3zntt3.cloudfront.net`.
+dynamique/authentifiée, jamais de cache). Enregistrements finaux côté
+Hostinger : `sit` et `ai` en CNAME vers `d25lgmry3zntt3.cloudfront.net`.
+
+**Bug découvert et corrigé au premier test** : la origin request policy
+managée `AllViewer` (utilisée au départ pour transmettre cookies/headers)
+transmet aussi le header `Host` du visiteur tel quel — or les Function
+URL Lambda font leur routage interne par nom d'hôte, donc recevoir
+`sit.archiaccess.com` au lieu de leur propre nom de domaine cassait tout
+(403 `AccessDeniedException` systématique). Remplacé par la policy
+managée `Managed-AllViewerExceptHostHeader`
+(`b689b0a8-53d0-40ab-baf2-68738e2966ac`), conçue précisément pour ce cas
+(origines Lambda Function URL/API Gateway) : transmet cookies/headers/
+query-strings sauf `Host`.
+
+**Testé bout en bout avec succès sur les deux domaines finaux** :
+`https://sit.archiaccess.com` et `https://ai.archiaccess.com` répondent
+(200), `/api/auth/me` fonctionne sur les deux, connexion complète testée
+via `sit.archiaccess.com` (cookie de session délivré). Le domaine
+personnalisé est donc pleinement opérationnel.
 
 Prochaines étapes :
-1. Vérifier que `https://sit.archiaccess.com` et `https://ai.archiaccess.com`
-   répondent bien une fois la distribution déployée (peut prendre
-   quelques minutes après création) et le DNS Hostinger propagé.
-2. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
+1. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
    redéploiement à chaque changement de code (actuellement manuel via
    CLI depuis cette session — pas de CI/CD), décider si l'app doit vivre
    sur `main` ou rester sur la branche de travail.
-3. Au-delà des trois connecteurs initiaux, d'autres sources restent
+2. Au-delà des trois connecteurs initiaux, d'autres sources restent
    possibles selon les besoins concrets des études (SIRENE/INSEE,
    BODACC...) — à choisir avec l'utilisateur plutôt qu'anticipées.
-4. La NAT instance n'a pas de haute disponibilité (contrairement au NAT
+3. La NAT instance n'a pas de haute disponibilité (contrairement au NAT
    Gateway managé) — point de défaillance unique assumé pour l'instant
    vu la sensibilité au coût ; à revoir si la fiabilité devient un
    problème concret (ex: une deuxième instance dans une autre AZ avec
