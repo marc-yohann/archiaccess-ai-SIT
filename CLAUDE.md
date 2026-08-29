@@ -410,16 +410,38 @@ immédiatement (chat Mistral + recherche d'adresse → 200 tous les deux),
 **puis** NAT Gateway supprimé et son Elastic IP libérée. Plus aucune
 dépendance au NAT Gateway managé.
 
+**`mistral-large-latest` de nouveau disponible, rebasculé en production**
+(2026-08-29) : l'incident côté infrastructure Mistral qui le faisait
+timeout (voir plus haut) s'est résolu — retesté en direct (HTTP 200,
+~1s), `lib/mistral.ts` repointé dessus, Lambda redéployée. C'est de
+nouveau le modèle cible du projet (RGPD/souveraineté) qui tourne, plus
+`medium` en repli.
+
+**CloudFront + domaine personnalisé mis en place** (2026-08-29) :
+l'utilisateur a choisi deux sous-domaines distincts sur son domaine
+existant `archiaccess.com` (hébergé chez Hostinger) — `sit.archiaccess.com`
+pour le SIT, `ai.archiaccess.com` pour le copilote — plutôt qu'un seul
+sous-domaine partagé. Un seul certificat ACM (us-east-1, requis pour
+CloudFront) couvre les deux domaines via subject-alternative-names,
+validé par DNS (deux enregistrements CNAME `_xxx.sit`/`_xxx.ai` ajoutés
+côté Hostinger, propagation + validation ACM en quelques minutes).
+Distribution CloudFront (`E1A2P5LIOXBTN1`,
+`d25lgmry3zntt3.cloudfront.net`) créée avec la Function URL Lambda comme
+origine HTTPS, cache désactivé (managed policy `CachingDisabled` — app
+dynamique/authentifiée, jamais de cache), toutes les méthodes HTTP
+autorisées et tous les en-têtes/cookies/query-strings transmis (managed
+policy `AllViewer`, nécessaire pour le cookie de session). Enregistrements
+finaux côté Hostinger : `sit` et `ai` en CNAME vers
+`d25lgmry3zntt3.cloudfront.net`.
+
 Prochaines étapes :
-1. Résoudre l'accès à `mistral-large-latest` (voir ci-dessus) — non
-   testé depuis le déploiement réel, à revérifier périodiquement.
-2. Pour un vrai usage (pas juste des tests manuels) : redéploiement à
-   chaque changement de code (actuellement manuel via CLI depuis cette
-   session — pas de CI/CD), nom de domaine (`archiaccess.com`, sous-
-   domaine à définir) + certificat ACM + CloudFront devant la Function
-   URL (une Function URL ne prend pas un domaine personnalisé
-   directement), décider si l'app doit vivre sur `main` ou rester sur
-   la branche de travail.
+1. Vérifier que `https://sit.archiaccess.com` et `https://ai.archiaccess.com`
+   répondent bien une fois la distribution déployée (peut prendre
+   quelques minutes après création) et le DNS Hostinger propagé.
+2. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
+   redéploiement à chaque changement de code (actuellement manuel via
+   CLI depuis cette session — pas de CI/CD), décider si l'app doit vivre
+   sur `main` ou rester sur la branche de travail.
 3. Au-delà des trois connecteurs initiaux, d'autres sources restent
    possibles selon les besoins concrets des études (SIRENE/INSEE,
    BODACC...) — à choisir avec l'utilisateur plutôt qu'anticipées.
