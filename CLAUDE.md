@@ -635,14 +635,44 @@ documenté en tête de ce fichier (`getAeoSharedPassword()` supprimé de
   existantes** (`TRUNCATE ... CASCADE`) plutôt que de les migrer — aucune
   n'a de `userId` valide vers lequel les rattacher, et ce ne sont que des
   échanges de test de cette session, pas de vraies données employé.
-- `tsc --noEmit` et `next build` passent tous les deux, toutes les
-  nouvelles routes apparaissent dans le build. **Pas encore appliqué ni
-  déployé** au moment d'écrire ceci : migration à passer par le bastion
-  EC2 + SSM (voir plus haut), puis build OpenNext + déploiement Lambda +
-  synchronisation du bucket S3 des assets statiques (voir le point de
-  vigilance juste au-dessus) + test de bout en bout réel (création du
-  premier compte, connexion, chat). Credentials AWS expirées en cours de
-  route, en attente de nouvelles pour continuer.
+- **Déployé et testé bout en bout avec succès** (2026-08-30, avec de
+  nouvelles credentials AWS). Migration appliquée via bastion EC2 + SSM :
+  **échec partiel à la première tentative**, instructif — `ALTER TABLE
+  "Conversation" DROP COLUMN "sessionId"` supprime automatiquement
+  l'index qui portait dessus (comportement Postgres), donc le `DROP
+  INDEX "Conversation_sessionId_idx"` explicite qui suivait dans le
+  script a échoué ("l'index n'existe pas"). Prisma ne rollback pas
+  forcément tout le script en cas d'erreur à mi-chemin (le `User` table
+  et les colonnes déjà ajoutées étaient bien présentes) : complété à la
+  main via `psql` (les deux statements restants) puis `prisma migrate
+  resolve --applied` pour lever le blocage. **Fichier de migration
+  corrigé dans le dépôt** (le `DROP INDEX` explicite retiré, avec un
+  commentaire expliquant pourquoi) pour qu'un déploiement futur sur une
+  base fraîche n'ait pas le même problème. Bastion de migration nettoyé
+  après usage (instance, rôle IAM, règle de security group temporaire).
+- Build OpenNext + déploiement Lambda + synchronisation du bucket S3 des
+  assets statiques (voir le point de vigilance plus haut) — **découvert
+  au passage** : les deux logos (`public/logo-ai.png`,
+  `public/logo-sit.png`) sont eux aussi des fichiers statiques servis
+  par Next.js à la racine, donc soumis au même problème que `noise.png`
+  (voir plus haut) — deux nouveaux cache behaviors CloudFront ajoutés
+  (`logo-ai.png`, `logo-sit.png` → origine S3, `CachingOptimized`) en
+  plus de la synchronisation S3. **À ne pas oublier pour tout futur
+  fichier statique ajouté à `public/`** : soit il correspond déjà à un
+  pattern existant (`_next/*`), soit il faut un nouveau cache behavior
+  dédié, sinon 404 silencieux dans le navigateur.
+- Testé bout en bout contre la vraie infrastructure : création d'un
+  compte de test via `/api/auth/bootstrap` (confirmé qu'il se ferme bien
+  une fois un compte créé), connexion, chat avec persistance de
+  l'historique (`/api/mistral/conversations`), tout en HTTP 200. Compte
+  de test supprimé directement en base ensuite (pas d'API de suppression
+  définitive, seulement désactivation — voir plus bas) pour que le
+  **vrai** premier compte (celui de l'utilisateur) puisse encore passer
+  par l'écran de bootstrap, qui ne fonctionne qu'une seule fois tant
+  qu'aucun compte n'existe.
+- **Prêt pour l'utilisateur** : `bootstrapNeeded: true` confirmé en
+  direct sur `sit.archiaccess.com` et `ai.archiaccess.com` — le premier
+  écran affiché sera la création du compte administrateur.
 - **Reste à faire si jugé utile, pas demandé explicitement** : rôles plus
   fins que admin/non-admin, page dédiée "changer mon mot de passe" en
   dehors du flux forcé de première connexion, suppression définitive d'un

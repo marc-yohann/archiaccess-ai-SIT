@@ -38,11 +38,12 @@ CREATE INDEX "Session_userId_idx" ON "Session"("userId");
 ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AlterTable: Conversation, sessionId -> userId
+-- Note : DROP COLUMN sur "sessionId" supprime aussi automatiquement
+-- l'index "Conversation_sessionId_idx" qui portait dessus (comportement
+-- Postgres) — un DROP INDEX explicite après coup échoue avec "l'index
+-- n'existe pas" (constaté en conditions réelles lors du déploiement).
 ALTER TABLE "Conversation" DROP COLUMN "sessionId";
 ALTER TABLE "Conversation" ADD COLUMN "userId" TEXT NOT NULL;
-
--- DropIndex
-DROP INDEX "Conversation_sessionId_idx";
 
 -- CreateIndex
 CREATE INDEX "Conversation_userId_idx" ON "Conversation"("userId");
