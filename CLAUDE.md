@@ -678,6 +678,33 @@ documenté en tête de ce fichier (`getAeoSharedPassword()` supprimé de
   dehors du flux forcé de première connexion, suppression définitive d'un
   compte (actuellement seulement désactivation).
 
+**Corrigé, pas encore déployé : la création de compte (bootstrap compris)
+ne doit apparaître QUE sur `/admin`, jamais sur `/`, `/sit` ou `/ai`**
+(2026-08-30, retour utilisateur immédiat après le déploiement ci-dessus) —
+"la création de compte ne doit pas se faire sur ai.archiaccess.com, mais
+moi qui crée les comptes". Le comportement précédent (AuthGate affichait
+automatiquement l'écran de création du premier compte dès que la table
+`User` était vide, sur les trois écrans partagés) exposait un formulaire
+de création de compte à quiconque visitait le chat avant que l'admin ait
+eu le temps de créer son propre compte — pas le modèle voulu : c'est
+l'utilisateur (admin) qui doit être seul à initier la création de
+comptes, via une page dédiée qu'il visite délibérément.
+
+Corrigé : `components/auth-gate.tsx` — `AuthGate` (utilisé par `/`,
+`/sit`, `/ai`) ne vérifie plus `bootstrapNeeded` du tout, affiche
+toujours un formulaire de connexion classique même si aucun compte
+n'existe encore (`BootstrapForm` exporté mais plus jamais monté depuis
+ce composant). `app/admin/page.tsx` fait maintenant sa propre vérification
+de `bootstrapNeeded` avant même de passer par `AuthGate` (qui suppose un
+compte existant pour se connecter) : si aucun compte n'existe, affiche
+directement `BootstrapForm` ; sinon, flux normal (connexion puis
+vérification `isAdmin`). `/admin` reste donc le seul endroit de
+création de compte, premier compris — mais accessible sur les deux
+sous-domaines (même Lambda), pas restreint à un seul pour l'instant.
+`tsc --noEmit` et `next build` passent, **build OpenNext prêt
+(zippé), déploiement Lambda en attente de nouvelles credentials AWS**
+(expirées en cours de route, pattern récurrent de cette session).
+
 Prochaines étapes :
 1. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
    redéploiement à chaque changement de code (actuellement manuel via

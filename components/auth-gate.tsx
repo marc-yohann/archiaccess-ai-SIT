@@ -38,15 +38,11 @@ export function AuthGate({
 }) {
   const [ready, setReady] = useState(false)
   const [user, setUser] = useState<CurrentUser | null>(null)
-  const [bootstrapNeeded, setBootstrapNeeded] = useState(false)
 
   function refreshUser() {
     return fetch("/api/auth/me", { signal: AbortSignal.timeout(10000) })
       .then((res) => res.json())
-      .then((data) => {
-        setUser(data.authenticated ? data.user : null)
-        setBootstrapNeeded(Boolean(data.bootstrapNeeded))
-      })
+      .then((data) => setUser(data.authenticated ? data.user : null))
       .catch(() => setUser(null))
       .finally(() => setReady(true))
   }
@@ -64,10 +60,13 @@ export function AuthGate({
     )
   }
 
+  // Volontairement pas de détection/écran de bootstrap ici : la création du
+  // tout premier compte (comme celle de tout compte employé) ne doit être
+  // accessible qu'en passant délibérément par /admin, jamais en visitant
+  // simplement /, /sit ou /ai — voir CLAUDE.md (retour utilisateur du
+  // 2026-08-30, "la création de compte ne doit pas se faire sur
+  // ai.archiaccess.com, mais moi qui crée les comptes").
   if (!user) {
-    if (bootstrapNeeded) {
-      return <BootstrapForm logoSrc={logoSrc} appName={appName} onDone={refreshUser} />
-    }
     return <LoginForm logoSrc={logoSrc} appName={appName} onSuccess={refreshUser} />
   }
 
@@ -149,7 +148,10 @@ function LoginForm({
   )
 }
 
-function BootstrapForm({
+// Exporté : /admin est le SEUL endroit qui affiche ce formulaire (voir
+// AuthGate ci-dessus et app/admin/page.tsx) — jamais automatiquement sur
+// les écrans employés.
+export function BootstrapForm({
   logoSrc,
   appName,
   onDone,

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { AuthGate, useUser } from "@/components/auth-gate"
+import { AuthGate, BootstrapForm, useUser } from "@/components/auth-gate"
 
 interface AdminUser {
   id: string
@@ -14,7 +14,40 @@ interface AdminUser {
   createdAt: string
 }
 
+// /admin est délibérément le SEUL endroit de l'app où la création de
+// compte est possible (le tout premier compme les suivants) — voir
+// components/auth-gate.tsx. Donc, avant même de passer par AuthGate (qui
+// suppose qu'un compte existe déjà pour se connecter), on vérifie ici si
+// aucun compte n'existe encore et on affiche directement le formulaire de
+// création du premier admin dans ce cas.
 export default function AdminPage() {
+  const [checking, setChecking] = useState(true)
+  const [bootstrapNeeded, setBootstrapNeeded] = useState(false)
+
+  function checkBootstrap() {
+    fetch("/api/auth/me", { signal: AbortSignal.timeout(10000) })
+      .then((res) => res.json())
+      .then((data) => setBootstrapNeeded(!data.authenticated && Boolean(data.bootstrapNeeded)))
+      .catch(() => setBootstrapNeeded(false))
+      .finally(() => setChecking(false))
+  }
+
+  useEffect(() => {
+    checkBootstrap()
+  }, [])
+
+  if (checking) {
+    return (
+      <main className="glass-scene flex min-h-screen items-center justify-center">
+        <p className="text-sm text-muted-foreground">Chargement…</p>
+      </main>
+    )
+  }
+
+  if (bootstrapNeeded) {
+    return <BootstrapForm logoSrc="/logo-ai.png" appName="Archiaccess" onDone={checkBootstrap} />
+  }
+
   return (
     <AuthGate logoSrc="/logo-ai.png" appName="Archiaccess">
       <AdminGuard />
