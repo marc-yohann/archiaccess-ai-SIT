@@ -9,9 +9,11 @@ internes d'Archiaccess elle-même.
 
 Projet **volontairement séparé** d'`archiaccess-pro` : pas de couplage aux
 données (Missions/Opérations de Pro), pas de partage d'infrastructure AWS.
-Seul point de réutilisation prévu : le mot de passe d'équipe AEO existant
-sert aussi de porte d'entrée ici (mot de passe partagé, pas un compte
-individuel — trivial à réutiliser sans coupler les deux applications).
+**Ancien plan abandonné le 2026-08-30** (voir plus bas, décision
+utilisateur explicite) : le mot de passe d'équipe AEO partagé devait
+initialement servir de porte d'entrée ici — remplacé entièrement par des
+comptes employés individuels. Plus aucune dépendance vers
+`archiaccess-pro` (le secret `archiaccess-pro/aeo-password` n'est plus lu).
 
 ## Contraintes techniques & choix d'architecture
 
@@ -34,12 +36,9 @@ individuel — trivial à réutiliser sans coupler les deux applications).
 
 - Next.js 16 + Prisma 7 (adapter-pg) + Tailwind v4, mêmes versions
   qu'archiaccess-pro pour rester dans un stack connu.
-- Auth par mot de passe d'équipe partagé (`lib/session.ts`,
-  `app/api/auth/*`) — lit `archiaccess-pro/aeo-password` dans AWS Secrets
-  Manager (voir `lib/secrets.ts`). C'est la SEULE dépendance volontaire
-  vers archiaccess-pro : le rôle IAM de ce projet doit avoir un accès en
-  lecture seule à ce secret précis, rien d'autre côté Pro (pas de base de
-  données partagée, pas d'accès à ses autres secrets).
+- Auth par comptes employés individuels (`lib/session.ts`, `lib/password.ts`,
+  `app/api/auth/*`, `app/api/admin/*`) — voir la section détaillée plus
+  bas (2026-08-30). Remplace l'ancien mot de passe d'équipe partagé.
 - Copilote conversationnel minimal (`app/api/mistral/chat/route.ts`,
   `lib/mistral.ts`) — appelle l'API Mistral, historique de conversation
   persisté (`Conversation`/`Message` dans `prisma/schema.prisma`).
@@ -572,6 +571,82 @@ faudra désormais synchroniser `.open-next/assets` vers ce bucket S3 EN
 PLUS de déployer le zip Lambda — sinon ce même bug (page qui ne
 s'hydrate jamais) reviendra dès que les noms de fichiers hashés changent
 entre deux builds.
+
+**Comptes employés individuels + refonte visuelle du chat — codé, PAS
+ENCORE déployé** (2026-08-30, suite à retour utilisateur avec capture
+d'écran d'une interface de chat de référence et demande explicite : logo
+partout, chat façon "IA du marché", comptes individuels). Deux décisions
+tranchées avec l'utilisateur via question directe : comptes créés par
+l'admin lui-même (pas d'auto-inscription/invitation email), et le mot de
+passe d'équipe AEO partagé est **remplacé entièrement** (pas gardé en
+complément) — ce qui annule le point d'intégration avec `archiaccess-pro`
+documenté en tête de ce fichier (`getAeoSharedPassword()` supprimé de
+`lib/secrets.ts`, plus aucune lecture du secret `archiaccess-pro/aeo-password`).
+
+- `prisma/schema.prisma` : nouveau modèle `User` (email unique, hash de
+  mot de passe, `isAdmin`, `active`, `mustChangePassword`). `Session` et
+  `Conversation` référencent maintenant `userId` au lieu de `sessionId` —
+  l'historique de conversation devient donc par utilisateur (persiste
+  entre reconnexions) plutôt que par session éphémère.
+- `lib/password.ts` : hachage par `scrypt` (module `crypto` natif de
+  Node, pas de dépendance bcrypt/argon2 à bindings natifs — évite un
+  risque connu de ce projet avec le bundling Lambda). Génère aussi des
+  mots de passe temporaires lisibles (sans caractères ambigus 0/O/1/l).
+- Auth : `POST /api/auth/login` prend maintenant `{ email, password }`.
+  `POST /api/auth/bootstrap` crée le tout premier compte (admin) — actif
+  uniquement tant que la table `User` est vide, se ferme de lui-même
+  ensuite. `POST /api/auth/change-password` gère le changement de mot de
+  passe obligatoire après un mot de passe temporaire.
+- Admin : `GET/POST /api/admin/users` + `PATCH /api/admin/users/[id]`
+  (réservés aux comptes `isAdmin`) — créer un compte génère un mot de
+  passe temporaire renvoyé **une seule fois** dans la réponse (jamais
+  stocké en clair), à transmettre à l'employé. Désactiver plutôt que
+  supprimer (traçabilité). Page `/admin` pour l'utiliser sans passer par
+  l'API directement.
+- `components/auth-gate.tsx` : refonte complète — logo + nom d'app
+  configurables par écran (prop `logoSrc`/`appName`, voir `/logo-ai.png`
+  et `/logo-sit.png` dans `public/`, copiés depuis les logos déjà
+  téléchargés pour les favicons), écran de connexion email+mot de passe,
+  écran de changement de mot de passe forcé, écran de création du premier
+  compte (affiché automatiquement quand `/api/auth/me` signale
+  `bootstrapNeeded`). Expose `useUser()` (contexte React) pour que les
+  pages filles accèdent à l'utilisateur connecté sans re-fetch.
+- `app/ai/page.tsx` refait dans l'esprit de la référence fournie par
+  l'utilisateur (capture d'écran d'une IA du marché) : barre latérale
+  avec logo, bouton "Nouvelle conversation", historique des conversations
+  (`GET /api/mistral/conversations`, `GET`/`DELETE
+  /api/mistral/conversations/[id]`), nom de l'utilisateur + déconnexion.
+  Écran d'accueil du chat (aucune conversation active) avec logo, message
+  de bienvenue personnalisé, suggestions de prompts orientées AMO/OPC.
+  `app/api/mistral/chat/route.ts` : la conversation est maintenant scopée
+  par `userId` (un employé ne peut plus continuer/lire la conversation
+  d'un autre en devinant un id — ce n'était pas vérifié avant), titre
+  auto-généré depuis le premier message.
+- `app/page.tsx` et `app/sit/page.tsx` : logo ajouté en en-tête, lien
+  "Administration" affiché sur l'accueil si `isAdmin`.
+- Migration Prisma écrite à la main
+  (`prisma/migrations/20260830200000_user_accounts/`) plutôt que générée
+  par `prisma migrate diff --from-migrations` : cette commande a besoin
+  d'une shadow database (connexion TCP réelle) pour rejouer l'historique,
+  indisponible depuis cet environnement (voir plus haut, limite
+  structurelle). Écrite à la main à partir du schéma déjà appliqué
+  (vérifié via `psql` lors de la migration initiale) : crée `User`,
+  ajoute `userId` à `Session`/`Conversation`, **purge les données de test
+  existantes** (`TRUNCATE ... CASCADE`) plutôt que de les migrer — aucune
+  n'a de `userId` valide vers lequel les rattacher, et ce ne sont que des
+  échanges de test de cette session, pas de vraies données employé.
+- `tsc --noEmit` et `next build` passent tous les deux, toutes les
+  nouvelles routes apparaissent dans le build. **Pas encore appliqué ni
+  déployé** au moment d'écrire ceci : migration à passer par le bastion
+  EC2 + SSM (voir plus haut), puis build OpenNext + déploiement Lambda +
+  synchronisation du bucket S3 des assets statiques (voir le point de
+  vigilance juste au-dessus) + test de bout en bout réel (création du
+  premier compte, connexion, chat). Credentials AWS expirées en cours de
+  route, en attente de nouvelles pour continuer.
+- **Reste à faire si jugé utile, pas demandé explicitement** : rôles plus
+  fins que admin/non-admin, page dédiée "changer mon mot de passe" en
+  dehors du flux forcé de première connexion, suppression définitive d'un
+  compte (actuellement seulement désactivation).
 
 Prochaines étapes :
 1. Pour un vrai usage (pas juste des tests manuels) : mettre en place un

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, isValidSession } from "@/lib/session"
+import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
 import { chatCompletion, type MistralMessage } from "@/lib/mistral"
 import { searchSimilarChunks } from "@/lib/rag"
@@ -45,7 +45,8 @@ Innovation, pilotage, collaboration, construire, structure — à refléter dans
 export async function POST(request: Request) {
   const store = await cookies()
   const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await isValidSession(token))) {
+  const user = await getSessionUser(token)
+  if (!user) {
     return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
   }
 
@@ -59,9 +60,17 @@ export async function POST(request: Request) {
 
   const prisma = await getPrisma()
 
+  // findUnique scopé par userId (pas juste l'id) : un employé ne doit pas
+  // pouvoir continuer la conversation d'un autre en devinant/rejouant un id.
   const conversation = conversationId
-    ? await prisma.conversation.findUnique({ where: { id: conversationId }, include: { messages: true } })
-    : await prisma.conversation.create({ data: { sessionId: token! }, include: { messages: true } })
+    ? await prisma.conversation.findFirst({
+        where: { id: conversationId, userId: user.id },
+        include: { messages: true },
+      })
+    : await prisma.conversation.create({
+        data: { userId: user.id, title: message.trim().slice(0, 80) },
+        include: { messages: true },
+      })
 
   if (!conversation) {
     return NextResponse.json({ success: false, error: "Conversation introuvable." }, { status: 404 })
@@ -107,6 +116,9 @@ export async function POST(request: Request) {
   await prisma.message.create({
     data: { conversationId: conversation.id, role: "ASSISTANT", content: reply },
   })
+  // Touche updatedAt pour que la conversation remonte en tête de liste
+  // dans la barre latérale (voir GET /api/mistral/conversations).
+  await prisma.conversation.update({ where: { id: conversation.id }, data: { updatedAt: new Date() } })
 
   return NextResponse.json({ success: true, conversationId: conversation.id, reply })
 }

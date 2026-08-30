@@ -6,15 +6,8 @@
 
 import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager"
 
-// TODO: remplacer par les vrais ARN une fois les secrets créés dans le
-// compte AWS (voir CLAUDE.md : infra séparée d'archiaccess-pro).
 const DATABASE_SECRET_NAME = "archiaccess-ai-sit/database"
 const MISTRAL_SECRET_NAME = "archiaccess-ai-sit/mistral"
-// Le mot de passe d'équipe AEO existe déjà dans archiaccess-pro
-// ("archiaccess-pro/aeo-password") — on lit le même secret ici plutôt que
-// d'en dupliquer un, pour que les deux applications restent en phase sans
-// coupler leur code ni leurs données.
-const AEO_PASSWORD_SECRET_NAME = "archiaccess-pro/aeo-password"
 
 const client = new SecretsManagerClient({})
 const cache = new Map<string, Promise<string>>()
@@ -57,8 +50,4 @@ export async function getDatabaseUrl(): Promise<string> {
 
 export async function getMistralApiKey(): Promise<string> {
   return getSecretString(MISTRAL_SECRET_NAME)
-}
-
-export async function getAeoSharedPassword(): Promise<string> {
-  return getSecretString(AEO_PASSWORD_SECRET_NAME)
 }

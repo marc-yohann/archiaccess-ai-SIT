@@ -1,20 +1,22 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { getAeoSharedPassword } from "@/lib/secrets"
+import { getPrisma } from "@/lib/prisma"
+import { verifyPassword } from "@/lib/password"
 import { createSession, SESSION_COOKIE_NAME } from "@/lib/session"
 
 export async function POST(request: Request) {
-  const { password } = (await request.json()) as { password?: string }
-  if (!password) {
-    return NextResponse.json({ success: false, error: "Mot de passe requis." }, { status: 400 })
+  const { email, password } = (await request.json()) as { email?: string; password?: string }
+  if (!email || !password) {
+    return NextResponse.json({ success: false, error: "Email et mot de passe requis." }, { status: 400 })
   }
 
-  const expected = await getAeoSharedPassword()
-  if (password !== expected) {
-    return NextResponse.json({ success: false, error: "Mot de passe incorrect." }, { status: 401 })
+  const prisma = await getPrisma()
+  const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } })
+  if (!user || !user.active || !(await verifyPassword(password, user.passwordHash))) {
+    return NextResponse.json({ success: false, error: "Identifiants incorrects." }, { status: 401 })
   }
 
-  const { token, expiresAt } = await createSession()
+  const { token, expiresAt } = await createSession(user.id)
   const store = await cookies()
   store.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
@@ -24,5 +26,5 @@ export async function POST(request: Request) {
     path: "/",
   })
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true, mustChangePassword: user.mustChangePassword })
 }

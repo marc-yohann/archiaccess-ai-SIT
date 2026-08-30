@@ -1,31 +1,93 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { AuthGate } from "@/components/auth-gate"
+import Image from "next/image"
+import { Plus, Trash2, LogOut, Home } from "lucide-react"
+import { AuthGate, useUser } from "@/components/auth-gate"
 
 interface ChatMessage {
   role: "user" | "assistant"
   content: string
 }
 
+interface ConversationSummary {
+  id: string
+  title: string | null
+  updatedAt: string
+}
+
+const SUGGESTIONS = [
+  "Rédige un mail pour informer un client d'un retard de chantier",
+  "Quelles sont les étapes pour déclarer un aléa sur un chantier ?",
+  "Résume les points clés d'une mission OPC",
+  "Prépare une trame de compte-rendu de réunion de chantier",
+]
+
 export default function AiPage() {
   return (
-    <AuthGate>
+    <AuthGate logoSrc="/logo-ai.png" appName="Archiaccess AI">
       <Chat />
     </AuthGate>
   )
 }
 
 function Chat() {
+  const user = useUser()
+  const [conversations, setConversations] = useState<ConversationSummary[]>([])
   const [conversationId, setConversationId] = useState<string | undefined>()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState("")
   const [isSending, setIsSending] = useState(false)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
-  async function send(e: React.FormEvent) {
+  function loadConversations() {
+    fetch("/api/mistral/conversations")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setConversations(data.conversations)
+      })
+      .catch(() => {})
+  }
+
+  useEffect(() => {
+    loadConversations()
+  }, [])
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
+  }, [messages])
+
+  async function openConversation(id: string) {
+    const res = await fetch(`/api/mistral/conversations/${id}`)
+    const data = await res.json()
+    if (data.success) {
+      setConversationId(data.conversation.id)
+      setMessages(data.conversation.messages)
+    }
+  }
+
+  function newConversation() {
+    setConversationId(undefined)
+    setMessages([])
+    setInput("")
+  }
+
+  async function deleteConversation(id: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    await fetch(`/api/mistral/conversations/${id}`, { method: "DELETE" })
+    if (id === conversationId) newConversation()
+    loadConversations()
+  }
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" })
+    window.location.reload()
+  }
+
+  async function send(e: React.FormEvent, prefill?: string) {
     e.preventDefault()
-    const text = input.trim()
+    const text = (prefill ?? input).trim()
     if (!text || isSending) return
     setInput("")
     setMessages((prev) => [...prev, { role: "user", content: text }])
@@ -40,6 +102,7 @@ function Chat() {
       if (data.success) {
         setConversationId(data.conversationId)
         setMessages((prev) => [...prev, { role: "assistant", content: data.reply }])
+        loadConversations()
       } else {
         setMessages((prev) => [...prev, { role: "assistant", content: `Erreur : ${data.error}` }])
       }
@@ -49,44 +112,116 @@ function Chat() {
   }
 
   return (
-    <main className="glass-scene flex min-h-screen justify-center p-4">
-      <div className="liquid-glass flex w-full max-w-2xl flex-col rounded-3xl p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-lg font-medium">Archiaccess AI</h1>
-          <Link href="/" className="text-sm text-muted-foreground hover:underline">
-            Accueil
-          </Link>
-        </div>
-        <div className="custom-scrollbar flex-1 space-y-3 overflow-y-auto">
-          {messages.map((m, i) => (
-            <div key={i} className={m.role === "user" ? "text-right" : "text-left"}>
-              <span
-                className={
-                  m.role === "user"
-                    ? "chrome-black inline-block max-w-[80%] rounded-2xl px-3 py-2 text-sm text-white"
-                    : "liquid-glass-soft inline-block max-w-[80%] rounded-2xl px-3 py-2 text-sm"
-                }
-              >
-                {m.content}
-              </span>
-            </div>
-          ))}
-        </div>
-        <form onSubmit={send} className="mt-4 flex gap-2">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Poser une question…"
-            className="liquid-glass-inset flex-1 rounded-xl px-3 py-2 text-sm outline-none"
-          />
+    <main className="glass-scene flex min-h-screen p-4">
+      <div className="liquid-glass flex h-[calc(100vh-2rem)] w-full max-w-5xl overflow-hidden rounded-3xl">
+        <aside className="liquid-glass-panel flex w-64 shrink-0 flex-col gap-3 p-4">
+          <div className="flex items-center gap-2">
+            <Image src="/logo-ai.png" alt="Archiaccess AI" width={32} height={32} className="rounded-lg" />
+            <span className="text-sm font-medium">Archiaccess AI</span>
+          </div>
           <button
-            type="submit"
-            disabled={isSending}
-            className="chrome-black rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
+            onClick={newConversation}
+            className="chrome-black flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm text-white"
           >
-            Envoyer
+            <Plus size={16} />
+            Nouvelle conversation
           </button>
-        </form>
+          <div className="custom-scrollbar flex-1 space-y-1 overflow-y-auto">
+            {conversations.map((c) => (
+              <div
+                key={c.id}
+                onClick={() => openConversation(c.id)}
+                className={`group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-sm hover:bg-black/5 ${
+                  c.id === conversationId ? "liquid-glass-soft" : ""
+                }`}
+              >
+                <span className="truncate">{c.title ?? "Nouvelle conversation"}</span>
+                <button
+                  onClick={(e) => deleteConversation(c.id, e)}
+                  className="ml-2 shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100"
+                  aria-label="Supprimer la conversation"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-col gap-1 border-t border-black/10 pt-3 text-sm text-muted-foreground">
+            <span className="truncate px-1">{user.name}</span>
+            <Link href="/" className="flex items-center gap-2 rounded-lg px-1 py-1 hover:underline">
+              <Home size={14} />
+              Accueil
+            </Link>
+            <button onClick={logout} className="flex items-center gap-2 rounded-lg px-1 py-1 text-left hover:underline">
+              <LogOut size={14} />
+              Déconnexion
+            </button>
+          </div>
+        </aside>
+
+        <div className="flex flex-1 flex-col">
+          {messages.length === 0 ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
+              <Image src="/logo-ai.png" alt="Archiaccess AI" width={72} height={72} className="rounded-2xl" />
+              <div>
+                <h1 className="text-xl font-medium">Prêt à vous aider, {user.name.split(" ")[0]} ?</h1>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Posez une question sur vos études AMO/OPC ou vos tâches du quotidien.
+                </p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                {SUGGESTIONS.map((s) => (
+                  <button
+                    key={s}
+                    onClick={(e) => send(e, s)}
+                    className="liquid-glass-soft rounded-full px-4 py-2 text-xs"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div ref={scrollRef} className="custom-scrollbar flex-1 space-y-3 overflow-y-auto p-6">
+              {messages.map((m, i) => (
+                <div key={i} className={m.role === "user" ? "text-right" : "text-left"}>
+                  <span
+                    className={
+                      m.role === "user"
+                        ? "chrome-black inline-block max-w-[80%] rounded-2xl px-3 py-2 text-sm text-white"
+                        : "liquid-glass-soft inline-block max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm"
+                    }
+                  >
+                    {m.content}
+                  </span>
+                </div>
+              ))}
+              {isSending && (
+                <div className="text-left">
+                  <span className="liquid-glass-soft inline-block rounded-2xl px-3 py-2 text-sm text-muted-foreground">
+                    Archiaccess AI écrit…
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <form onSubmit={send} className="flex gap-2 p-4 pt-0">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Poser une question…"
+              className="liquid-glass-inset flex-1 rounded-xl px-3 py-2 text-sm outline-none"
+            />
+            <button
+              type="submit"
+              disabled={isSending}
+              className="chrome-black rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
+            >
+              Envoyer
+            </button>
+          </form>
+        </div>
       </div>
     </main>
   )

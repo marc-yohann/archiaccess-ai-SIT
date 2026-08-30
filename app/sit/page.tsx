@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { AuthGate } from "@/components/auth-gate"
 import type { AddressResult } from "@/lib/data-sources/ban"
 import type { Parcel } from "@/lib/data-sources/cadastre"
@@ -15,11 +16,14 @@ import type { Mutation } from "@/lib/data-sources/dvf"
 // par ParcelList) — voir CLAUDE.md.
 export default function SitPage() {
   return (
-    <AuthGate>
+    <AuthGate logoSrc="/logo-sit.png" appName="Archiaccess SIT">
       <main className="glass-scene flex min-h-screen justify-center p-4">
         <div className="flex w-full max-w-2xl flex-col gap-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-lg font-medium">Système d'Information Technique</h1>
+            <div className="flex items-center gap-3">
+              <Image src="/logo-sit.png" alt="Archiaccess SIT" width={36} height={36} className="rounded-xl" />
+              <h1 className="text-lg font-medium">Système d'Information Technique</h1>
+            </div>
             <Link href="/" className="text-sm text-muted-foreground hover:underline">
               Accueil
             </Link>
