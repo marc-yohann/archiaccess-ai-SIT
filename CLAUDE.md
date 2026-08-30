@@ -507,6 +507,23 @@ responsable plutôt que de promettre des capacités non implémentées.
 Excel/CSV, table `Feedback` + UI pour logger un signalement au lieu d'un
 simple message texte à l'IA.
 
+**En testant le chat après ce déploiement : `mistral-large-latest`
+renvoie maintenant 403 "tier_not_allowed"** (2026-08-30) — "This model is
+not available in your subscription tier". **Différent de l'incident
+précédent** (qui était un timeout côté infrastructure Mistral, résolu le
+2026-08-29) : ici la requête aboutit tout de suite avec un refus net,
+signe d'un problème d'abonnement/plan Mistral plutôt que d'une panne.
+Vérifié en direct avec la clé stockée : `large` → 403, `medium` → 200
+(même clé, même requête). `lib/mistral.ts` rebasculé sur
+`mistral-medium-latest` en attendant, Lambda redéployée, chat retesté
+avec succès (y compris le comportement RGPD/refus des Consignes — un
+test avec "quel est le mot de passe du dossier client Z ?" a bien produit
+un refus argumenté renvoyant vers le responsable). **À l'utilisateur** :
+vérifier le plan/abonnement sur la console Mistral (console.mistral.ai)
+pour voir si `mistral-large-latest` nécessite une mise à niveau, ou
+contacter leur support — ce n'est pas quelque chose que ce projet peut
+résoudre côté code.
+
 **Demande reçue, pas encore traitée** : **chaque employé doit avoir son
 propre compte** ("chaque employé doit avoir son compte") —
 remplacerait/compléterait le modèle actuel de mot de passe d'équipe

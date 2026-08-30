@@ -6,11 +6,15 @@
 import { getMistralApiKey } from "@/lib/secrets"
 
 const MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
-// mistral-large-latest a timeout systématiquement pendant plusieurs jours
-// (incident côté infrastructure Mistral, voir CLAUDE.md) — repli temporaire
-// sur medium, revérifié périodiquement. Résolu le 2026-08-29 (retesté en
-// direct : HTTP 200, ~1s), rebasculé sur le modèle cible du projet.
-const MODEL = "mistral-large-latest"
+// mistral-large-latest : d'abord timeout systématique (incident
+// infrastructure Mistral, résolu le 2026-08-29), puis 403
+// "tier_not_allowed" constaté le 2026-08-30 ("This model is not available
+// in your subscription tier") — un problème différent, côté abonnement
+// Mistral cette fois, pas infrastructure. Vérifié en direct : large → 403,
+// medium → 200 avec la même clé. Repli sur medium en attendant que
+// l'utilisateur vérifie/mette à niveau son plan sur la console Mistral —
+// voir CLAUDE.md.
+const MODEL = "mistral-medium-latest"
 
 export interface MistralMessage {
   role: "system" | "user" | "assistant"
