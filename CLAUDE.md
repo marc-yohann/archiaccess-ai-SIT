@@ -491,19 +491,29 @@ titre "Archiaccess AI" + favicon dédié ; les chemins explicites `/sit` et
 inchangé ; le domaine CloudFront par défaut (sans sous-domaine
 correspondant) continue d'afficher l'accueil générique, comme prévu.
 
-**Demandes reçues, pas encore traitées** :
-1. **Chaque employé doit avoir son propre compte** ("chaque employé doit
-   avoir son compte") — remplacerait/compléterait le modèle actuel de mot
-   de passe d'équipe partagé (`lib/session.ts`). Changement d'architecture
-   significatif (gestion des comptes, création/désactivation, peut-être
-   des rôles) — à clarifier avec l'utilisateur avant de se lancer, plutôt
-   que de décider seul du design.
-2. **Document "Consignes pour Archiaccess AI"** fourni par l'utilisateur
-   (mission, ton, limites autorisé/interdit, RGPD/sécurité, protocole de
-   feedback, valeurs d'entreprise, contacts) — à intégrer au comportement
-   réel du copilote, a minima dans le prompt système de
-   `app/api/mistral/chat/route.ts`, possiblement au-delà (logging de
-   feedback, formats de génération de documents, garde-fous sécurité).
+**Document "Consignes pour Archiaccess AI" intégré au prompt système**
+(2026-08-30) : le document fourni par l'utilisateur (mission, ton,
+autorisé/interdit, protocole RGPD/sécurité, feedback, valeurs
+d'entreprise, contact responsable) a été retranscrit dans `SYSTEM_PROMPT`
+de `app/api/mistral/chat/route.ts`. **Volontairement pas repris à
+l'identique** : le document mentionne aussi (a) la génération de
+fichiers Excel/CSV modifiables pour les tableaux/graphiques, et (b) un
+mécanisme de logging structuré du feedback ("cette réponse est
+incorrecte" → enregistrement) — ni l'un ni l'autre n'existe côté produit
+(pas d'export de fichier, pas de table Prisma pour stocker le feedback),
+donc le prompt demande des tableaux markdown et invite à contacter le
+responsable plutôt que de promettre des capacités non implémentées.
+**Reste à faire si jugé utile** : génération réelle de fichiers
+Excel/CSV, table `Feedback` + UI pour logger un signalement au lieu d'un
+simple message texte à l'IA.
+
+**Demande reçue, pas encore traitée** : **chaque employé doit avoir son
+propre compte** ("chaque employé doit avoir son compte") —
+remplacerait/compléterait le modèle actuel de mot de passe d'équipe
+partagé (`lib/session.ts`). Changement d'architecture significatif
+(gestion des comptes, création/désactivation, peut-être des rôles) — à
+clarifier avec l'utilisateur avant de se lancer, plutôt que de décider
+seul du design.
 
 Prochaines étapes :
 1. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
