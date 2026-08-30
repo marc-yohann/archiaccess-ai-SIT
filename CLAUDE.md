@@ -532,6 +532,47 @@ partagé (`lib/session.ts`). Changement d'architecture significatif
 clarifier avec l'utilisateur avant de se lancer, plutôt que de décider
 seul du design.
 
+**Bug critique découvert et corrigé : la page restait bloquée sur
+"Chargement…" dans un vrai navigateur** (2026-08-30, signalé par
+l'utilisateur) — jamais détecté avant car tous les tests bout en bout de
+cette session étaient des appels `curl` sur les routes API, jamais un
+vrai chargement de page en navigateur. Cause : la distribution
+CloudFront n'avait qu'une seule origine (la Function URL Lambda) ; les
+bundles JS/CSS statiques de Next.js (`_next/static/*`) sont censés être
+servis depuis une origine S3 dédiée (c'est ce que `open-next build`
+prévoit dans `open-next.output.json`), mais cette origine S3 n'avait
+jamais été créée quand CloudFront a été mis en place — un commentaire
+resté dans `open-next.config.ts` datait d'avant CloudFront ("pas de
+CloudFront/S3 pour l'instant, Function URL suffit"), jamais revu depuis.
+Résultat : le HTML se chargeait bien (rendu côté serveur, titre/favicon
+corrects), mais le bundle JS 404 dans le navigateur, React n'hydrate
+jamais, la page reste bloquée sur l'état de chargement initial de
+`AuthGate` indéfiniment. Ce bug est donc probablement présent **depuis
+la toute première mise en place de CloudFront** (2026-08-29), pas
+introduit par les changements du jour.
+
+Corrigé : nouveau bucket S3 privé `archiaccess-ai-sit-static-638954279923`
+(chiffré, accès public bloqué), synchronisé avec `.open-next/assets`
+(`aws s3 sync`, cache-control `immutable` sur les assets versionnés,
+`no-cache` sur `BUILD_ID`). Ajouté comme deuxième origine de la
+distribution CloudFront (`E1A2P5LIOXBTN1`) via une Origin Access Control
+(OAC) — accès restreint à cette distribution précise via la bucket
+policy, pas de bucket public. Trois nouveaux cache behaviors
+(`_next/*`, `BUILD_ID`, `noise.png`) routés vers cette origine S3 avec
+la policy managée `CachingOptimized` (au lieu de `CachingDisabled` sur
+le comportement par défaut Lambda — ces fichiers sont immuables/versionnés,
+donc cache long légitime, contrairement aux pages dynamiques/authentifiées).
+Les routes `/sit/icon.png` et `/ai/icon.png` (générées dynamiquement par
+Next.js, pas des fichiers statiques) continuent de passer par le
+comportement par défaut vers Lambda, sans changement. **Testé bout en
+bout avec succès** : tous les bundles JS/CSS/fonts/images référencés par
+la page rendent 200 avec le bon `content-type`, sur les deux domaines.
+**Point de vigilance pour la suite** : à chaque nouveau déploiement, il
+faudra désormais synchroniser `.open-next/assets` vers ce bucket S3 EN
+PLUS de déployer le zip Lambda — sinon ce même bug (page qui ne
+s'hydrate jamais) reviendra dès que les noms de fichiers hashés changent
+entre deux builds.
+
 Prochaines étapes :
 1. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
    redéploiement à chaque changement de code (actuellement manuel via
