@@ -701,9 +701,27 @@ directement `BootstrapForm` ; sinon, flux normal (connexion puis
 vérification `isAdmin`). `/admin` reste donc le seul endroit de
 création de compte, premier compris — mais accessible sur les deux
 sous-domaines (même Lambda), pas restreint à un seul pour l'instant.
-`tsc --noEmit` et `next build` passent, **build OpenNext prêt
-(zippé), déploiement Lambda en attente de nouvelles credentials AWS**
-(expirées en cours de route, pattern récurrent de cette session).
+`tsc --noEmit` et `next build` passent. **Déployé et vérifié** (nouvelles
+credentials) : `bootstrapNeeded` n'apparaît plus que dans le chunk
+compilé de `/admin`, plus nulle part ailleurs — confirmé en inspectant le
+bundle `.open-next` déployé. `sit.archiaccess.com` et `ai.archiaccess.com`
+affichent bien un formulaire de connexion classique à la racine.
+
+**Bug découvert juste après par l'utilisateur (capture d'écran) : logo
+cassé (icône d'image manquante) sur l'écran de connexion** — cause :
+`next/image` génère par défaut une URL d'optimisation à la volée
+(`/_next/image?url=...`), qui doit être servie par une Lambda séparée
+(`image-optimization-function` côté OpenNext) — jamais déployée, seule la
+Lambda principale l'est (voir `open-next.output.json`, comportement
+`_next/image*` → origine `imageOptimizer`, sans équivalent côté
+CloudFront). Ces requêtes tombaient donc sur la Lambda principale, qui ne
+sait pas y répondre — échec silencieux, pas d'erreur visible en dehors de
+l'icône cassée. Corrigé avec `images: { unoptimized: true }` dans
+`next.config.mjs` : plutôt que de déployer et maintenir une Lambda de
+plus pour quelques logos fixes qui n'ont besoin d'aucun redimensionnement
+dynamique, `next/image` sert désormais l'URL brute (`/logo-ai.png` etc.)
+directement. Testé : les deux logos répondent 200 en `image/png` sur les
+deux domaines.
 
 Prochaines étapes :
 1. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
