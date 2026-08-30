@@ -448,6 +448,63 @@ query-strings sauf `Host`.
 via `sit.archiaccess.com` (cookie de session délivré). Le domaine
 personnalisé est donc pleinement opérationnel.
 
+**Titre/favicon distincts par écran, puis bug de routing par sous-domaine
+découvert et corrigé** (2026-08-30) : logos fournis par l'utilisateur
+téléchargés et redimensionnés (512×512) en favicons dédiés —
+`app/sit/icon.png` (logo "Archiaccess executive") et `app/ai/icon.png`
+(logo "Archiaccess AI"), via la convention Next.js de favicon par segment
+de route. `app/sit/layout.tsx` et `app/ai/layout.tsx` ajoutés (Server
+Components) pour fournir un titre par route (`/sit/page.tsx` et
+`/ai/page.tsx` sont `"use client"`, donc ne peuvent pas exporter
+`metadata` eux-mêmes).
+
+Après déploiement, `/sit` et `/ai` (les chemins) avaient bien le bon
+titre/favicon, mais **la racine `https://sit.archiaccess.com/` continuait
+à afficher "Archiaccess AI"** — bug signalé par l'utilisateur. Cause
+réelle, après investigation : ce n'était pas un problème de cache, mais
+de routing. `sit.archiaccess.com/` et `ai.archiaccess.com/` pointent tous
+les deux vers la MÊME Lambda, et la racine `/` a toujours été la page
+d'accueil générique (`app/page.tsx`, liens vers `/sit` et `/ai`) — rien
+ne faisait correspondre un sous-domaine à sa page dédiée. Corrigé avec un
+middleware Next.js (`proxy.ts` — Next.js 16.3.3 a renommé la convention
+`middleware.ts` → `proxy.ts`, codemod officiel utilisé) qui réécrit `/`
+vers `/sit` ou `/ai` selon le sous-domaine visité.
+
+**Complication additionnelle** : le middleware lit le header `Host` pour
+décider du sous-domaine, mais CloudFront (policy `Managed-
+AllViewerExceptHostHeader`, voir plus haut) **supprime volontairement**
+le vrai `Host` du visiteur avant de transmettre à l'origine (nécessaire
+pour que la Function URL Lambda ne renvoie pas 403). Résultat : le
+middleware ne voyait jamais `sit.` ni `ai.`, seulement le nom de domaine
+de la Lambda elle-même. Résolu avec une **CloudFront Function**
+(`archiaccess-ai-sit-preserve-host`, JS, événement `viewer-request`,
+associée à la distribution `E1A2P5LIOXBTN1`) qui recopie le `Host`
+d'origine du visiteur dans un header custom `x-app-host` avant que la
+origin request policy ne l'écrase — c'est ce header que `proxy.ts` lit
+maintenant (avec repli sur `host` si absent). Coût négligeable (1M
+d'exécutions gratuites/mois sur CloudFront Functions).
+
+**Testé bout en bout avec succès** : `https://sit.archiaccess.com/` →
+titre "Archiaccess SIT" + favicon dédié ; `https://ai.archiaccess.com/` →
+titre "Archiaccess AI" + favicon dédié ; les chemins explicites `/sit` et
+`/ai` fonctionnent toujours sur les deux domaines ; `/api/auth/me`
+inchangé ; le domaine CloudFront par défaut (sans sous-domaine
+correspondant) continue d'afficher l'accueil générique, comme prévu.
+
+**Demandes reçues, pas encore traitées** :
+1. **Chaque employé doit avoir son propre compte** ("chaque employé doit
+   avoir son compte") — remplacerait/compléterait le modèle actuel de mot
+   de passe d'équipe partagé (`lib/session.ts`). Changement d'architecture
+   significatif (gestion des comptes, création/désactivation, peut-être
+   des rôles) — à clarifier avec l'utilisateur avant de se lancer, plutôt
+   que de décider seul du design.
+2. **Document "Consignes pour Archiaccess AI"** fourni par l'utilisateur
+   (mission, ton, limites autorisé/interdit, RGPD/sécurité, protocole de
+   feedback, valeurs d'entreprise, contacts) — à intégrer au comportement
+   réel du copilote, a minima dans le prompt système de
+   `app/api/mistral/chat/route.ts`, possiblement au-delà (logging de
+   feedback, formats de génération de documents, garde-fous sécurité).
+
 Prochaines étapes :
 1. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
    redéploiement à chaque changement de code (actuellement manuel via
