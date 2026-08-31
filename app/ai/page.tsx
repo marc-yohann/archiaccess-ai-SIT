@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Plus, Trash2, LogOut, Home } from "lucide-react"
+import { Plus, Trash2, LogOut, Home, Menu, X, Settings } from "lucide-react"
 import { AuthGate, useUser } from "@/components/auth-gate"
 
 interface ChatMessage {
@@ -39,6 +39,7 @@ function Chat() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState("")
   const [isSending, setIsSending] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   function loadConversations() {
@@ -112,12 +113,27 @@ function Chat() {
   }
 
   return (
-    <main className="glass-scene flex min-h-screen p-4">
-      <div className="liquid-glass flex h-[calc(100vh-2rem)] w-full max-w-5xl overflow-hidden rounded-3xl">
-        <aside className="liquid-glass-panel flex w-64 shrink-0 flex-col gap-3 p-4">
-          <div className="flex items-center gap-2">
-            <Image src="/logo-ai.png" alt="Archiaccess AI" width={36} height={36} />
-            <span className="text-sm font-medium">Archiaccess AI</span>
+    <main className="glass-scene flex min-h-screen items-center justify-center p-0 sm:p-4">
+      <div className="liquid-glass relative flex h-screen w-full overflow-hidden rounded-none sm:h-[calc(100vh-2rem)] sm:max-w-6xl sm:rounded-3xl">
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-20 bg-black/30 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+        <aside
+          className={`liquid-glass-panel fixed inset-y-0 left-0 z-30 flex w-72 shrink-0 flex-col gap-3 p-4 transition-transform duration-200 md:static md:z-auto md:w-64 md:translate-x-0 ${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Image src="/logo-ai.png" alt="Archiaccess AI" width={36} height={36} />
+              <span className="text-sm font-medium">Archiaccess AI</span>
+            </div>
+            <button onClick={() => setSidebarOpen(false)} className="md:hidden" aria-label="Fermer le menu">
+              <X size={18} />
+            </button>
           </div>
           <button
             onClick={newConversation}
@@ -152,6 +168,12 @@ function Chat() {
               <Home size={14} />
               Accueil
             </Link>
+            {user.isAdmin && (
+              <Link href="/admin" className="flex items-center gap-2 rounded-lg px-1 py-1 hover:underline">
+                <Settings size={14} />
+                Administration
+              </Link>
+            )}
             <button onClick={logout} className="flex items-center gap-2 rounded-lg px-1 py-1 text-left hover:underline">
               <LogOut size={14} />
               Déconnexion
@@ -159,7 +181,14 @@ function Chat() {
           </div>
         </aside>
 
-        <div className="flex flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex items-center gap-2 p-3 md:hidden">
+            <button onClick={() => setSidebarOpen(true)} aria-label="Ouvrir le menu">
+              <Menu size={20} />
+            </button>
+            <Image src="/logo-ai.png" alt="Archiaccess AI" width={24} height={24} />
+            <span className="text-sm font-medium">Archiaccess AI</span>
+          </div>
           {messages.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
               <Image src="/logo-ai.png" alt="Archiaccess AI" width={112} height={112} />
