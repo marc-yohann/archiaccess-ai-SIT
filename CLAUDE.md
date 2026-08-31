@@ -998,8 +998,12 @@ comme toujours :
   reprendre si jugé prioritaire (l'économie de la construction est une
   discipline coeur pour l'AMO/OPC, contrairement au nucléaire).
 - `tsc --noEmit` et `next build` passent (les 2 nouvelles routes
-  apparaissent dans le build). **Pas encore déployé** — credentials AWS
-  de cette session expirées avant le déploiement.
+  apparaissent dans le build). **Déployé et testé bout en bout avec
+  succès** (2026-08-31, avec de nouvelles credentials AWS) : build
+  OpenNext, zip Lambda, synchronisation S3 des assets statiques. Vérifié
+  en direct : `/api/sit/nappes` et `/api/sit/chaleur-urbaine` répondent
+  401 sans session, `/sit` et `/ai` répondent 200 sur les deux
+  sous-domaines.
 
 Prochaines étapes :
 1. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
