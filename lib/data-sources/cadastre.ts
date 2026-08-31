@@ -5,6 +5,8 @@
 // le point exact, et on retourne les parcelles qui l'intersectent —
 // vérifié par appel réel (voir CLAUDE.md).
 
+import { withVault } from "@/lib/data-vault"
+
 const CADASTRE_URL = "https://apicarto.ign.fr/api/cadastre/parcelle"
 
 export interface Parcel {
@@ -56,6 +58,11 @@ function bboxAround(lon: number, lat: number, bufferMeters: number): GeoJSON.Pol
 }
 
 export async function getParcelsNear(lon: number, lat: number, bufferMeters = 20): Promise<Parcel[]> {
+  const key = `${lon.toFixed(5)},${lat.toFixed(5)},${bufferMeters}`
+  return withVault("cadastre", key, () => fetchParcelsLive(lon, lat, bufferMeters))
+}
+
+async function fetchParcelsLive(lon: number, lat: number, bufferMeters: number): Promise<Parcel[]> {
   const url = new URL(CADASTRE_URL)
   url.searchParams.set("geom", JSON.stringify(bboxAround(lon, lat, bufferMeters)))
 

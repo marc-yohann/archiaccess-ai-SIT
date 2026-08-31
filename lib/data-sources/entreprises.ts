@@ -4,6 +4,8 @@
 // recherche peut aussi porter sur une entreprise (nom, SIREN, SIRET) —
 // voir CLAUDE.md. Validé par appel réel avant d'écrire ce code.
 
+import { withVault } from "@/lib/data-vault"
+
 const BASE_URL = "https://recherche-entreprises.api.gouv.fr/search"
 
 export interface Company {
@@ -46,6 +48,10 @@ function dirigeantLabel(d: NonNullable<RawResult["dirigeants"]>[number]): string
 }
 
 export async function searchCompanies(query: string, limit = 5): Promise<Company[]> {
+  return withVault("entreprises", `q:${query.trim().toLowerCase()}`, () => fetchCompaniesLive(query, limit))
+}
+
+async function fetchCompaniesLive(query: string, limit: number): Promise<Company[]> {
   const url = new URL(BASE_URL)
   url.searchParams.set("q", query)
   url.searchParams.set("per_page", String(limit))

@@ -5,6 +5,8 @@
 // plutôt que le point exact, pour ne pas rater la zone si le géocodage
 // tombe légèrement à côté. Validé par appel réel avant d'écrire ce code.
 
+import { withVault } from "@/lib/data-vault"
+
 const GPU_URL = "https://apicarto.ign.fr/api/gpu/zone-urba"
 
 export interface UrbanZone {
@@ -47,6 +49,11 @@ function bboxAround(lon: number, lat: number, bufferMeters: number): GeoJSON.Pol
 }
 
 export async function getUrbanZonesNear(lon: number, lat: number, bufferMeters = 20): Promise<UrbanZone[]> {
+  const key = `${lon.toFixed(5)},${lat.toFixed(5)},${bufferMeters}`
+  return withVault("urbanisme", key, () => fetchUrbanZonesLive(lon, lat, bufferMeters))
+}
+
+async function fetchUrbanZonesLive(lon: number, lat: number, bufferMeters: number): Promise<UrbanZone[]> {
   const res = await fetch(GPU_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

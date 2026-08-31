@@ -6,6 +6,8 @@
 // du bâtiment concerné et de ses voisins immédiats. Validé par appel réel
 // avant d'écrire ce code (voir CLAUDE.md).
 
+import { withVault } from "@/lib/data-vault"
+
 const BASE_URL = "https://data.ademe.fr/data-fair/api/v1/datasets/meg-83tjwtg8dyz4vv7h1dqe/lines"
 
 export interface DpeRecord {
@@ -39,6 +41,11 @@ function bboxAround(lon: number, lat: number, bufferMeters: number): [number, nu
 }
 
 export async function getDpeRecordsNear(lon: number, lat: number, bufferMeters = 60, limit = 10): Promise<DpeRecord[]> {
+  const key = `${lon.toFixed(5)},${lat.toFixed(5)},${bufferMeters},${limit}`
+  return withVault("dpe", key, () => fetchDpeRecordsLive(lon, lat, bufferMeters, limit))
+}
+
+async function fetchDpeRecordsLive(lon: number, lat: number, bufferMeters: number, limit: number): Promise<DpeRecord[]> {
   const [minLon, minLat, maxLon, maxLat] = bboxAround(lon, lat, bufferMeters)
   const url = new URL(BASE_URL)
   url.searchParams.set("size", String(limit))

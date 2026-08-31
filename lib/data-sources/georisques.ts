@@ -5,6 +5,8 @@
 // potentiel radon (ventilation/santé). Validé par appels réels avant
 // d'écrire ce code (voir CLAUDE.md).
 
+import { withVault } from "@/lib/data-vault"
+
 const BASE_URL = "https://georisques.gouv.fr/api/v1"
 
 export interface Risk {
@@ -45,6 +47,10 @@ async function fetchJson<T>(url: string): Promise<T> {
 }
 
 export async function getRisksForCommune(codeInsee: string): Promise<CommuneRisks> {
+  return withVault("georisques", codeInsee, () => fetchRisksLive(codeInsee))
+}
+
+async function fetchRisksLive(codeInsee: string): Promise<CommuneRisks> {
   const [gaspard, seismic, radon] = await Promise.all([
     fetchJson<GaspardResponse>(`${BASE_URL}/gaspar/risques?code_insee=${codeInsee}`),
     fetchJson<ZonageSismiqueResponse>(`${BASE_URL}/zonage_sismique?code_insee=${codeInsee}`),

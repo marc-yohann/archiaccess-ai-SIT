@@ -6,6 +6,8 @@
 // tuile Entreprise (lib/data-sources/entreprises.ts) déjà en place.
 // Validé par appel réel avant d'écrire ce code.
 
+import { withVault } from "@/lib/data-vault"
+
 const BASE_URL = "https://bodacc-datadila.opendatasoft.com/api/records/1.0/search/"
 
 export interface BodaccAnnouncement {
@@ -35,6 +37,10 @@ interface BodaccResponse {
 }
 
 export async function getAnnouncementsForSiren(siren: string, limit = 10): Promise<BodaccAnnouncement[]> {
+  return withVault("bodacc", siren, () => fetchAnnouncementsLive(siren, limit))
+}
+
+async function fetchAnnouncementsLive(siren: string, limit: number): Promise<BodaccAnnouncement[]> {
   const url = new URL(BASE_URL)
   url.searchParams.set("dataset", "annonces-commerciales")
   url.searchParams.set("q", `registre:${siren}`)

@@ -9,6 +9,8 @@
 // ex: "000AP") — voir lib/data-sources/cadastre.ts pour comment on
 // l'obtient à partir d'une parcelle.
 
+import { withVault } from "@/lib/data-vault"
+
 const BASE_URL = "https://app.dvf.etalab.gouv.fr/api/mutations3"
 
 export interface Mutation {
@@ -48,6 +50,10 @@ function parseText(value: string): string | null {
 }
 
 export async function getMutationsForSection(codeCommune: string, sectionPrefixe: string): Promise<Mutation[]> {
+  return withVault("dvf", `${codeCommune}:${sectionPrefixe}`, () => fetchMutationsLive(codeCommune, sectionPrefixe))
+}
+
+async function fetchMutationsLive(codeCommune: string, sectionPrefixe: string): Promise<Mutation[]> {
   const res = await fetch(`${BASE_URL}/${codeCommune}/${sectionPrefixe}`, { signal: AbortSignal.timeout(15000) })
   if (!res.ok) {
     throw new Error(`API DVF a répondu ${res.status}`)

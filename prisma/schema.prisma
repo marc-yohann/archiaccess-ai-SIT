@@ -108,3 +108,25 @@ model DocumentChunk {
 
   @@index([documentId])
 }
+
+// "Coffre" du SIT — voir CLAUDE.md, décision utilisateur du 2026-08-31 :
+// chaque recherche (cadastre, DVF, entreprises, urbanisme, DPE, BODACC,
+// Géorisques, adresse) interroge TOUJOURS la source en direct (données à
+// jour), mais le résultat est systématiquement conservé ici — jamais
+// supprimé, jamais purgé automatiquement. Sert de mémoire permanente
+// ("second cerveau" des données brutes, par opposition à celui des
+// documents/études ci-dessus) et de repli si une API externe tombe en
+// panne. Une seule table générique pour toutes les sources, présentes et
+// futures, plutôt qu'un modèle par connecteur — reste léger à faire
+// évoluer.
+model DataCacheEntry {
+  id        String   @id @default(cuid())
+  source    String // ex: "cadastre", "dvf", "entreprises", "urbanisme", "dpe", "bodacc", "georisques", "ban"
+  cacheKey  String // ex: coordonnées arrondies, SIREN, code INSEE...
+  payload   Json // réponse normalisée du connecteur (le même type que celui-ci retourne à l'appelant)
+  fetchedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@unique([source, cacheKey])
+  @@index([source])
+}

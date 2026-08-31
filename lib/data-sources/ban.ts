@@ -4,6 +4,8 @@
 // DVF...) qui ont tous besoin d'une adresse géocodée ou d'un code commune
 // en entrée.
 
+import { withVault } from "@/lib/data-vault"
+
 const BAN_SEARCH_URL = "https://api-adresse.data.gouv.fr/search/"
 
 export interface AddressResult {
@@ -41,6 +43,10 @@ interface BanResponse {
 }
 
 export async function searchAddress(query: string, limit = 5): Promise<AddressResult[]> {
+  return withVault("ban", `q:${query.trim().toLowerCase()}`, () => fetchAddressLive(query, limit))
+}
+
+async function fetchAddressLive(query: string, limit: number): Promise<AddressResult[]> {
   const url = new URL(BAN_SEARCH_URL)
   url.searchParams.set("q", query)
   url.searchParams.set("limit", String(limit))
