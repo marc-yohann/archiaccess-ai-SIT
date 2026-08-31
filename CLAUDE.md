@@ -762,15 +762,82 @@ plusieurs retours rapides traités et déployés dans la foulée :
   l'utilisateur : "Je suis Archiaccess AI, l'assistant interne
   d'Archiaccess."
 
+**SIT redéfini et refait en tableau de bord — connecteurs Urbanisme, DPE,
+BODACC ajoutés** (2026-08-31, pas encore déployé). Discussion avec
+l'utilisateur sur le rôle du SIT avant de coder quoi que ce soit (comme
+demandé) : "un système d'information là où il y a de la big data pour
+réaliser des études... un peu comme les traders... la capacité à
+rechercher les infos et Archiaccess AI pour épauler" — plus un
+formulaire séquentiel centré sur l'adresse, mais un vrai tableau de bord
+dense, recherche universelle (pas seulement une adresse), panneau IA
+intégré qui combine résumé automatique ET chat libre (les deux, pas l'un
+ou l'autre).
+
+- `app/sit/page.tsx` réécrit : recherche universelle (`/api/sit/search`,
+  nouveau, remplace `search-address/`) — détecte un SIREN/SIRET par motif
+  (9 ou 14 chiffres) pour chercher une entreprise directement, sinon
+  tente adresse ET entreprise en parallèle (`Promise.allSettled`, l'une
+  peut échouer sans faire échouer l'autre). Résultats affichés en grille
+  de tuiles simultanées (adresse, cadastre, urbanisme, risques, DVF, DPE,
+  entreprises) plutôt que scrollés section par section. Layout plein
+  écran comme `/ai` (voir plus haut), panneau Archiaccess AI permanent à
+  droite (sous le contenu sur petit écran).
+- `lib/data-sources/entreprises.ts` (nouveau) : API Recherche
+  d'entreprises (data.gouv.fr/DINUM, données SIRENE/RNE, sans clé) —
+  recherche par nom ou SIREN/SIRET, validé par appel réel (retourne même
+  la fiche réelle d'Archiaccess, SIREN 909816696).
+- `lib/data-sources/urbanisme.ts` (nouveau) : zonage PLU/POS d'une
+  parcelle via l'API GPU de l'IGN, même stratégie bbox que le cadastre
+  (voir plus haut) pour ne pas rater la zone si le géocodage tombe
+  légèrement à côté.
+- `lib/data-sources/dpe.ts` (nouveau) : diagnostics de performance
+  énergétique du bâti existant, API ADEME. Recherche par bbox
+  géographique plutôt que code postal seul — un code postal peut couvrir
+  des dizaines de milliers de DPE (110 000+ rien que sur Reims), une
+  bbox resserrée autour de l'adresse ramène ceux du bâtiment concerné et
+  de ses voisins immédiats.
+- `lib/data-sources/bodacc.ts` (nouveau) : annonces légales par SIREN
+  (procédures collectives, dépôts de comptes...), chargées automatiquement
+  pour chaque entreprise trouvée et affichées dans la tuile Entreprise
+  plutôt qu'une tuile séparée.
+- **Chaque source vérifiée par appel réel avant d'écrire le code** (comme
+  toujours sur ce projet) : le nom exact du dataset ADEME a dû être
+  retrouvé (le premier essayé, `dpe-v2-logements-existants`, n'existe
+  plus — le bon est `meg-83tjwtg8dyz4vv7h1dqe`), la syntaxe `qs`/`select`
+  et le support `bbox` de l'API data-fair d'ADEME vérifiés en direct, le
+  filtre BODACC par SIREN (`registre:XXXXXXXXX`) vérifié avec un vrai
+  SIREN ayant un historique d'annonces.
+- **Mérimée (monuments historiques) pas retenu pour l'instant** :
+  l'ancienne API data.culture.gouv.fr a changé de plateforme, je n'ai pas
+  trouvé de remplaçant national qui marche (seulement un miroir
+  départemental Isère, insuffisant) — à reprendre si jugé prioritaire.
+- `app/api/mistral/chat/route.ts` : accepte maintenant un champ `context`
+  optionnel (message système injecté avant l'historique) — c'est ce que
+  le panneau IA du SIT utilise pour que le copilote réponde avec les
+  données actuellement chargées sans que l'employé ait à tout recopier.
+  Absent depuis `/ai`, comportement inchangé là-bas.
+- **Point technique retenu** : la construction du contexte envoyé à l'IA
+  est passée d'une lecture du state React (risque de valeurs pas encore
+  à jour juste après un `setState`, `setState` étant asynchrone) à un
+  instantané explicite (`SitSnapshot`) construit à partir des données
+  fraîchement récupérées à chaque étape — plus robuste, à réutiliser si
+  d'autres panneaux IA contextuels sont ajoutés ailleurs.
+- `tsc --noEmit` et `next build` passent, toutes les nouvelles routes
+  apparaissent dans le build. **Pas encore déployé** au moment d'écrire
+  ceci — build OpenNext prêt, en attente de nouvelles credentials AWS.
+- **Prochaine étape explicite de l'utilisateur** : avant d'ajouter
+  d'autres sources ("le coffre de data"), il veut qu'on fasse une
+  recherche commune pour lister toutes les API/bases de données
+  candidates, PUIS que je me contente d'exécuter ce qui aura été
+  sélectionné — ne pas proposer/ajouter de nouvelles sources de ma
+  propre initiative avant ce point de passage.
+
 Prochaines étapes :
 1. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
    redéploiement à chaque changement de code (actuellement manuel via
    CLI depuis cette session — pas de CI/CD), décider si l'app doit vivre
    sur `main` ou rester sur la branche de travail.
-2. Au-delà des trois connecteurs initiaux, d'autres sources restent
-   possibles selon les besoins concrets des études (SIRENE/INSEE,
-   BODACC...) — à choisir avec l'utilisateur plutôt qu'anticipées.
-3. La NAT instance n'a pas de haute disponibilité (contrairement au NAT
+2. La NAT instance n'a pas de haute disponibilité (contrairement au NAT
    Gateway managé) — point de défaillance unique assumé pour l'instant
    vu la sensibilité au coût ; à revoir si la fiabilité devient un
    problème concret (ex: une deuxième instance dans une autre AZ avec
