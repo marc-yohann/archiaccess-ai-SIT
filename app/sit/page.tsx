@@ -18,6 +18,8 @@ import type { PollutedSitesResult } from "@/lib/data-sources/sites-pollues"
 import type { Servitude } from "@/lib/data-sources/servitudes"
 import type { PublicMarket } from "@/lib/data-sources/boamp"
 import { departmentCodeFromCityCode } from "@/lib/insee"
+import type { GroundwaterStation } from "@/lib/data-sources/nappes"
+import type { HeatNetworkEligibility } from "@/lib/data-sources/chaleur-urbaine"
 
 interface ChatMessage {
   role: "user" | "assistant"
@@ -42,6 +44,8 @@ interface SitSnapshot {
   pollutedSites?: PollutedSitesResult | null
   servitudes?: Servitude[] | null
   publicMarkets?: PublicMarket[] | null
+  groundwaterStations?: GroundwaterStation[] | null
+  heatNetwork?: HeatNetworkEligibility | null
 }
 
 function formatContext(s: SitSnapshot): string {
@@ -104,6 +108,25 @@ function formatContext(s: SitSnapshot): string {
         .join(" ; ")}.`,
     )
   }
+  if (s.groundwaterStations) {
+    parts.push(
+      s.groundwaterStations.length > 0
+        ? `Nappes phréatiques (stations piézométriques, commune) : ${s.groundwaterStations.length} station(s), ex. ${s.groundwaterStations
+            .slice(0, 3)
+            .map((g) => `${g.aquifere ?? "aquifère non renseigné"}${g.profondeurInvestigation ? ` (prof. ${g.profondeurInvestigation} m)` : ""}${g.dateFinMesure ? ` — arrêtée ${g.dateFinMesure}` : " — suivi actif"}`)
+            .join(", ")}.`
+        : "Nappes phréatiques : aucune station piézométrique recensée sur cette commune.",
+    )
+  }
+  if (s.heatNetwork) {
+    parts.push(
+      s.heatNetwork.isEligible
+        ? `Réseau de chaleur urbain : point éligible au réseau "${s.heatNetwork.networkName ?? "?"}" (à ${s.heatNetwork.distanceMeters} m, géré par ${s.heatNetwork.manager ?? "gestionnaire non renseigné"}).`
+        : s.heatNetwork.futureNetwork
+          ? "Réseau de chaleur urbain : pas éligible actuellement, mais un réseau est en projet à proximité."
+          : "Réseau de chaleur urbain : aucun réseau existant ou en projet à proximité.",
+    )
+  }
   if (s.companies && s.companies.length > 0) {
     parts.push(
       `Entreprises trouvées : ${s.companies
@@ -153,6 +176,8 @@ function Dashboard() {
   const [pollutedSites, setPollutedSites] = useState<PollutedSitesResult | null>(null)
   const [servitudes, setServitudes] = useState<Servitude[] | null>(null)
   const [publicMarkets, setPublicMarkets] = useState<PublicMarket[] | null>(null)
+  const [groundwaterStations, setGroundwaterStations] = useState<GroundwaterStation[] | null>(null)
+  const [heatNetwork, setHeatNetwork] = useState<HeatNetworkEligibility | null>(null)
 
   const [aiConversationId, setAiConversationId] = useState<string>()
   const [aiMessages, setAiMessages] = useState<ChatMessage[]>([])
@@ -199,6 +224,8 @@ function Dashboard() {
       pollutedSites,
       servitudes,
       publicMarkets,
+      groundwaterStations,
+      heatNetwork,
     })
   }
 
@@ -229,6 +256,8 @@ function Dashboard() {
     setPollutedSites(null)
     setServitudes(null)
     setPublicMarkets(null)
+    setGroundwaterStations(null)
+    setHeatNetwork(null)
     setAiConversationId(undefined)
     setAiMessages([])
     try {
@@ -276,10 +305,23 @@ function Dashboard() {
     setPollutedSites(null)
     setServitudes(null)
     setPublicMarkets(null)
+    setGroundwaterStations(null)
+    setHeatNetwork(null)
 
     const [lon, lat] = addr.coordinates
     const codeDepartement = departmentCodeFromCityCode(addr.citycode)
-    const [parcelsRes, risksRes, urbanismeRes, dpeRes, cavitesRes, sitesPolluesRes, servitudesRes, boampRes] = await Promise.all([
+    const [
+      parcelsRes,
+      risksRes,
+      urbanismeRes,
+      dpeRes,
+      cavitesRes,
+      sitesPolluesRes,
+      servitudesRes,
+      boampRes,
+      nappesRes,
+      chaleurRes,
+    ] = await Promise.all([
       fetch(`/api/sit/parcels?lon=${lon}&lat=${lat}`).then((r) => r.json()),
       fetch(`/api/sit/risks?codeInsee=${addr.citycode}`).then((r) => r.json()),
       fetch(`/api/sit/urbanisme?lon=${lon}&lat=${lat}`).then((r) => r.json()),
@@ -288,6 +330,8 @@ function Dashboard() {
       fetch(`/api/sit/sites-pollues?codeInsee=${addr.citycode}`).then((r) => r.json()),
       fetch(`/api/sit/servitudes?lon=${lon}&lat=${lat}`).then((r) => r.json()),
       fetch(`/api/sit/boamp?codeDepartement=${codeDepartement}`).then((r) => r.json()),
+      fetch(`/api/sit/nappes?codeInsee=${addr.citycode}`).then((r) => r.json()),
+      fetch(`/api/sit/chaleur-urbaine?lon=${lon}&lat=${lat}`).then((r) => r.json()),
     ])
 
     const loadedParcels: Parcel[] = parcelsRes.success ? parcelsRes.parcels : []
@@ -300,6 +344,8 @@ function Dashboard() {
       : null
     const loadedServitudes: Servitude[] = servitudesRes.success ? servitudesRes.servitudes : []
     const loadedPublicMarkets: PublicMarket[] = boampRes.success ? boampRes.markets : []
+    const loadedGroundwater: GroundwaterStation[] = nappesRes.success ? nappesRes.stations : []
+    const loadedHeatNetwork: HeatNetworkEligibility | null = chaleurRes.success ? chaleurRes.eligibility : null
     setParcels(loadedParcels)
     setRisks(loadedRisks)
     setUrbanZones(loadedUrbanZones)
@@ -308,6 +354,8 @@ function Dashboard() {
     setPollutedSites(loadedPollutedSites)
     setServitudes(loadedServitudes)
     setPublicMarkets(loadedPublicMarkets)
+    setGroundwaterStations(loadedGroundwater)
+    setHeatNetwork(loadedHeatNetwork)
 
     let loadedMutations: Mutation[] = []
     if (loadedParcels[0]) {
@@ -319,7 +367,7 @@ function Dashboard() {
     setMutations(loadedMutations)
 
     void sendAiMessage(
-      "Fais un résumé synthétique des informations ci-dessus (adresse, cadastre, urbanisme, risques, DVF, DPE, cavités, sites pollués, servitudes, marchés publics), pertinent pour une étude technique AMO/OPC. Sois concis (5-8 lignes maximum), et signale si une donnée importante manque.",
+      "Fais un résumé synthétique des informations ci-dessus (adresse, cadastre, urbanisme, risques, DVF, DPE, cavités, sites pollués, servitudes, marchés publics, nappes phréatiques, réseau de chaleur), pertinent pour une étude technique AMO/OPC. Sois concis (5-8 lignes maximum), et signale si une donnée importante manque.",
       {
         address: addr,
         parcels: loadedParcels,
@@ -333,6 +381,8 @@ function Dashboard() {
         pollutedSites: loadedPollutedSites,
         servitudes: loadedServitudes,
         publicMarkets: loadedPublicMarkets,
+        groundwaterStations: loadedGroundwater,
+        heatNetwork: loadedHeatNetwork,
       },
     )
   }
@@ -564,6 +614,44 @@ function Dashboard() {
                       </li>
                     ))}
                   </ul>
+                )}
+              </Tile>
+            )}
+
+            {selectedAddress && (
+              <Tile title="Nappes phréatiques (piézométrie)" loading={groundwaterStations === null}>
+                {groundwaterStations && groundwaterStations.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Aucune station piézométrique recensée sur cette commune.</p>
+                )}
+                {groundwaterStations && groundwaterStations.length > 0 && (
+                  <ul className="custom-scrollbar max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
+                    {groundwaterStations.map((g) => (
+                      <li key={g.codeBss}>
+                        <span className="font-mono">{g.codeBss}</span> — {g.aquifere ?? "aquifère non renseigné"}
+                        {g.profondeurInvestigation && ` (prof. ${g.profondeurInvestigation} m)`}
+                        {g.dateFinMesure ? ` — arrêtée ${g.dateFinMesure}` : " — suivi actif"}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Tile>
+            )}
+
+            {selectedAddress && (
+              <Tile title="Réseau de chaleur urbain" loading={heatNetwork === null}>
+                {heatNetwork && (
+                  <div className="text-xs text-muted-foreground">
+                    {heatNetwork.isEligible ? (
+                      <p>
+                        Point éligible au réseau <span className="font-medium">{heatNetwork.networkName ?? "?"}</span> — à{" "}
+                        {heatNetwork.distanceMeters} m{heatNetwork.manager && `, géré par ${heatNetwork.manager}`}.
+                      </p>
+                    ) : heatNetwork.futureNetwork ? (
+                      <p>Pas éligible actuellement — un réseau est en projet à proximité.</p>
+                    ) : (
+                      <p>Aucun réseau de chaleur existant ou en projet à proximité.</p>
+                    )}
+                  </div>
                 )}
               </Tile>
             )}

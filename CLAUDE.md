@@ -944,6 +944,53 @@ routes (`/api/sit/cavites`, `/api/sit/sites-pollues`,
 les deux sous-domaines, un asset statique versionné du dernier build
 répond 200 (confirme que le sync S3 a bien pris).
 
+**Demande utilisateur : couvrir aussi les disciplines techniques
+d'Archiaccess (structures, géotechnique, thermique, MEP/fluides,
+acoustique, TP/VRD, environnement, management de projet, disciplines de
+niche — liste complète fournie par l'utilisateur)** (2026-08-31). Point
+clarifié avant de coder (comme demandé) : la plupart de ces disciplines
+(Eurocodes 2/3/4/5, dimensionnement CVC, acoustique de salle, méthodes
+BIM/OPC, scénographie, salles blanches, travaux hyperbares...) ne sont
+pas des jeux de données interrogeables par site — ce sont des
+savoir-faire d'ingénierie et des textes normatifs, sans équivalent
+data.gouv.fr. Question posée à l'utilisateur : connecteurs SIT (données
+publiques par site) et/ou corpus normatif pour le RAG existant (pgvector)
+d'Archiaccess AI ? **Réponse : les deux, en deux chantiers séparés** — le
+second (corpus normatif Eurocodes/DTU/RE2020 indexé dans le coffre RAG
+pour l'expertise du copilote) reste à faire, pas commencé.
+
+Premier chantier (connecteurs SIT) démarré, recherche par appel réel
+comme toujours :
+- **Hub'Eau / niveaux_nappes** (`lib/data-sources/nappes.ts`, nouveau) —
+  plateforme API officielle du Service Public Français des Données de
+  l'Eau (`hubeau.eaufrance.fr`), stations de mesure piézométrique
+  (ADES/BSS) par code commune. Pertinent pour géotechnique/hydrogéologie
+  (rabattement de nappe, profondeur d'investigation, aquifère). Validé
+  en direct (7 stations trouvées sur Reims, tous les champs confirmés).
+- **France Chaleur Urbaine** (`lib/data-sources/chaleur-urbaine.ts`,
+  nouveau) — éligibilité d'un point à un réseau de chaleur urbain
+  existant ou en projet (`france-chaleur-urbaine.beta.gouv.fr/api/v1/
+  eligibility`), endpoint non documenté publiquement, retrouvé par essais
+  successifs sur le site officiel puis validé en direct. Pertinent pour
+  "Réseaux de chaleur et énergies renouvelables".
+- Exposés via `app/api/sit/nappes/route.ts` et
+  `app/api/sit/chaleur-urbaine/route.ts`, wirés dans les tuiles du
+  tableau de bord et `formatContext()`/`SitSnapshot`, même pattern
+  `withVault` que les 12 connecteurs existants.
+- **Autres candidats de cette liste testés mais pas encore aboutis** :
+  BRGM/BSS (géotechnique, sondages/forages) — dataset trouvé sur
+  data.gouv.fr mais aucun endpoint REST fonctionnel retrouvé (webservices
+  historiques en 404, tentative WFS bloquée par le proxy de cet
+  environnement) ; INPN (écologie/biodiversité, zonages réglementaires) —
+  `api.inpn.mnhn.fr` systématiquement rejeté par le proxy sortant de cet
+  environnement (502 "policy denial or upstream failure", à re-tester
+  depuis un autre environnement) ; ASN (nucléaire) et index BT/TP
+  (économie de la construction) — pas encore recherchés, prochaine
+  itération.
+- `tsc --noEmit` et `next build` passent (les 2 nouvelles routes
+  apparaissent dans le build). **Pas encore déployé** — credentials AWS
+  de cette session expirées avant le déploiement.
+
 Prochaines étapes :
 1. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
    redéploiement à chaque changement de code (actuellement manuel via
