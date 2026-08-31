@@ -10,10 +10,74 @@ import type { Parcel } from "@/lib/data-sources/cadastre"
 import type { CommuneRisks } from "@/lib/data-sources/georisques"
 import type { Mutation } from "@/lib/data-sources/dvf"
 import type { Company } from "@/lib/data-sources/entreprises"
+import type { UrbanZone } from "@/lib/data-sources/urbanisme"
+import type { DpeRecord } from "@/lib/data-sources/dpe"
+import type { BodaccAnnouncement } from "@/lib/data-sources/bodacc"
 
 interface ChatMessage {
   role: "user" | "assistant"
   content: string
+}
+
+// Instantané des données actuellement chargées dans le tableau de bord —
+// passé explicitement à formatContext()/sendAiMessage() plutôt que lu
+// depuis le state React, pour éviter de capturer des valeurs pas encore
+// à jour (setState est asynchrone : juste après un setParcels(...), le
+// state "parcels" du closure courant peut encore être l'ancien).
+interface SitSnapshot {
+  address?: AddressResult | null
+  parcels?: Parcel[] | null
+  risks?: CommuneRisks | null
+  mutations?: Mutation[] | null
+  urbanZones?: UrbanZone[] | null
+  dpeRecords?: DpeRecord[] | null
+  companies?: Company[]
+  bodaccBySiren?: Record<string, BodaccAnnouncement[]>
+}
+
+function formatContext(s: SitSnapshot): string {
+  const parts: string[] = []
+  if (s.address) {
+    parts.push(`Adresse sélectionnée : ${s.address.label} (${s.address.postcode} ${s.address.city}, code INSEE ${s.address.citycode})`)
+  }
+  if (s.parcels?.[0]) {
+    const p = s.parcels[0]
+    parts.push(`Parcelle cadastrale : section ${p.section} n°${p.numero}, ${p.contenanceM2} m², identifiant ${p.idu}`)
+  }
+  if (s.risks) {
+    const riskLabels = s.risks.risks.map((r) => r.label).join(", ") || "aucun risque recensé"
+    parts.push(
+      `Risques (commune ${s.risks.commune}) : zone sismique ${s.risks.seismicZone ?? "non renseignée"}, potentiel radon ${s.risks.radonPotential ?? "non renseigné"}, risques : ${riskLabels}`,
+    )
+  }
+  if (s.urbanZones && s.urbanZones.length > 0) {
+    parts.push(`Urbanisme (PLU/POS) : ${s.urbanZones.map((z) => `${z.description} (${z.label}${z.type ? `, type ${z.type}` : ""})`).join(" ; ")}`)
+  }
+  if (s.mutations && s.mutations.length > 0) {
+    const last = s.mutations[0]
+    parts.push(
+      `DVF : ${s.mutations.length} vente(s) recensée(s) sur cette section, la plus récente le ${last.date}${last.valeurFonciere ? ` pour ${last.valeurFonciere.toLocaleString("fr-FR")} €` : ""}.`,
+    )
+  }
+  if (s.dpeRecords && s.dpeRecords.length > 0) {
+    const labels = s.dpeRecords.map((d) => d.etiquetteEnergie).filter(Boolean).join(", ")
+    parts.push(`DPE à proximité : ${s.dpeRecords.length} diagnostic(s) trouvé(s), étiquettes énergie : ${labels || "non renseignées"}.`)
+  }
+  if (s.companies && s.companies.length > 0) {
+    parts.push(
+      `Entreprises trouvées : ${s.companies
+        .map((c) => {
+          const announcements = s.bodaccBySiren?.[c.siren] ?? []
+          const bodacc =
+            announcements.length > 0
+              ? ` — BODACC : ${announcements.length} annonce(s), la plus récente : ${announcements[0].famille} le ${announcements[0].datePublication}`
+              : ""
+          return `${c.nom} (SIREN ${c.siren}${c.adresse ? `, ${c.adresse}` : ""}, ${c.etatAdministratif ?? "statut inconnu"})${bodacc}`
+        })
+        .join(" ; ")}`,
+    )
+  }
+  return parts.join("\n")
 }
 
 // Tableau de bord du SIT : recherche universelle (adresse OU entreprise —
@@ -36,49 +100,21 @@ function Dashboard() {
   const [error, setError] = useState("")
   const [addresses, setAddresses] = useState<AddressResult[]>([])
   const [companies, setCompanies] = useState<Company[]>([])
+  const [bodaccBySiren, setBodaccBySiren] = useState<Record<string, BodaccAnnouncement[]>>({})
 
   const [selectedAddress, setSelectedAddress] = useState<AddressResult | null>(null)
   const [parcels, setParcels] = useState<Parcel[] | null>(null)
   const [risks, setRisks] = useState<CommuneRisks | null>(null)
   const [mutations, setMutations] = useState<Mutation[] | null>(null)
+  const [urbanZones, setUrbanZones] = useState<UrbanZone[] | null>(null)
+  const [dpeRecords, setDpeRecords] = useState<DpeRecord[] | null>(null)
 
   const [aiConversationId, setAiConversationId] = useState<string>()
   const [aiMessages, setAiMessages] = useState<ChatMessage[]>([])
   const [aiInput, setAiInput] = useState("")
   const [isAiSending, setIsAiSending] = useState(false)
 
-  function buildContext(currentCompanies = companies): string {
-    const parts: string[] = []
-    if (selectedAddress) {
-      parts.push(`Adresse sélectionnée : ${selectedAddress.label} (${selectedAddress.postcode} ${selectedAddress.city}, code INSEE ${selectedAddress.citycode})`)
-    }
-    if (parcels && parcels[0]) {
-      const p = parcels[0]
-      parts.push(`Parcelle cadastrale : section ${p.section} n°${p.numero}, ${p.contenanceM2} m², identifiant ${p.idu}`)
-    }
-    if (risks) {
-      const riskLabels = risks.risks.map((r) => r.label).join(", ") || "aucun risque recensé"
-      parts.push(
-        `Risques (commune ${risks.commune}) : zone sismique ${risks.seismicZone ?? "non renseignée"}, potentiel radon ${risks.radonPotential ?? "non renseigné"}, risques : ${riskLabels}`,
-      )
-    }
-    if (mutations && mutations.length > 0) {
-      const last = mutations[0]
-      parts.push(
-        `DVF : ${mutations.length} vente(s) recensée(s) sur cette section, la plus récente le ${last.date}${last.valeurFonciere ? ` pour ${last.valeurFonciere.toLocaleString("fr-FR")} €` : ""}.`,
-      )
-    }
-    if (currentCompanies.length > 0) {
-      parts.push(
-        `Entreprises trouvées : ${currentCompanies
-          .map((c) => `${c.nom} (SIREN ${c.siren}${c.adresse ? `, ${c.adresse}` : ""}, ${c.etatAdministratif ?? "statut inconnu"})`)
-          .join(" ; ")}`,
-      )
-    }
-    return parts.join("\n")
-  }
-
-  async function sendAiMessage(text: string, currentCompanies = companies) {
+  async function sendAiMessage(text: string, snapshot: SitSnapshot) {
     if (!text.trim() || isAiSending) return
     setAiMessages((prev) => [...prev, { role: "user", content: text }])
     setIsAiSending(true)
@@ -86,7 +122,7 @@ function Dashboard() {
       const res = await fetch("/api/mistral/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId: aiConversationId, message: text, context: buildContext(currentCompanies) }),
+        body: JSON.stringify({ conversationId: aiConversationId, message: text, context: formatContext(snapshot) }),
       })
       const data = await res.json()
       if (data.success) {
@@ -105,7 +141,18 @@ function Dashboard() {
     const text = aiInput.trim()
     if (!text) return
     setAiInput("")
-    await sendAiMessage(text)
+    await sendAiMessage(text, { address: selectedAddress, parcels, risks, mutations, urbanZones, dpeRecords, companies, bodaccBySiren })
+  }
+
+  async function loadBodacc(currentCompanies: Company[]): Promise<Record<string, BodaccAnnouncement[]>> {
+    if (currentCompanies.length === 0) return {}
+    const entries = await Promise.all(
+      currentCompanies.map(async (c) => {
+        const res = await fetch(`/api/sit/bodacc?siren=${c.siren}`).then((r) => r.json())
+        return [c.siren, res.success ? (res.announcements as BodaccAnnouncement[]) : []] as const
+      }),
+    )
+    return Object.fromEntries(entries)
   }
 
   async function search(e: React.FormEvent) {
@@ -117,6 +164,9 @@ function Dashboard() {
     setParcels(null)
     setRisks(null)
     setMutations(null)
+    setUrbanZones(null)
+    setDpeRecords(null)
+    setBodaccBySiren({})
     setAiConversationId(undefined)
     setAiMessages([])
     try {
@@ -128,15 +178,24 @@ function Dashboard() {
         setCompanies([])
         return
       }
-      setAddresses(data.addresses)
-      setCompanies(data.companies)
-      if (data.addresses.length === 0 && data.companies.length === 0) {
+      const foundAddresses: AddressResult[] = data.addresses
+      const foundCompanies: Company[] = data.companies
+      setAddresses(foundAddresses)
+      setCompanies(foundCompanies)
+
+      if (foundAddresses.length === 0 && foundCompanies.length === 0) {
         setError("Aucun résultat pour cette recherche.")
-      } else if (data.addresses.length === 0 && data.companies.length > 0) {
+        return
+      }
+
+      const bodacc = await loadBodacc(foundCompanies)
+      setBodaccBySiren(bodacc)
+
+      if (foundAddresses.length === 0 && foundCompanies.length > 0) {
         // Que des entreprises : rien à sélectionner, on peut résumer tout de suite.
         void sendAiMessage(
           "Fais un résumé synthétique des informations ci-dessus, pertinent pour une étude AMO/OPC (par exemple pour vérifier un partenaire de groupement). Sois concis (5-8 lignes maximum).",
-          data.companies,
+          { companies: foundCompanies, bodaccBySiren: bodacc },
         )
       }
     } finally {
@@ -149,16 +208,25 @@ function Dashboard() {
     setParcels(null)
     setRisks(null)
     setMutations(null)
+    setUrbanZones(null)
+    setDpeRecords(null)
 
     const [lon, lat] = addr.coordinates
-    const [parcelsRes, risksRes] = await Promise.all([
+    const [parcelsRes, risksRes, urbanismeRes, dpeRes] = await Promise.all([
       fetch(`/api/sit/parcels?lon=${lon}&lat=${lat}`).then((r) => r.json()),
       fetch(`/api/sit/risks?codeInsee=${addr.citycode}`).then((r) => r.json()),
+      fetch(`/api/sit/urbanisme?lon=${lon}&lat=${lat}`).then((r) => r.json()),
+      fetch(`/api/sit/dpe?lon=${lon}&lat=${lat}`).then((r) => r.json()),
     ])
 
     const loadedParcels: Parcel[] = parcelsRes.success ? parcelsRes.parcels : []
+    const loadedRisks: CommuneRisks | null = risksRes.success ? risksRes.risks : null
+    const loadedUrbanZones: UrbanZone[] = urbanismeRes.success ? urbanismeRes.zones : []
+    const loadedDpe: DpeRecord[] = dpeRes.success ? dpeRes.records : []
     setParcels(loadedParcels)
-    if (risksRes.success) setRisks(risksRes.risks)
+    setRisks(loadedRisks)
+    setUrbanZones(loadedUrbanZones)
+    setDpeRecords(loadedDpe)
 
     let loadedMutations: Mutation[] = []
     if (loadedParcels[0]) {
@@ -170,7 +238,17 @@ function Dashboard() {
     setMutations(loadedMutations)
 
     void sendAiMessage(
-      "Fais un résumé synthétique des informations ci-dessus (adresse, cadastre, risques, DVF), pertinent pour une étude technique AMO/OPC. Sois concis (5-8 lignes maximum), et signale si une donnée importante manque.",
+      "Fais un résumé synthétique des informations ci-dessus (adresse, cadastre, urbanisme, risques, DVF, DPE), pertinent pour une étude technique AMO/OPC. Sois concis (5-8 lignes maximum), et signale si une donnée importante manque.",
+      {
+        address: addr,
+        parcels: loadedParcels,
+        risks: loadedRisks,
+        mutations: loadedMutations,
+        urbanZones: loadedUrbanZones,
+        dpeRecords: loadedDpe,
+        companies,
+        bodaccBySiren,
+      },
     )
   }
 
@@ -262,6 +340,21 @@ function Dashboard() {
             )}
 
             {selectedAddress && (
+              <Tile title="Urbanisme (PLU/POS)" loading={urbanZones === null}>
+                {urbanZones && urbanZones.length === 0 && <p className="text-xs text-muted-foreground">Aucune zone trouvée (document non couvert par le GPU).</p>}
+                {urbanZones && urbanZones.length > 0 && (
+                  <ul className="space-y-1 text-xs text-muted-foreground">
+                    {urbanZones.map((z, i) => (
+                      <li key={i}>
+                        {z.description} (<span className="font-mono">{z.label}</span>){z.type && ` — type ${z.type}`}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Tile>
+            )}
+
+            {selectedAddress && (
               <Tile title="Géorisques" loading={risks === null}>
                 {risks && (
                   <div className="space-y-1 text-xs text-muted-foreground">
@@ -292,6 +385,23 @@ function Dashboard() {
                         {m.date} — {m.nature} — {m.adresse}
                         {m.valeurFonciere !== null && ` — ${m.valeurFonciere.toLocaleString("fr-FR")} €`}
                         {m.surfaceReelleBati !== null && ` (${m.surfaceReelleBati} m²)`}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Tile>
+            )}
+
+            {selectedAddress && (
+              <Tile title="DPE à proximité" loading={dpeRecords === null}>
+                {dpeRecords && dpeRecords.length === 0 && <p className="text-xs text-muted-foreground">Aucun diagnostic répertorié à proximité.</p>}
+                {dpeRecords && dpeRecords.length > 0 && (
+                  <ul className="custom-scrollbar max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
+                    {dpeRecords.map((d) => (
+                      <li key={d.numeroDpe}>
+                        {d.adresse} — énergie <span className="font-medium">{d.etiquetteEnergie ?? "?"}</span> / GES{" "}
+                        <span className="font-medium">{d.etiquetteGes ?? "?"}</span>
+                        {d.typeBatiment && ` (${d.typeBatiment}${d.surfaceHabitable ? `, ${d.surfaceHabitable} m²` : ""})`}
                       </li>
                     ))}
                   </ul>
@@ -346,6 +456,18 @@ function Dashboard() {
                     </>
                   )}
                 </dl>
+                {(bodaccBySiren[c.siren]?.length ?? 0) > 0 && (
+                  <div className="mt-3 border-t border-border/50 pt-2">
+                    <h4 className="mb-1 text-xs font-medium text-muted-foreground">BODACC — annonces légales</h4>
+                    <ul className="custom-scrollbar max-h-32 space-y-1 overflow-y-auto text-xs text-muted-foreground">
+                      {bodaccBySiren[c.siren].map((a) => (
+                        <li key={a.id}>
+                          {a.datePublication} — {a.famille} ({a.type})
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </Tile>
             ))}
           </div>
