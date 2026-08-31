@@ -224,13 +224,11 @@ petit bundle sur S3, instance EC2 spot avec rôle IAM scoping minimal,
 `aws ssm send-command`, cleanup systématique après usage) — pas besoin
 de repartir de zéro à chaque fois.
 
-**Reste à nettoyer** : une deuxième instance bastion (lancée pour un
-test bout-en-bout du pipeline RAG complet — embedding→pgvector→recherche
-→réponse Mistral avec contexte) et son rôle IAM
-`archiaccess-ai-sit-smoketest-bastion` sont restés provisionnés, les
-identifiants AWS ayant expiré pendant l'attente de l'enregistrement SSM.
-À terminer/supprimer dès la prochaine session avec des identifiants
-valides (coût négligeable en attendant, instance spot t3.micro). Ce test
+**Nettoyé** : le bastion de smoketest RAG mentionné ci-dessus (et son
+rôle IAM `archiaccess-ai-sit-smoketest-bastion`) ne sont plus
+provisionnés — vérifié le 2026-08-31 via `aws ec2 describe-instances`/
+`aws iam list-roles` (seuls `archiaccess-ai-sit-app` et
+`archiaccess-ai-sit-nat-instance` restent, tous deux légitimes). Ce test
 bout-en-bout du RAG complet lui-même reste à refaire si jugé utile — pas
 bloquant, la brique pgvector a déjà été validée au niveau SQL (`psql`)
 et le connecteur Mistral testé séparément.
