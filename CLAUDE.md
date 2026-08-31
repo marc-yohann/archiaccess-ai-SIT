@@ -723,6 +723,45 @@ dynamique, `next/image` sert désormais l'URL brute (`/logo-ai.png` etc.)
 directement. Testé : les deux logos répondent 200 en `image/png` sur les
 deux domaines.
 
+**Premier compte admin créé par l'utilisateur avec succès** (2026-08-30,
+via `/admin`, bootstrap fermé et vérifié comme prévu). Suite à ça,
+plusieurs retours rapides traités et déployés dans la foulée :
+
+- **Logo recadré/trop petit sur les écrans de connexion** : les classes
+  `rounded-2xl`/`rounded-xl`/`rounded-lg` appliquées au conteneur
+  `next/image` rognaient les coins du logo au lieu de le laisser
+  s'afficher tel quel. Retiré partout, tailles augmentées sur les écrans
+  où le logo est mis en avant (connexion, bootstrap, changement de mot
+  de passe, écran d'accueil du chat). Texte de l'écran de connexion
+  repris deux fois selon retours successifs, version finale : "Plateforme
+  interne Archiaccess — accès réservé à l'équipe Archiaccess."
+- **Chat `/ai` : lien "Administration" absent** — je ne l'avais ajouté
+  que sur la page d'accueil (`app/page.tsx`), aucun moyen d'atteindre
+  `/admin` depuis l'écran de chat lui-même. Ajouté dans la sidebar du
+  chat (visible seulement si `isAdmin`).
+- **Chat `/ai` : mise en page cassée (collée à gauche)** — le conteneur
+  principal n'avait pas `justify-center`, donc le panneau (`max-w-5xl`)
+  restait plaqué au bord gauche sur un écran large au lieu d'être
+  centré. Corrigé, puis l'utilisateur a demandé mieux : un vrai plein
+  écran façon ChatGPT/Claude (sidebar collée au bord, pas de carte
+  flottante avec marges), en gardant le même CSS (`liquid-glass-panel`,
+  `chrome-black`, etc.) sur la sidebar et les bulles — seul le
+  conteneur extérieur a changé (`h-screen w-full`, plus de
+  `rounded-3xl`/`max-w-6xl`/marge). Le fil de conversation et la barre
+  de saisie gardent `max-w-3xl` centré pour rester lisibles sur un très
+  grand écran, comme ChatGPT/Claude le font aussi. Sidebar responsive :
+  visible en permanence à partir de la largeur tablette, repliée en
+  tiroir sur mobile (bouton hamburger + overlay).
+- **Le copilote révélait le modèle/fournisseur sous-jacent** : à "Tu es
+  quel modèle d'IA ?", il répondait "Je suis un grand modèle de langage
+  développé par Mistral AI." — trop d'information technique exposée à
+  l'employé. Ajout d'une section "Identité" au prompt système
+  (`app/api/mistral/chat/route.ts`) : le copilote se présente uniquement
+  comme "Archiaccess AI", sans jamais citer de fournisseur ni de nom de
+  modèle technique, même sur demande directe. Testé et confirmé par
+  l'utilisateur : "Je suis Archiaccess AI, l'assistant interne
+  d'Archiaccess."
+
 Prochaines étapes :
 1. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
    redéploiement à chaque changement de code (actuellement manuel via
