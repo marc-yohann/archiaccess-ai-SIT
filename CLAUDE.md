@@ -832,6 +832,113 @@ ou l'autre).
   sélectionné — ne pas proposer/ajouter de nouvelles sources de ma
   propre initiative avant ce point de passage.
 
+**SIT + comptes employés déployés, "coffre" (second brain) conçu et câblé
+sur les 8 connecteurs existants** (2026-08-31) : le tableau de bord SIT
+(urbanisme/DPE/BODACC compris) et le modèle de comptes employés
+individuels ci-dessus ont été construits, buildés (`tsc`/`next build`
+verts) puis déployés avec succès. Ensuite, discussion "Passons au coffre
+du SIT tu propose quoi comme architecture afin que ce soit léger" : j'ai
+proposé un cache à TTL, l'utilisateur a corrigé explicitement — **"si le
+coffre se rempli au fur et à mesure et le but c'est que ça reste et ne
+supprime pas, ça fait office de second brain"**. Conception retenue en
+conséquence, dans `lib/data-vault.ts` :
+- Table `DataCacheEntry` (`prisma/schema.prisma`, `source` + `cacheKey`
+  uniques, `payload` JSON, `fetchedAt`) — **jamais de suppression/purge**,
+  accumulation permanente de tout ce qui a été interrogé un jour.
+- `withVault(source, cacheKey, fetchLive)` : tente TOUJOURS l'appel live
+  en premier (fraîcheur de la donnée) ; en cas d'échec, retombe sur la
+  dernière valeur en cache si elle existe (sinon relance l'erreur
+  d'origine) ; en cas de succès, upsert best-effort dans `DataCacheEntry`
+  (un échec d'écriture du cache n'empêche jamais de répondre).
+- Les 8 connecteurs existants (`ban`, `cadastre`, `georisques`, `dvf`,
+  `entreprises`, `urbanisme`, `dpe`, `bodacc`) ont chacun été refactorés
+  selon le même schéma : la fonction publique appelle `withVault(...)`,
+  l'implémentation d'origine devient une fonction privée `fetchXxxLive`.
+- Migration écrite à la main (`prisma/migrations/20260831130000_data_cache_entry/`,
+  même raison que d'habitude : pas de shadow DB accessible depuis cet
+  environnement), appliquée via le bastion EC2 + SSM habituel (voir
+  plus haut) — capacité spot indisponible sur le premier sous-réseau
+  tenté (`eu-west-3a`), relancé avec succès sur `eu-west-3b`. Bastion
+  nettoyé après usage. **Déployé.**
+
+**Recherche commune sur les nouvelles sources ("je veux de tout") —
+quatre connecteurs supplémentaires ajoutés au coffre, quatre écartés
+pour des raisons d'architecture ou d'absence d'API** (2026-08-31, pas
+encore déployé). Suite de "Ok maintenant il faut l'alimenter" : la
+liste de candidats proposée à partir des sections **Données** et **API**
+de data.gouv.fr a été validée en bloc par l'utilisateur ("En réalité
+sans te mentir je veux de tout"). Chaque source vérifiée par appel réel
+avant d'écrire du code, comme toujours :
+
+Ajoutés (suivent exactement le pattern `withVault` ci-dessus — connecteur
+`lib/data-sources/*.ts`, route `app/api/sit/*/route.ts`, tuile dans
+`app/sit/page.tsx`, extension de `formatContext()`/`SitSnapshot`) :
+- `lib/data-sources/cavites.ts` — cavités souterraines (carrières, caves,
+  ouvrages civils) par commune, `georisques.gouv.fr/api/v1/cavites`.
+  Complète le connecteur risques existant : point de vigilance
+  géotechnique direct pour une étude AMO/OPC.
+- `lib/data-sources/sites-pollues.ts` — sites et sols pollués. **BASOL/
+  BASIAS ont été renommés SSP/CASIAS côté Géorisques** (les anciens noms
+  d'endpoint `/basol`/`/basias` renvoient 404, le bon est `/api/v1/ssp`)
+  — terminologie vérifiée en direct avant d'écrire le code. Combine les
+  sites recensés (`casias`) et les instructions en cours
+  (`instructions`).
+- `lib/data-sources/servitudes.ts` — servitudes d'utilité publique
+  (périmètres monuments historiques, réseaux, captages...) via l'API GPU
+  de l'IGN, endpoint `assiette-sup-s`. Point notable : contrairement à
+  `zone-urba` (urbanisme, a besoin d'une bbox), cet endpoint accepte un
+  `Point` directement — vérifié en direct.
+- `lib/data-sources/boamp.ts` — marchés publics (BOAMP), même plateforme
+  opendatasoft que le BODACC déjà intégré. Recherche par département
+  (dérivé du code INSEE de l'adresse via `departmentCodeFromCityCode()`)
+  plutôt que par SIREN — vue "marché" locale plutôt que liée à une
+  entreprise précise.
+- **Piège de bundling découvert en construisant celui-ci** :
+  `departmentCodeFromCityCode()` est une fonction pure (pas d'accès
+  réseau/DB), mais la définir dans `lib/data-sources/boamp.ts` et
+  l'importer depuis le composant client `app/sit/page.tsx` faisait
+  échouer `next build` (`Module not found: 'tls'`/`'util/types'`) —
+  parce que TOUT le module `boamp.ts` (y compris son import de
+  `withVault`/Prisma/`pg`, du code serveur uniquement) se retrouvait
+  entraîné dans le bundle navigateur dès qu'une seule valeur (pas un
+  type) en était importée côté client. Corrigé en extrayant la fonction
+  dans un nouveau fichier neutre `lib/insee.ts`, sans aucune dépendance
+  serveur — **à retenir pour tout futur utilitaire partagé entre un
+  connecteur serveur et une page client** : le séparer dès qu'il n'a pas
+  besoin de `withVault`/Prisma, plutôt que de le laisser dans le fichier
+  du connecteur.
+
+Écartés (pas de simple connecteur REST — architecture différente ou
+API introuvable, à ne pas construire à l'identique du pattern existant
+sans en reparler) :
+- **INSEE données carroyées** : uniquement des fichiers statiques
+  (shapefile, flux WMS, PDF de documentation) — pas d'API de requête par
+  point/commune. Intégrer cette donnée demanderait un pipeline d'import
+  ETL (téléchargement + parsing shapefile en base), pas un simple appel
+  live comme les autres connecteurs.
+- **RPLS (logement social)** : mêmes indices qu'INSEE carroyées — les
+  jeux de données data.gouv.fr trouvés sont distribués par commune sous
+  forme de fichiers statiques, pas une API interrogeable.
+- **transport.data.gouv.fr** : l'API existe et répond
+  (`/api/datasets?type=public-transit`), mais c'est un catalogue de flux
+  GTFS statiques téléchargeables par réseau de transport, pas une API de
+  requête "arrêts à proximité d'un point" comme les autres connecteurs —
+  intégrer ça correctement demanderait de télécharger et parser des
+  fichiers GTFS, un chantier à part entière plutôt qu'un connecteur de
+  plus.
+- **Mérimée (monuments historiques)** : confirmé que l'ancienne
+  plateforme (`data.culture.gouv.fr`) a bien migré vers
+  `culture.data.gouv.fr`/`api.pop.culture.gouv.fr` ("POPv2 API"), mais
+  cette nouvelle API ne publie aucune documentation découvrable — une
+  dizaine de chemins REST plausibles testés en direct (`/search/merimee`,
+  `/notices`, `/collection/merimee`...), tous 404. Toujours pas de point
+  d'entrée fonctionnel trouvé — inchangé depuis la première tentative.
+
+`tsc --noEmit` et `next build` passent (les 4 nouvelles routes
+apparaissent dans le build). **Pas encore déployé** au moment d'écrire
+ceci — credentials AWS de cette session expirées avant le déploiement,
+en attente de nouvelles.
+
 Prochaines étapes :
 1. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
    redéploiement à chaque changement de code (actuellement manuel via

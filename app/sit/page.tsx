@@ -13,6 +13,11 @@ import type { Company } from "@/lib/data-sources/entreprises"
 import type { UrbanZone } from "@/lib/data-sources/urbanisme"
 import type { DpeRecord } from "@/lib/data-sources/dpe"
 import type { BodaccAnnouncement } from "@/lib/data-sources/bodacc"
+import type { CavitesResult } from "@/lib/data-sources/cavites"
+import type { PollutedSitesResult } from "@/lib/data-sources/sites-pollues"
+import type { Servitude } from "@/lib/data-sources/servitudes"
+import type { PublicMarket } from "@/lib/data-sources/boamp"
+import { departmentCodeFromCityCode } from "@/lib/insee"
 
 interface ChatMessage {
   role: "user" | "assistant"
@@ -33,6 +38,10 @@ interface SitSnapshot {
   dpeRecords?: DpeRecord[] | null
   companies?: Company[]
   bodaccBySiren?: Record<string, BodaccAnnouncement[]>
+  cavites?: CavitesResult | null
+  pollutedSites?: PollutedSitesResult | null
+  servitudes?: Servitude[] | null
+  publicMarkets?: PublicMarket[] | null
 }
 
 function formatContext(s: SitSnapshot): string {
@@ -62,6 +71,38 @@ function formatContext(s: SitSnapshot): string {
   if (s.dpeRecords && s.dpeRecords.length > 0) {
     const labels = s.dpeRecords.map((d) => d.etiquetteEnergie).filter(Boolean).join(", ")
     parts.push(`DPE à proximité : ${s.dpeRecords.length} diagnostic(s) trouvé(s), étiquettes énergie : ${labels || "non renseignées"}.`)
+  }
+  if (s.cavites) {
+    parts.push(
+      s.cavites.total > 0
+        ? `Cavités souterraines (commune) : ${s.cavites.total} recensée(s), ex. ${s.cavites.cavites
+            .slice(0, 3)
+            .map((c) => `${c.type}${c.nom ? ` "${c.nom}"` : ""}`)
+            .join(", ")}.`
+        : "Cavités souterraines (commune) : aucune recensée.",
+    )
+  }
+  if (s.pollutedSites) {
+    parts.push(
+      s.pollutedSites.totalCasias + s.pollutedSites.totalInstructions > 0
+        ? `Sites et sols pollués (SSP/CASIAS, commune) : ${s.pollutedSites.totalCasias} site(s) recensé(s), ${s.pollutedSites.totalInstructions} instruction(s) en cours.`
+        : "Sites et sols pollués (SSP/CASIAS, commune) : aucun recensé.",
+    )
+  }
+  if (s.servitudes) {
+    parts.push(
+      s.servitudes.length > 0
+        ? `Servitudes d'utilité publique : ${s.servitudes.map((sv) => `${sv.label} (${sv.type})`).join(" ; ")}.`
+        : "Servitudes d'utilité publique : aucune identifiée sur ce point.",
+    )
+  }
+  if (s.publicMarkets && s.publicMarkets.length > 0) {
+    parts.push(
+      `Marchés publics récents (département) : ${s.publicMarkets
+        .slice(0, 3)
+        .map((m) => `${m.acheteur} — ${m.objet} (${m.datePublication})`)
+        .join(" ; ")}.`,
+    )
   }
   if (s.companies && s.companies.length > 0) {
     parts.push(
@@ -108,6 +149,10 @@ function Dashboard() {
   const [mutations, setMutations] = useState<Mutation[] | null>(null)
   const [urbanZones, setUrbanZones] = useState<UrbanZone[] | null>(null)
   const [dpeRecords, setDpeRecords] = useState<DpeRecord[] | null>(null)
+  const [cavites, setCavites] = useState<CavitesResult | null>(null)
+  const [pollutedSites, setPollutedSites] = useState<PollutedSitesResult | null>(null)
+  const [servitudes, setServitudes] = useState<Servitude[] | null>(null)
+  const [publicMarkets, setPublicMarkets] = useState<PublicMarket[] | null>(null)
 
   const [aiConversationId, setAiConversationId] = useState<string>()
   const [aiMessages, setAiMessages] = useState<ChatMessage[]>([])
@@ -141,7 +186,20 @@ function Dashboard() {
     const text = aiInput.trim()
     if (!text) return
     setAiInput("")
-    await sendAiMessage(text, { address: selectedAddress, parcels, risks, mutations, urbanZones, dpeRecords, companies, bodaccBySiren })
+    await sendAiMessage(text, {
+      address: selectedAddress,
+      parcels,
+      risks,
+      mutations,
+      urbanZones,
+      dpeRecords,
+      companies,
+      bodaccBySiren,
+      cavites,
+      pollutedSites,
+      servitudes,
+      publicMarkets,
+    })
   }
 
   async function loadBodacc(currentCompanies: Company[]): Promise<Record<string, BodaccAnnouncement[]>> {
@@ -167,6 +225,10 @@ function Dashboard() {
     setUrbanZones(null)
     setDpeRecords(null)
     setBodaccBySiren({})
+    setCavites(null)
+    setPollutedSites(null)
+    setServitudes(null)
+    setPublicMarkets(null)
     setAiConversationId(undefined)
     setAiMessages([])
     try {
@@ -210,23 +272,42 @@ function Dashboard() {
     setMutations(null)
     setUrbanZones(null)
     setDpeRecords(null)
+    setCavites(null)
+    setPollutedSites(null)
+    setServitudes(null)
+    setPublicMarkets(null)
 
     const [lon, lat] = addr.coordinates
-    const [parcelsRes, risksRes, urbanismeRes, dpeRes] = await Promise.all([
+    const codeDepartement = departmentCodeFromCityCode(addr.citycode)
+    const [parcelsRes, risksRes, urbanismeRes, dpeRes, cavitesRes, sitesPolluesRes, servitudesRes, boampRes] = await Promise.all([
       fetch(`/api/sit/parcels?lon=${lon}&lat=${lat}`).then((r) => r.json()),
       fetch(`/api/sit/risks?codeInsee=${addr.citycode}`).then((r) => r.json()),
       fetch(`/api/sit/urbanisme?lon=${lon}&lat=${lat}`).then((r) => r.json()),
       fetch(`/api/sit/dpe?lon=${lon}&lat=${lat}`).then((r) => r.json()),
+      fetch(`/api/sit/cavites?codeInsee=${addr.citycode}`).then((r) => r.json()),
+      fetch(`/api/sit/sites-pollues?codeInsee=${addr.citycode}`).then((r) => r.json()),
+      fetch(`/api/sit/servitudes?lon=${lon}&lat=${lat}`).then((r) => r.json()),
+      fetch(`/api/sit/boamp?codeDepartement=${codeDepartement}`).then((r) => r.json()),
     ])
 
     const loadedParcels: Parcel[] = parcelsRes.success ? parcelsRes.parcels : []
     const loadedRisks: CommuneRisks | null = risksRes.success ? risksRes.risks : null
     const loadedUrbanZones: UrbanZone[] = urbanismeRes.success ? urbanismeRes.zones : []
     const loadedDpe: DpeRecord[] = dpeRes.success ? dpeRes.records : []
+    const loadedCavites: CavitesResult | null = cavitesRes.success ? { total: cavitesRes.total, cavites: cavitesRes.cavites } : null
+    const loadedPollutedSites: PollutedSitesResult | null = sitesPolluesRes.success
+      ? { totalCasias: sitesPolluesRes.totalCasias, totalInstructions: sitesPolluesRes.totalInstructions, sites: sitesPolluesRes.sites }
+      : null
+    const loadedServitudes: Servitude[] = servitudesRes.success ? servitudesRes.servitudes : []
+    const loadedPublicMarkets: PublicMarket[] = boampRes.success ? boampRes.markets : []
     setParcels(loadedParcels)
     setRisks(loadedRisks)
     setUrbanZones(loadedUrbanZones)
     setDpeRecords(loadedDpe)
+    setCavites(loadedCavites)
+    setPollutedSites(loadedPollutedSites)
+    setServitudes(loadedServitudes)
+    setPublicMarkets(loadedPublicMarkets)
 
     let loadedMutations: Mutation[] = []
     if (loadedParcels[0]) {
@@ -238,7 +319,7 @@ function Dashboard() {
     setMutations(loadedMutations)
 
     void sendAiMessage(
-      "Fais un résumé synthétique des informations ci-dessus (adresse, cadastre, urbanisme, risques, DVF, DPE), pertinent pour une étude technique AMO/OPC. Sois concis (5-8 lignes maximum), et signale si une donnée importante manque.",
+      "Fais un résumé synthétique des informations ci-dessus (adresse, cadastre, urbanisme, risques, DVF, DPE, cavités, sites pollués, servitudes, marchés publics), pertinent pour une étude technique AMO/OPC. Sois concis (5-8 lignes maximum), et signale si une donnée importante manque.",
       {
         address: addr,
         parcels: loadedParcels,
@@ -248,6 +329,10 @@ function Dashboard() {
         dpeRecords: loadedDpe,
         companies,
         bodaccBySiren,
+        cavites: loadedCavites,
+        pollutedSites: loadedPollutedSites,
+        servitudes: loadedServitudes,
+        publicMarkets: loadedPublicMarkets,
       },
     )
   }
@@ -402,6 +487,80 @@ function Dashboard() {
                         {d.adresse} — énergie <span className="font-medium">{d.etiquetteEnergie ?? "?"}</span> / GES{" "}
                         <span className="font-medium">{d.etiquetteGes ?? "?"}</span>
                         {d.typeBatiment && ` (${d.typeBatiment}${d.surfaceHabitable ? `, ${d.surfaceHabitable} m²` : ""})`}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Tile>
+            )}
+
+            {selectedAddress && (
+              <Tile title="Cavités souterraines" loading={cavites === null}>
+                {cavites && cavites.total === 0 && <p className="text-xs text-muted-foreground">Aucune cavité recensée pour cette commune.</p>}
+                {cavites && cavites.total > 0 && (
+                  <>
+                    <p className="mb-1 text-xs text-muted-foreground">{cavites.total} cavité(s) recensée(s) dans la commune.</p>
+                    <ul className="custom-scrollbar max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
+                      {cavites.cavites.slice(0, 10).map((c) => (
+                        <li key={c.identifiant}>
+                          {c.type}
+                          {c.nom && ` — ${c.nom}`}
+                          {c.reperageGeo && ` (${c.reperageGeo})`}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </Tile>
+            )}
+
+            {selectedAddress && (
+              <Tile title="Sites et sols pollués (SSP/CASIAS)" loading={pollutedSites === null}>
+                {pollutedSites && pollutedSites.totalCasias + pollutedSites.totalInstructions === 0 && (
+                  <p className="text-xs text-muted-foreground">Aucun site recensé pour cette commune.</p>
+                )}
+                {pollutedSites && pollutedSites.totalCasias + pollutedSites.totalInstructions > 0 && (
+                  <>
+                    <p className="mb-1 text-xs text-muted-foreground">
+                      {pollutedSites.totalCasias} site(s) recensé(s), {pollutedSites.totalInstructions} instruction(s) en cours.
+                    </p>
+                    <ul className="custom-scrollbar max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
+                      {pollutedSites.sites.slice(0, 10).map((s) => (
+                        <li key={s.identifiantSsp}>
+                          {s.nom} — {s.statut}
+                          {s.adresse && ` (${s.adresse})`}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </Tile>
+            )}
+
+            {selectedAddress && (
+              <Tile title="Servitudes d'utilité publique" loading={servitudes === null}>
+                {servitudes && servitudes.length === 0 && <p className="text-xs text-muted-foreground">Aucune servitude identifiée sur ce point.</p>}
+                {servitudes && servitudes.length > 0 && (
+                  <ul className="space-y-1 text-xs text-muted-foreground">
+                    {servitudes.map((s, i) => (
+                      <li key={i}>
+                        {s.label} (<span className="font-mono">{s.type}</span>)
+                        {s.natureAssiette && ` — ${s.natureAssiette}`}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Tile>
+            )}
+
+            {selectedAddress && (
+              <Tile title="Marchés publics (BOAMP, département)" loading={publicMarkets === null}>
+                {publicMarkets && publicMarkets.length === 0 && <p className="text-xs text-muted-foreground">Aucun marché public récent trouvé.</p>}
+                {publicMarkets && publicMarkets.length > 0 && (
+                  <ul className="custom-scrollbar max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
+                    {publicMarkets.map((m) => (
+                      <li key={m.id}>
+                        <span className="font-medium">{m.acheteur}</span> — {m.objet} ({m.datePublication})
                       </li>
                     ))}
                   </ul>
