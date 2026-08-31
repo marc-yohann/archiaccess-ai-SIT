@@ -935,9 +935,16 @@ sans en reparler) :
   d'entrée fonctionnel trouvé — inchangé depuis la première tentative.
 
 `tsc --noEmit` et `next build` passent (les 4 nouvelles routes
-apparaissent dans le build). **Pas encore déployé** au moment d'écrire
-ceci — credentials AWS de cette session expirées avant le déploiement,
-en attente de nouvelles.
+apparaissent dans le build). **Déployé et testé bout en bout avec
+succès** (2026-08-31, avec de nouvelles credentials AWS) : build
+OpenNext, zip Lambda, synchronisation du bucket S3 des assets statiques
+— pas de nouveau fichier `public/` cette fois, donc pas de nouveau cache
+behavior CloudFront nécessaire. Vérifié en direct : les 4 nouvelles
+routes (`/api/sit/cavites`, `/api/sit/sites-pollues`,
+`/api/sit/servitudes`, `/api/sit/boamp`) répondent 401 sans session
+(gate d'auth active, ni 404 ni 500), `/sit` et `/ai` répondent 200 sur
+les deux sous-domaines, un asset statique versionné du dernier build
+répond 200 (confirme que le sync S3 a bien pris).
 
 Prochaines étapes :
 1. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
