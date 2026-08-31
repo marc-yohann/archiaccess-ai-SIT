@@ -984,9 +984,19 @@ comme toujours :
   environnement) ; INPN (écologie/biodiversité, zonages réglementaires) —
   `api.inpn.mnhn.fr` systématiquement rejeté par le proxy sortant de cet
   environnement (502 "policy denial or upstream failure", à re-tester
-  depuis un autre environnement) ; ASN (nucléaire) et index BT/TP
-  (économie de la construction) — pas encore recherchés, prochaine
-  itération.
+  depuis un autre environnement) ; **ASN (nucléaire)** — seuls un flux
+  RSS et un lexique trouvés sur data.gouv.fr côté ASN, aucun jeu de
+  données géolocalisé (installations, zonage) interrogeable — cohérent
+  avec le fait que cette discipline est très nichée pour Archiaccess ;
+  **index BT/TP et ICC (économie de la construction)** — recherchés à la
+  fois sur data.gouv.fr (aucun résultat pertinent) et sur la nouvelle
+  plateforme de diffusion INSEE Melodi (`api.insee.fr/melodi`,
+  accessible sans clé mais dont le paramètre de recherche `q` du
+  catalogue ne semble pas filtrer réellement — mêmes résultats
+  génériques quelle que soit la requête, dataset ID exact non
+  retrouvé). Aucun des deux n'a abouti dans cette itération — à
+  reprendre si jugé prioritaire (l'économie de la construction est une
+  discipline coeur pour l'AMO/OPC, contrairement au nucléaire).
 - `tsc --noEmit` et `next build` passent (les 2 nouvelles routes
   apparaissent dans le build). **Pas encore déployé** — credentials AWS
   de cette session expirées avant le déploiement.
