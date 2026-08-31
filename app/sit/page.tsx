@@ -1,273 +1,418 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { Search, Send, Sparkles } from "lucide-react"
 import { AuthGate } from "@/components/auth-gate"
 import type { AddressResult } from "@/lib/data-sources/ban"
 import type { Parcel } from "@/lib/data-sources/cadastre"
 import type { CommuneRisks } from "@/lib/data-sources/georisques"
 import type { Mutation } from "@/lib/data-sources/dvf"
+import type { Company } from "@/lib/data-sources/entreprises"
 
-// Connecteurs du hub SIT : recherche d'adresse (Base Adresse Nationale),
-// cadastre/parcelles (API Carto IGN), Géorisques (risques réglementaires),
-// DVF (valeurs foncières) — tous s'articulent autour d'une adresse
-// sélectionnée (DVF a en plus besoin de la section cadastrale, fournie
-// par ParcelList) — voir CLAUDE.md.
+interface ChatMessage {
+  role: "user" | "assistant"
+  content: string
+}
+
+// Tableau de bord du SIT : recherche universelle (adresse OU entreprise —
+// voir CLAUDE.md, "je veux pas que ce soit l'adresse seulement"), tous
+// les résultats affichés simultanément en tuiles denses plutôt qu'un
+// formulaire séquentiel, avec un panneau Archiaccess AI intégré qui
+// résume automatiquement les données chargées et répond aux questions
+// dessus (contexte transmis à /api/mistral/chat).
 export default function SitPage() {
   return (
     <AuthGate logoSrc="/logo-sit.png" appName="Archiaccess SIT">
-      <main className="glass-scene flex min-h-screen justify-center p-4">
-        <div className="flex w-full max-w-2xl flex-col gap-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Image src="/logo-sit.png" alt="Archiaccess SIT" width={44} height={44} />
-              <h1 className="text-lg font-medium">Système d'Information Technique</h1>
-            </div>
-            <Link href="/" className="text-sm text-muted-foreground hover:underline">
-              Accueil
-            </Link>
-          </div>
-          <AddressSearch />
-          <DocumentUpload />
-        </div>
-      </main>
+      <Dashboard />
     </AuthGate>
   )
 }
 
-function AddressSearch() {
+function Dashboard() {
   const [query, setQuery] = useState("")
-  const [results, setResults] = useState<AddressResult[]>([])
-  const [selected, setSelected] = useState<AddressResult | null>(null)
   const [isSearching, setIsSearching] = useState(false)
   const [error, setError] = useState("")
-  const [parcels, setParcels] = useState<Parcel[]>([])
+  const [addresses, setAddresses] = useState<AddressResult[]>([])
+  const [companies, setCompanies] = useState<Company[]>([])
+
+  const [selectedAddress, setSelectedAddress] = useState<AddressResult | null>(null)
+  const [parcels, setParcels] = useState<Parcel[] | null>(null)
+  const [risks, setRisks] = useState<CommuneRisks | null>(null)
+  const [mutations, setMutations] = useState<Mutation[] | null>(null)
+
+  const [aiConversationId, setAiConversationId] = useState<string>()
+  const [aiMessages, setAiMessages] = useState<ChatMessage[]>([])
+  const [aiInput, setAiInput] = useState("")
+  const [isAiSending, setIsAiSending] = useState(false)
+
+  function buildContext(currentCompanies = companies): string {
+    const parts: string[] = []
+    if (selectedAddress) {
+      parts.push(`Adresse sélectionnée : ${selectedAddress.label} (${selectedAddress.postcode} ${selectedAddress.city}, code INSEE ${selectedAddress.citycode})`)
+    }
+    if (parcels && parcels[0]) {
+      const p = parcels[0]
+      parts.push(`Parcelle cadastrale : section ${p.section} n°${p.numero}, ${p.contenanceM2} m², identifiant ${p.idu}`)
+    }
+    if (risks) {
+      const riskLabels = risks.risks.map((r) => r.label).join(", ") || "aucun risque recensé"
+      parts.push(
+        `Risques (commune ${risks.commune}) : zone sismique ${risks.seismicZone ?? "non renseignée"}, potentiel radon ${risks.radonPotential ?? "non renseigné"}, risques : ${riskLabels}`,
+      )
+    }
+    if (mutations && mutations.length > 0) {
+      const last = mutations[0]
+      parts.push(
+        `DVF : ${mutations.length} vente(s) recensée(s) sur cette section, la plus récente le ${last.date}${last.valeurFonciere ? ` pour ${last.valeurFonciere.toLocaleString("fr-FR")} €` : ""}.`,
+      )
+    }
+    if (currentCompanies.length > 0) {
+      parts.push(
+        `Entreprises trouvées : ${currentCompanies
+          .map((c) => `${c.nom} (SIREN ${c.siren}${c.adresse ? `, ${c.adresse}` : ""}, ${c.etatAdministratif ?? "statut inconnu"})`)
+          .join(" ; ")}`,
+      )
+    }
+    return parts.join("\n")
+  }
+
+  async function sendAiMessage(text: string, currentCompanies = companies) {
+    if (!text.trim() || isAiSending) return
+    setAiMessages((prev) => [...prev, { role: "user", content: text }])
+    setIsAiSending(true)
+    try {
+      const res = await fetch("/api/mistral/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId: aiConversationId, message: text, context: buildContext(currentCompanies) }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setAiConversationId(data.conversationId)
+        setAiMessages((prev) => [...prev, { role: "assistant", content: data.reply }])
+      } else {
+        setAiMessages((prev) => [...prev, { role: "assistant", content: `Erreur : ${data.error}` }])
+      }
+    } finally {
+      setIsAiSending(false)
+    }
+  }
+
+  async function submitAiInput(e: React.FormEvent) {
+    e.preventDefault()
+    const text = aiInput.trim()
+    if (!text) return
+    setAiInput("")
+    await sendAiMessage(text)
+  }
 
   async function search(e: React.FormEvent) {
     e.preventDefault()
     if (!query.trim() || isSearching) return
     setIsSearching(true)
     setError("")
-    setSelected(null)
-    setParcels([])
+    setSelectedAddress(null)
+    setParcels(null)
+    setRisks(null)
+    setMutations(null)
+    setAiConversationId(undefined)
+    setAiMessages([])
     try {
-      const res = await fetch(`/api/sit/search-address?q=${encodeURIComponent(query)}`)
+      const res = await fetch(`/api/sit/search?q=${encodeURIComponent(query)}`)
       const data = await res.json()
-      if (data.success) {
-        setResults(data.results)
-      } else {
+      if (!data.success) {
         setError(data.error ?? "Recherche impossible.")
-        setResults([])
+        setAddresses([])
+        setCompanies([])
+        return
+      }
+      setAddresses(data.addresses)
+      setCompanies(data.companies)
+      if (data.addresses.length === 0 && data.companies.length === 0) {
+        setError("Aucun résultat pour cette recherche.")
+      } else if (data.addresses.length === 0 && data.companies.length > 0) {
+        // Que des entreprises : rien à sélectionner, on peut résumer tout de suite.
+        void sendAiMessage(
+          "Fais un résumé synthétique des informations ci-dessus, pertinent pour une étude AMO/OPC (par exemple pour vérifier un partenaire de groupement). Sois concis (5-8 lignes maximum).",
+          data.companies,
+        )
       }
     } finally {
       setIsSearching(false)
     }
   }
 
+  async function selectAddress(addr: AddressResult) {
+    setSelectedAddress(addr)
+    setParcels(null)
+    setRisks(null)
+    setMutations(null)
+
+    const [lon, lat] = addr.coordinates
+    const [parcelsRes, risksRes] = await Promise.all([
+      fetch(`/api/sit/parcels?lon=${lon}&lat=${lat}`).then((r) => r.json()),
+      fetch(`/api/sit/risks?codeInsee=${addr.citycode}`).then((r) => r.json()),
+    ])
+
+    const loadedParcels: Parcel[] = parcelsRes.success ? parcelsRes.parcels : []
+    setParcels(loadedParcels)
+    if (risksRes.success) setRisks(risksRes.risks)
+
+    let loadedMutations: Mutation[] = []
+    if (loadedParcels[0]) {
+      const dvfRes = await fetch(
+        `/api/sit/dvf?codeCommune=${loadedParcels[0].codeInsee}&sectionPrefixe=${loadedParcels[0].sectionPrefixe}`,
+      ).then((r) => r.json())
+      if (dvfRes.success) loadedMutations = dvfRes.mutations
+    }
+    setMutations(loadedMutations)
+
+    void sendAiMessage(
+      "Fais un résumé synthétique des informations ci-dessus (adresse, cadastre, risques, DVF), pertinent pour une étude technique AMO/OPC. Sois concis (5-8 lignes maximum), et signale si une donnée importante manque.",
+    )
+  }
+
+  const hasTiles = selectedAddress || companies.length > 0
+
   return (
-    <div className="liquid-glass w-full rounded-3xl p-6">
-      <h2 className="mb-3 text-sm font-medium text-muted-foreground">Recherche d'adresse</h2>
+    <main className="glass-scene flex h-screen w-full flex-col overflow-hidden lg:flex-row">
+      <div className="custom-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Image src="/logo-sit.png" alt="Archiaccess SIT" width={40} height={40} />
+            <h1 className="text-lg font-medium">Système d'Information Technique</h1>
+          </div>
+          <Link href="/" className="text-sm text-muted-foreground hover:underline">
+            Accueil
+          </Link>
+        </div>
 
-      <form onSubmit={search} className="flex gap-2">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Rechercher une adresse (ex: 8 boulevard du Port, Amiens)…"
-          className="liquid-glass-inset flex-1 rounded-xl px-3 py-2 text-sm outline-none"
-        />
-        <button
-          type="submit"
-          disabled={isSearching}
-          className="chrome-black rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
-        >
-          {isSearching ? "…" : "Rechercher"}
-        </button>
-      </form>
-
-      {error && <p className="mt-3 text-xs text-red-600">{error}</p>}
-
-      <div className="custom-scrollbar mt-4 max-h-[50vh] space-y-2 overflow-y-auto">
-        {results.map((r) => (
+        <form onSubmit={search} className="liquid-glass flex items-center gap-2 rounded-2xl p-2">
+          <Search size={18} className="ml-2 shrink-0 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Adresse, entreprise, SIREN/SIRET… — tapez ce que vous cherchez"
+            className="flex-1 bg-transparent px-1 py-2 text-sm outline-none"
+          />
           <button
-            key={`${r.citycode}-${r.label}`}
-            onClick={() => {
-              setSelected(r)
-              setParcels([])
-            }}
-            className="liquid-glass-soft block w-full rounded-xl p-3 text-left text-sm transition-shadow hover:shadow-md"
+            type="submit"
+            disabled={isSearching}
+            className="chrome-black shrink-0 rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
           >
-            <p className="font-medium">{r.label}</p>
-            <p className="text-xs text-muted-foreground">{r.context}</p>
+            {isSearching ? "…" : "Rechercher"}
           </button>
-        ))}
+        </form>
+
+        {error && <p className="text-xs text-red-600">{error}</p>}
+
+        {addresses.length > 0 && !selectedAddress && (
+          <div className="liquid-glass-panel rounded-2xl p-4">
+            <h2 className="mb-2 text-xs font-medium text-muted-foreground">Adresses trouvées — sélectionnez-en une</h2>
+            <div className="space-y-2">
+              {addresses.map((a) => (
+                <button
+                  key={`${a.citycode}-${a.label}`}
+                  onClick={() => selectAddress(a)}
+                  className="liquid-glass-soft block w-full rounded-xl p-3 text-left text-sm transition-shadow hover:shadow-md"
+                >
+                  <p className="font-medium">{a.label}</p>
+                  <p className="text-xs text-muted-foreground">{a.context}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {hasTiles && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {selectedAddress && (
+              <Tile title="Adresse">
+                <p className="font-medium">{selectedAddress.label}</p>
+                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                  <dt>Code INSEE</dt>
+                  <dd>{selectedAddress.citycode}</dd>
+                  <dt>Code postal</dt>
+                  <dd>{selectedAddress.postcode}</dd>
+                  <dt>Coordonnées</dt>
+                  <dd>
+                    {selectedAddress.coordinates[0].toFixed(5)}, {selectedAddress.coordinates[1].toFixed(5)}
+                  </dd>
+                  <dt>Score</dt>
+                  <dd>{Math.round(selectedAddress.score * 100)}%</dd>
+                </dl>
+              </Tile>
+            )}
+
+            {selectedAddress && (
+              <Tile title="Cadastre" loading={parcels === null}>
+                {parcels && parcels.length === 0 && <p className="text-xs text-muted-foreground">Aucune parcelle trouvée à proximité.</p>}
+                {parcels && parcels.length > 0 && (
+                  <ul className="space-y-1 text-xs text-muted-foreground">
+                    {parcels.map((p) => (
+                      <li key={p.idu}>
+                        Section {p.section}, parcelle {p.numero} — {p.contenanceM2} m² (<span className="font-mono">{p.idu}</span>)
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Tile>
+            )}
+
+            {selectedAddress && (
+              <Tile title="Géorisques" loading={risks === null}>
+                {risks && (
+                  <div className="space-y-1 text-xs text-muted-foreground">
+                    <p>
+                      Zone sismique : {risks.seismicZone ?? "non renseignée"} · Potentiel radon : {risks.radonPotential ?? "non renseigné"}
+                    </p>
+                    {risks.risks.length > 0 ? (
+                      <ul className="list-inside list-disc">
+                        {risks.risks.map((r) => (
+                          <li key={r.code}>{r.label}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>Aucun risque répertorié pour cette commune.</p>
+                    )}
+                  </div>
+                )}
+              </Tile>
+            )}
+
+            {selectedAddress && parcels && parcels.length > 0 && (
+              <Tile title={`DVF — section ${parcels[0].sectionPrefixe.slice(3)}`} loading={mutations === null}>
+                {mutations && mutations.length === 0 && <p className="text-xs text-muted-foreground">Aucune vente répertoriée dans cette section.</p>}
+                {mutations && mutations.length > 0 && (
+                  <ul className="custom-scrollbar max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
+                    {mutations.slice(0, 10).map((m) => (
+                      <li key={m.idMutation}>
+                        {m.date} — {m.nature} — {m.adresse}
+                        {m.valeurFonciere !== null && ` — ${m.valeurFonciere.toLocaleString("fr-FR")} €`}
+                        {m.surfaceReelleBati !== null && ` (${m.surfaceReelleBati} m²)`}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Tile>
+            )}
+
+            {companies.map((c) => (
+              <Tile key={c.siren} title="Entreprise">
+                <p className="font-medium">
+                  {c.nom} {c.sigle && <span className="text-xs text-muted-foreground">({c.sigle})</span>}
+                </p>
+                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                  <dt>SIREN</dt>
+                  <dd className="font-mono">{c.siren}</dd>
+                  {c.siret && (
+                    <>
+                      <dt>SIRET (siège)</dt>
+                      <dd className="font-mono">{c.siret}</dd>
+                    </>
+                  )}
+                  <dt>Statut</dt>
+                  <dd>{c.etatAdministratif ?? "inconnu"}</dd>
+                  {c.categorieEntreprise && (
+                    <>
+                      <dt>Catégorie</dt>
+                      <dd>{c.categorieEntreprise}</dd>
+                    </>
+                  )}
+                  {c.activitePrincipale && (
+                    <>
+                      <dt>Activité (NAF)</dt>
+                      <dd>{c.activitePrincipale}</dd>
+                    </>
+                  )}
+                  {c.dateCreation && (
+                    <>
+                      <dt>Création</dt>
+                      <dd>{c.dateCreation}</dd>
+                    </>
+                  )}
+                  {c.adresse && (
+                    <>
+                      <dt>Adresse (siège)</dt>
+                      <dd className="col-span-1">{c.adresse}</dd>
+                    </>
+                  )}
+                  {c.dirigeants.length > 0 && (
+                    <>
+                      <dt>Dirigeant(s)</dt>
+                      <dd>{c.dirigeants.join(", ")}</dd>
+                    </>
+                  )}
+                </dl>
+              </Tile>
+            ))}
+          </div>
+        )}
+
+        <DocumentUpload />
       </div>
 
-      {selected && (
-        <div className="liquid-glass-panel mt-4 rounded-2xl p-4 text-sm">
-          <h3 className="mb-2 font-medium">{selected.label}</h3>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
-            <dt>Code commune (INSEE)</dt>
-            <dd>{selected.citycode}</dd>
-            <dt>Code postal</dt>
-            <dd>{selected.postcode}</dd>
-            <dt>Coordonnées (lon, lat)</dt>
-            <dd>
-              {selected.coordinates[0].toFixed(5)}, {selected.coordinates[1].toFixed(5)}
-            </dd>
-            <dt>Score de fiabilité</dt>
-            <dd>{Math.round(selected.score * 100)}%</dd>
-          </dl>
-          <ParcelList lon={selected.coordinates[0]} lat={selected.coordinates[1]} onLoaded={setParcels} />
-          <RiskList codeInsee={selected.citycode} />
-          {parcels[0] && <DvfList codeCommune={parcels[0].codeInsee} sectionPrefixe={parcels[0].sectionPrefixe} />}
+      <aside className="liquid-glass-panel flex h-[45vh] w-full shrink-0 flex-col p-4 lg:h-screen lg:w-96">
+        <div className="mb-2 flex items-center gap-2">
+          <Sparkles size={16} />
+          <h2 className="text-sm font-medium">Archiaccess AI</h2>
         </div>
-      )}
-    </div>
-  )
-}
-
-function ParcelList({ lon, lat, onLoaded }: { lon: number; lat: number; onLoaded: (parcels: Parcel[]) => void }) {
-  const [parcels, setParcels] = useState<Parcel[] | null>(null)
-  const [error, setError] = useState("")
-
-  useEffect(() => {
-    let cancelled = false
-    setParcels(null)
-    setError("")
-    fetch(`/api/sit/parcels?lon=${lon}&lat=${lat}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled) return
-        if (data.success) {
-          setParcels(data.parcels)
-          onLoaded(data.parcels)
-        } else {
-          setError(data.error ?? "Recherche de parcelle impossible.")
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setError("Recherche de parcelle impossible.")
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [lon, lat, onLoaded])
-
-  return (
-    <div className="mt-3 border-t border-border/50 pt-3">
-      <h4 className="mb-1 text-xs font-medium text-muted-foreground">Cadastre</h4>
-      {error && <p className="text-xs text-red-600">{error}</p>}
-      {!error && parcels === null && <p className="text-xs text-muted-foreground">Recherche…</p>}
-      {parcels?.length === 0 && <p className="text-xs text-muted-foreground">Aucune parcelle trouvée à proximité.</p>}
-      {parcels && parcels.length > 0 && (
-        <ul className="space-y-1">
-          {parcels.map((p) => (
-            <li key={p.idu} className="text-xs text-muted-foreground">
-              Section {p.section}, parcelle {p.numero} — {p.contenanceM2} m² (
-              <span className="font-mono">{p.idu}</span>)
-            </li>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Résume automatiquement les données chargées et répond à vos questions dessus.
+        </p>
+        <div className="custom-scrollbar flex-1 space-y-2 overflow-y-auto">
+          {aiMessages.length === 0 && (
+            <p className="text-xs text-muted-foreground">Lancez une recherche pour obtenir un premier résumé.</p>
+          )}
+          {aiMessages.map((m, i) => (
+            <div key={i} className={m.role === "user" ? "text-right" : "text-left"}>
+              <span
+                className={
+                  m.role === "user"
+                    ? "chrome-black inline-block max-w-[90%] rounded-2xl px-3 py-2 text-xs text-white"
+                    : "liquid-glass-soft inline-block max-w-[90%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-xs"
+                }
+              >
+                {m.content}
+              </span>
+            </div>
           ))}
-        </ul>
-      )}
-    </div>
-  )
-}
-
-function DvfList({ codeCommune, sectionPrefixe }: { codeCommune: string; sectionPrefixe: string }) {
-  const [mutations, setMutations] = useState<Mutation[] | null>(null)
-  const [error, setError] = useState("")
-
-  useEffect(() => {
-    let cancelled = false
-    setMutations(null)
-    setError("")
-    fetch(`/api/sit/dvf?codeCommune=${codeCommune}&sectionPrefixe=${sectionPrefixe}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled) return
-        if (data.success) {
-          setMutations(data.mutations)
-        } else {
-          setError(data.error ?? "Recherche DVF impossible.")
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setError("Recherche DVF impossible.")
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [codeCommune, sectionPrefixe])
-
-  return (
-    <div className="mt-3 border-t border-border/50 pt-3">
-      <h4 className="mb-1 text-xs font-medium text-muted-foreground">DVF — ventes récentes (section {sectionPrefixe.slice(3)})</h4>
-      {error && <p className="text-xs text-red-600">{error}</p>}
-      {!error && mutations === null && <p className="text-xs text-muted-foreground">Recherche…</p>}
-      {mutations?.length === 0 && <p className="text-xs text-muted-foreground">Aucune vente répertoriée dans cette section.</p>}
-      {mutations && mutations.length > 0 && (
-        <ul className="custom-scrollbar max-h-40 space-y-1 overflow-y-auto">
-          {mutations.slice(0, 10).map((m) => (
-            <li key={m.idMutation} className="text-xs text-muted-foreground">
-              {m.date} — {m.nature} — {m.adresse}
-              {m.valeurFonciere !== null && ` — ${m.valeurFonciere.toLocaleString("fr-FR")} €`}
-              {m.surfaceReelleBati !== null && ` (${m.surfaceReelleBati} m²)`}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  )
-}
-
-function RiskList({ codeInsee }: { codeInsee: string }) {
-  const [risks, setRisks] = useState<CommuneRisks | null>(null)
-  const [error, setError] = useState("")
-
-  useEffect(() => {
-    let cancelled = false
-    setRisks(null)
-    setError("")
-    fetch(`/api/sit/risks?codeInsee=${codeInsee}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled) return
-        if (data.success) {
-          setRisks(data.risks)
-        } else {
-          setError(data.error ?? "Recherche de risques impossible.")
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setError("Recherche de risques impossible.")
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [codeInsee])
-
-  return (
-    <div className="mt-3 border-t border-border/50 pt-3">
-      <h4 className="mb-1 text-xs font-medium text-muted-foreground">Géorisques (échelle commune)</h4>
-      {error && <p className="text-xs text-red-600">{error}</p>}
-      {!error && risks === null && <p className="text-xs text-muted-foreground">Recherche…</p>}
-      {risks && (
-        <div className="space-y-1 text-xs text-muted-foreground">
-          <p>
-            Zone sismique : {risks.seismicZone ?? "non renseignée"} · Potentiel radon : {risks.radonPotential ?? "non renseigné"}
-          </p>
-          {risks.risks.length > 0 ? (
-            <ul className="list-inside list-disc">
-              {risks.risks.map((r) => (
-                <li key={r.code}>{r.label}</li>
-              ))}
-            </ul>
-          ) : (
-            <p>Aucun risque répertorié pour cette commune.</p>
+          {isAiSending && (
+            <div className="text-left">
+              <span className="liquid-glass-soft inline-block rounded-2xl px-3 py-2 text-xs text-muted-foreground">
+                Archiaccess AI réfléchit…
+              </span>
+            </div>
           )}
         </div>
-      )}
+        <form onSubmit={submitAiInput} className="mt-3 flex gap-2">
+          <input
+            value={aiInput}
+            onChange={(e) => setAiInput(e.target.value)}
+            placeholder="Une question sur ces données…"
+            className="liquid-glass-inset flex-1 rounded-xl px-3 py-2 text-xs outline-none"
+          />
+          <button
+            type="submit"
+            disabled={isAiSending}
+            className="chrome-black shrink-0 rounded-xl px-3 py-2 text-white disabled:opacity-50"
+            aria-label="Envoyer"
+          >
+            <Send size={14} />
+          </button>
+        </form>
+      </aside>
+    </main>
+  )
+}
+
+function Tile({ title, loading, children }: { title: string; loading?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="liquid-glass-panel rounded-2xl p-4 text-sm">
+      <h3 className="mb-2 text-xs font-medium text-muted-foreground">{title}</h3>
+      {loading ? <p className="text-xs text-muted-foreground">Recherche…</p> : children}
     </div>
   )
 }
@@ -303,7 +448,7 @@ function DocumentUpload() {
   }
 
   return (
-    <div className="liquid-glass w-full rounded-3xl p-6">
+    <div className="liquid-glass rounded-3xl p-6">
       <h2 className="mb-1 text-sm font-medium text-muted-foreground">Ajouter une étude (Markdown)</h2>
       <p className="mb-3 text-xs text-muted-foreground">
         Indexée pour que le copilote Archiaccess AI puisse s'en servir comme contexte (recherche par similarité, pgvector).

@@ -53,9 +53,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
   }
 
-  const { conversationId, message } = (await request.json()) as {
+  const { conversationId, message, context } = (await request.json()) as {
     conversationId?: string
     message?: string
+    // Données actuellement affichées dans le SIT (adresse/cadastre/risques/
+    // DVF/entreprise sélectionnés) — envoyé par le panneau IA intégré à
+    // /sit pour que le copilote réponde avec ce contexte en tête, sans
+    // que l'employé ait à tout recopier. Absent depuis /ai (comportement
+    // inchangé là-bas).
+    context?: string
   }
   if (!message?.trim()) {
     return NextResponse.json({ success: false, error: "Message vide." }, { status: 400 })
@@ -104,8 +110,13 @@ export async function POST(request: Request) {
     contextMessage = undefined
   }
 
+  const sitContextMessage: MistralMessage | undefined = context?.trim()
+    ? { role: "system", content: `Données actuellement affichées dans le SIT :\n\n${context.trim()}` }
+    : undefined
+
   const history: MistralMessage[] = [
     { role: "system", content: SYSTEM_PROMPT },
+    ...(sitContextMessage ? [sitContextMessage] : []),
     ...(contextMessage ? [contextMessage] : []),
     ...conversation.messages.map((m) => ({
       role: m.role === "USER" ? ("user" as const) : ("assistant" as const),
