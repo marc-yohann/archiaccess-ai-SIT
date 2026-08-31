@@ -54,7 +54,7 @@ export function AuthGate({
   if (!ready) {
     return (
       <main className="glass-scene flex min-h-screen flex-col items-center justify-center gap-4">
-        <Image src={logoSrc} alt={appName} width={64} height={64} className="rounded-2xl opacity-70" />
+        <Image src={logoSrc} alt={appName} width={96} height={96} className="opacity-70" />
         <p className="text-sm text-muted-foreground">Chargement…</p>
       </main>
     )
@@ -115,9 +115,11 @@ function LoginForm({
   return (
     <main className="glass-scene flex min-h-screen items-center justify-center p-4">
       <form onSubmit={submit} className="liquid-glass flex w-full max-w-sm flex-col items-center gap-3 rounded-3xl p-8">
-        <Image src={logoSrc} alt={appName} width={72} height={72} className="mb-2 rounded-2xl" />
+        <Image src={logoSrc} alt={appName} width={128} height={128} className="mb-2" />
         <h1 className="text-lg font-medium">{appName}</h1>
-        <p className="text-sm text-muted-foreground">Connectez-vous avec votre compte Archiaccess</p>
+        <p className="text-center text-sm text-muted-foreground">
+          Plateforme interne Archiaccess — accès réservé aux collaborateurs habilités.
+        </p>
         <input
           type="email"
           value={email}
@@ -195,7 +197,7 @@ export function BootstrapForm({
   return (
     <main className="glass-scene flex min-h-screen items-center justify-center p-4">
       <form onSubmit={submit} className="liquid-glass flex w-full max-w-sm flex-col items-center gap-3 rounded-3xl p-8">
-        <Image src={logoSrc} alt={appName} width={72} height={72} className="mb-2 rounded-2xl" />
+        <Image src={logoSrc} alt={appName} width={128} height={128} className="mb-2" />
         <h1 className="text-lg font-medium">Premier compte administrateur</h1>
         <p className="text-center text-sm text-muted-foreground">
           Aucun compte n'existe encore sur {appName}. Créez le premier — il aura les droits administrateur pour
@@ -288,7 +290,7 @@ function ForcedPasswordChange({
   return (
     <main className="glass-scene flex min-h-screen items-center justify-center p-4">
       <form onSubmit={submit} className="liquid-glass flex w-full max-w-sm flex-col items-center gap-3 rounded-3xl p-8">
-        <Image src={logoSrc} alt={appName} width={72} height={72} className="mb-2 rounded-2xl" />
+        <Image src={logoSrc} alt={appName} width={128} height={128} className="mb-2" />
         <h1 className="text-lg font-medium">Nouveau mot de passe</h1>
         <p className="text-center text-sm text-muted-foreground">
           Première connexion : choisissez votre mot de passe définitif.

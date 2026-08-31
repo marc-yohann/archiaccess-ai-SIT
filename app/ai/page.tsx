@@ -116,7 +116,7 @@ function Chat() {
       <div className="liquid-glass flex h-[calc(100vh-2rem)] w-full max-w-5xl overflow-hidden rounded-3xl">
         <aside className="liquid-glass-panel flex w-64 shrink-0 flex-col gap-3 p-4">
           <div className="flex items-center gap-2">
-            <Image src="/logo-ai.png" alt="Archiaccess AI" width={32} height={32} className="rounded-lg" />
+            <Image src="/logo-ai.png" alt="Archiaccess AI" width={36} height={36} />
             <span className="text-sm font-medium">Archiaccess AI</span>
           </div>
           <button
@@ -162,7 +162,7 @@ function Chat() {
         <div className="flex flex-1 flex-col">
           {messages.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
-              <Image src="/logo-ai.png" alt="Archiaccess AI" width={72} height={72} className="rounded-2xl" />
+              <Image src="/logo-ai.png" alt="Archiaccess AI" width={112} height={112} />
               <div>
                 <h1 className="text-xl font-medium">Prêt à vous aider, {user.name.split(" ")[0]} ?</h1>
                 <p className="mt-1 text-sm text-muted-foreground">

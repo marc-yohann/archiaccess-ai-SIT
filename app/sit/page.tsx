@@ -21,7 +21,7 @@ export default function SitPage() {
         <div className="flex w-full max-w-2xl flex-col gap-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Image src="/logo-sit.png" alt="Archiaccess SIT" width={36} height={36} className="rounded-xl" />
+              <Image src="/logo-sit.png" alt="Archiaccess SIT" width={44} height={44} />
               <h1 className="text-lg font-medium">Système d'Information Technique</h1>
             </div>
             <Link href="/" className="text-sm text-muted-foreground hover:underline">

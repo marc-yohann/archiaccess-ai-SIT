@@ -28,7 +28,7 @@ function Home() {
       <div className="liquid-glass w-full max-w-2xl rounded-3xl p-8">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Image src="/logo-ai.png" alt="Archiaccess" width={40} height={40} className="rounded-xl" />
+            <Image src="/logo-ai.png" alt="Archiaccess" width={48} height={48} />
             <h1 className="text-xl font-medium">Archiaccess</h1>
           </div>
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
