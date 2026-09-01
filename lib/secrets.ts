@@ -8,6 +8,7 @@ import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-sec
 
 const DATABASE_SECRET_NAME = "archiaccess-ai-sit/database"
 const MISTRAL_SECRET_NAME = "archiaccess-ai-sit/mistral"
+const INGEST_TOKEN_SECRET_NAME = "archiaccess-ai-sit/ingest-token"
 
 const client = new SecretsManagerClient({})
 const cache = new Map<string, Promise<string>>()
@@ -50,4 +51,13 @@ export async function getDatabaseUrl(): Promise<string> {
 
 export async function getMistralApiKey(): Promise<string> {
   return getSecretString(MISTRAL_SECRET_NAME)
+}
+
+// Jeton d'ingestion en masse du coffre RAG (voir app/api/sit/documents/bulk)
+// — contourne le besoin d'un bastion EC2/SSM pour indexer des documents
+// depuis l'extérieur du VPC : la Lambda a déjà accès à Postgres, il suffit
+// d'un point d'entrée HTTPS authentifié par secret plutôt que par session
+// utilisateur. Voir CLAUDE.md pour le contexte (blocage SSM inexpliqué).
+export async function getIngestToken(): Promise<string> {
+  return getSecretString(INGEST_TOKEN_SECRET_NAME)
 }
