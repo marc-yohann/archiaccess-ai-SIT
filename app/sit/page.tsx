@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Search, Send, Sparkles } from "lucide-react"
@@ -24,6 +24,46 @@ import type { HeatNetworkEligibility } from "@/lib/data-sources/chaleur-urbaine"
 interface ChatMessage {
   role: "user" | "assistant"
   content: string
+}
+
+interface RecentSearch {
+  source: string
+  cacheKey: string
+  fetchedAt: string
+}
+
+interface VaultStats {
+  totalCacheEntries: number
+  totalDocuments: number
+  recentSearches: RecentSearch[]
+}
+
+const SOURCE_LABELS: Record<string, string> = {
+  ban: "Adresse",
+  cadastre: "Cadastre",
+  georisques: "Géorisques",
+  dvf: "DVF",
+  entreprises: "Entreprise",
+  urbanisme: "Urbanisme",
+  dpe: "DPE",
+  bodacc: "BODACC",
+  cavites: "Cavités",
+  "sites-pollues": "Sites pollués",
+  servitudes: "Servitudes",
+  boamp: "BOAMP",
+  nappes: "Nappes phréatiques",
+  "chaleur-urbaine": "Réseau de chaleur",
+}
+
+function timeAgo(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime()
+  const minutes = Math.round(diffMs / 60000)
+  if (minutes < 1) return "à l'instant"
+  if (minutes < 60) return `il y a ${minutes} min`
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return `il y a ${hours} h`
+  const days = Math.round(hours / 24)
+  return `il y a ${days} j`
 }
 
 // Instantané des données actuellement chargées dans le tableau de bord —
@@ -178,6 +218,22 @@ function Dashboard() {
   const [publicMarkets, setPublicMarkets] = useState<PublicMarket[] | null>(null)
   const [groundwaterStations, setGroundwaterStations] = useState<GroundwaterStation[] | null>(null)
   const [heatNetwork, setHeatNetwork] = useState<HeatNetworkEligibility | null>(null)
+
+  const [vaultStats, setVaultStats] = useState<VaultStats | null>(null)
+  useEffect(() => {
+    fetch("/api/sit/vault-stats")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) {
+          setVaultStats({
+            totalCacheEntries: data.totalCacheEntries,
+            totalDocuments: data.totalDocuments,
+            recentSearches: data.recentSearches,
+          })
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const [aiConversationId, setAiConversationId] = useState<string>()
   const [aiMessages, setAiMessages] = useState<ChatMessage[]>([])
@@ -420,6 +476,49 @@ function Dashboard() {
         </form>
 
         {error && <p className="text-xs text-red-600">{error}</p>}
+
+        {!hasTiles && addresses.length === 0 && companies.length === 0 && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="liquid-glass-panel rounded-2xl p-4">
+              <h2 className="mb-3 text-xs font-medium text-muted-foreground">Le coffre en un coup d'œil</h2>
+              <dl className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <dt className="text-xs text-muted-foreground">Recherches accumulées</dt>
+                  <dd className="text-2xl font-medium">{vaultStats?.totalCacheEntries ?? "…"}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Documents réglementaires</dt>
+                  <dd className="text-2xl font-medium">{vaultStats?.totalDocuments ?? "…"}</dd>
+                </div>
+              </dl>
+              <p className="mt-3 text-xs text-muted-foreground">
+                14 connecteurs actifs (adresse, cadastre, urbanisme, risques, DVF, DPE, entreprises, BODACC, cavités,
+                sites pollués, servitudes, BOAMP, nappes phréatiques, réseau de chaleur) + le corpus réglementaire du
+                copilote Archiaccess AI.
+              </p>
+            </div>
+
+            <div className="liquid-glass-panel rounded-2xl p-4">
+              <h2 className="mb-3 text-xs font-medium text-muted-foreground">Recherches récentes</h2>
+              {vaultStats && vaultStats.recentSearches.length === 0 && (
+                <p className="text-xs text-muted-foreground">Aucune recherche pour l'instant — lancez-en une pour commencer à remplir le coffre.</p>
+              )}
+              {!vaultStats && <p className="text-xs text-muted-foreground">Chargement…</p>}
+              <ul className="space-y-1.5 text-xs">
+                {vaultStats?.recentSearches.map((s, i) => (
+                  <li key={i} className="flex items-center justify-between gap-2 text-muted-foreground">
+                    <span className="truncate">
+                      <span className="font-medium text-foreground">{SOURCE_LABELS[s.source] ?? s.source}</span>
+                      {" — "}
+                      <span className="font-mono">{s.cacheKey}</span>
+                    </span>
+                    <span className="shrink-0">{timeAgo(s.fetchedAt)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
 
         {addresses.length > 0 && !selectedAddress && (
           <div className="liquid-glass-panel rounded-2xl p-4">
