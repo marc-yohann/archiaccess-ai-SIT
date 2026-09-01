@@ -1136,6 +1136,33 @@ session utilisateur, appelable directement depuis n'importe où.
   elles nécessitent vraiment `prisma migrate deploy` depuis l'intérieur
   du VPC).
 
+**Deuxième lot du chantier RAG normatif — cadre contractuel/juridique
+AMO/OPC** (2026-09-01). Suite à "le but est qu'il y ait assez de données
+pour que mon bureau d'études puisse commencer à travailler sur des
+missions AMO/OPC" : au-delà des disciplines techniques déjà couvertes,
+ajout du socle contractuel qu'un AMO/OPC utilise en permanence — 5
+nouveaux documents, même méthode (WebSearch/WebFetch sur Légifrance,
+domaine public uniquement) :
+- Garanties de construction (Code civil, articles 1792 à 1792-6 :
+  décennale, biennale/bon fonctionnement, parfait achèvement, réception)
+- CCAG-Travaux 2021 (délais/pénalités, réception, résiliation,
+  sous-traitance, révision des prix, différends)
+- Accessibilité PMR logements neufs (arrêté du 24 décembre 2015) et ERP
+  neufs (arrêté du 20 avril 2017) — cheminements, ascenseurs, sanitaires
+  adaptés, stationnement
+- Procédures de passation des marchés publics (Code de la commande
+  publique, seuils MAPA/procédure formalisée 2026)
+
+**Point notable : cette deuxième vague n'a nécessité AUCUN identifiant
+AWS** — la route `/api/sit/documents/bulk` ajoutée précédemment
+fonctionne en HTTPS pur avec le jeton déjà stocké localement dans cette
+session, sans passer par l'API AWS du tout. Ça supprime la friction des
+identifiants temporaires à durée de vie courte pour toute future
+alimentation du coffre RAG (tant que le code applicatif ne change pas —
+un déploiement Lambda reste nécessaire pour toute évolution de route).
+Les 5 documents envoyés en un seul appel → `success: true`, un
+`documentId` réel pour chacun. **Coffre RAG à 20 documents au total.**
+
 Prochaines étapes :
 1. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
    redéploiement à chaque changement de code (actuellement manuel via
