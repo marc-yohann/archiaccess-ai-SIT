@@ -1163,6 +1163,36 @@ un déploiement Lambda reste nécessaire pour toute évolution de route).
 Les 5 documents envoyés en un seul appel → `success: true`, un
 `documentId` réel pour chacun. **Coffre RAG à 20 documents au total.**
 
+**RAG testé en conditions réelles, tableau de bord /sit enrichi pour
+mieux incarner le "système fédéré"** (2026-09-01) :
+- `POST /api/sit/documents/search-test` (nouveau) — même authentification
+  par jeton que la route bulk, expose `searchSimilarChunks()` directement
+  pour vérifier la pertinence du coffre sans passer par une session de
+  chat. **4 requêtes de test, toutes pertinentes** : "isolement
+  acoustique entre logements" → article exact (53 dB, distance 0.15) ;
+  "délai de recours après réception" → CCAG-Travaux + Garanties
+  construction (les deux pertinents) ; "seuil diagnostic PEMD" →
+  décret PEMD (distance 0.15) ; "seuil marché sans procédure formalisée"
+  → document seuils MAPA (distance 0.20). Le coffre répond correctement.
+- Retour utilisateur sur `/sit` : "un peu pauvre, rajoute des données
+  quand on y rentre" (page vide avant recherche) puis "il faut qu'on
+  sente qu'on est dans un système de données, le SIT (Système
+  d'Information Technique Fédéré)". `GET /api/sit/vault-stats` (nouveau,
+  authentifié par session comme les autres routes SIT) retourne
+  maintenant : nombre total de recherches accumulées, nombre de
+  documents du coffre RAG, **détail par source** (`groupBy` Prisma sur
+  les 14 connecteurs, avec les sources jamais interrogées à 0 plutôt que
+  simplement absentes), titres des documents indexés, et les 8 dernières
+  recherches. `app/sit/page.tsx` affiche maintenant, tant qu'aucune
+  recherche n'est lancée, un panneau "Sources fédérées" (liste des 14
+  connecteurs avec indicateur actif/inactif et compteur réel), un
+  panneau "Corpus réglementaire" (liste des titres du coffre RAG), et un
+  panneau "Activité récente" — la page reflète l'état réel du système
+  plutôt que d'être vide à l'arrivée.
+- `tsc --noEmit` et `next build` passent, déployé et vérifié en direct :
+  `/api/sit/vault-stats` répond 401 sans session, `/sit` et `/ai`
+  répondent 200 sur les deux sous-domaines.
+
 Prochaines étapes :
 1. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
    redéploiement à chaque changement de code (actuellement manuel via
