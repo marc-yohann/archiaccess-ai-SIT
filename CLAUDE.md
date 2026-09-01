@@ -1060,13 +1060,38 @@ le reste s'appuie sur les connaissances générales du modèle Mistral.
   causes : security groups (RDS autorise déjà tout le CIDR VPC), NACL
   (allow-all par défaut), options de métadonnées IMDS (identiques à la
   NAT instance qui fonctionne), permissions boundary IAM (aucune),
-  policy `AmazonSSMManagedInstanceCore` bien attachée. Cause racine
-  **non identifiée** — à re-creuser dans une prochaine session
-  (vérifier la console Systems Manager directement : Quick Setup,
-  Fleet Manager, quota de "managed instances", ou un changement récent
-  de configuration du compte non visible via l'API depuis ici).
-- **Nettoyé** : les 3 instances EC2 de test créées pour ce diagnostic
-  ont toutes été terminées. Le rôle IAM
+  policy `AmazonSSMManagedInstanceCore` bien attachée.
+
+  **Investigation approfondie avec l'utilisateur (accès console)** : la
+  configuration Quick Setup existante ("Console du gestionnaire de
+  systèmes intégrés", déployée avec succès, 5/5) n'a aucune cible
+  spécifique et est sans rapport avec le problème. La page Session
+  Manager de la console ("Se connecter") confirme juste "n'est pas
+  connecté", sans message d'erreur plus précis que le CLI. **Deux tests
+  supplémentaires décisifs, tous deux négatifs** :
+  1. **Cross-région** : même instance/rôle dans un VPC par défaut en
+     eu-west-1 (IP publique directe, aucun rapport avec eu-west-3 ou le
+     NAT instance) — ne s'enregistre pas non plus après 4 minutes.
+  2. **Isolation du rôle IAM** : nouvelle instance en eu-west-3 utilisant
+     le rôle `archiaccess-ai-sit-nat-instance` **lui-même** (celui du NAT
+     instance qui s'enregistre en continu depuis des jours) plutôt que
+     mon rôle custom — ne s'enregistre pas non plus après 4 minutes. Ce
+     n'est donc ni le rôle IAM custom, ni la région, ni le réseau/VPC.
+  3. Compte vérifié **hors AWS Organizations** (`DescribeOrganization` →
+     `AWSOrganizationsNotInUseException`) — pas de SCP possible.
+
+  **Conclusion** : le blocage touche l'enregistrement de TOUTE nouvelle
+  instance SSM sur ce compte, indépendamment du rôle IAM, de la région ou
+  du réseau — seules les instances déjà enregistrées avant le problème
+  (le NAT instance) continuent de fonctionner. Cause racine **non
+  identifiable depuis l'API/CLI/console standard** — au-delà de ce qui
+  est visible sans accès Support AWS. **Recommandation à l'utilisateur** :
+  ouvrir un dossier AWS Support (nécessite un plan Developer minimum pour
+  les cas techniques, Basic ne couvre que facturation/compte) — c'est le
+  seul canal qui peut voir ce qui bloque côté infrastructure AWS pour ce
+  compte spécifiquement.
+- **Nettoyé** : les 6 instances EC2 de test créées pour ce diagnostic
+  (dont une en eu-west-1) ont toutes été terminées. Le rôle IAM
   `archiaccess-ai-sit-rag-ingest-bastion` et son instance profile sont
   laissés en place (permissions correctes, prêts à réutiliser) plutôt
   que recréés à chaque tentative future.
