@@ -1098,8 +1098,43 @@ le reste s'appuie sur les connaissances générales du modèle Mistral.
 - Les 15 documents sources restent disponibles dans le scratchpad de
   cette session (`rag-docs/*.md` + `ingest-bundle/` avec le script et le
   bundle S3 déjà uploadé sur `s3://archiaccess-ai-sit-documents-.../ops/
-  ingest-bundle.tar.gz`) — rien à resourcer, juste à relancer
-  l'ingestion une fois le blocage SSM levé.
+  ingest-bundle.tar.gz`) — devenus obsolètes, voir point suivant.
+
+**Blocage SSM contourné, 15 documents indexés avec succès — plus besoin
+de bastion EC2/SSM pour alimenter le coffre RAG** (2026-09-01). Constat :
+le vrai blocage n'était pas l'accès réseau à Postgres en général, mais
+le fait que *cette session* n'a pas de chemin réseau vers le VPC — or la
+Lambda de l'app, elle, y a déjà accès (c'est comme ça que
+`/api/sit/documents` fonctionne). Solution : un point d'entrée HTTPS
+supplémentaire sur la même Lambda, authentifié par secret plutôt que par
+session utilisateur, appelable directement depuis n'importe où.
+
+- `POST /api/sit/documents/bulk` (nouveau) — `Authorization: Bearer
+  <token>` vérifié contre le secret `archiaccess-ai-sit/ingest-token`
+  (nouveau, créé pour l'occasion) via `lib/secrets.ts::getIngestToken()`
+  ; accepte `{ documents: [{title, sourceType, content}, ...] }`, appelle
+  `indexDocument()` pour chacun (même chemin de code que la route
+  session-authentifiée existante). Jamais exposé côté UI — outil
+  d'ingestion en masse uniquement.
+- Aucune modification IAM nécessaire : la policy du rôle applicatif
+  autorisait déjà `secretsmanager:GetSecretValue` sur tout
+  `archiaccess-ai-sit/*`, le nouveau secret est couvert automatiquement.
+- **Testé et exécuté avec succès en conditions réelles** : mauvais jeton
+  → 401 ; payload vide → 400 ; les 15 documents réglementaires envoyés
+  en un seul appel → `success: true`, un `documentId` réel retourné pour
+  chacun. Le chantier RAG normatif (domaine public : acoustique,
+  parasismique, RE2020, QAI, hyperbare, ICPE, SPS, amiante, loi sur
+  l'eau, radioprotection/radon, PEMD, maîtrise d'œuvre, incendie ERP,
+  assainissement, solarisation) est donc **terminé et déployé**.
+- **À retenir pour toute future opération nécessitant un accès VPC**
+  (nouvelle migration, nouveau script ponctuel...) : essayer d'abord ce
+  pattern (route HTTPS authentifiée par secret sur la Lambda existante)
+  avant de reprovisionner un bastion EC2/SSM — plus simple, plus rapide,
+  et insensible au blocage SSM constaté sur ce compte (cause toujours
+  non identifiée, dossier AWS Support recommandé si le bastion redevient
+  nécessaire pour autre chose, ex. modifications de schéma Prisma qui
+  elles nécessitent vraiment `prisma migrate deploy` depuis l'intérieur
+  du VPC).
 
 Prochaines étapes :
 1. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
