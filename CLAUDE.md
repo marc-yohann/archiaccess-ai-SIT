@@ -1005,6 +1005,77 @@ comme toujours :
   401 sans session, `/sit` et `/ai` répondent 200 sur les deux
   sous-domaines.
 
+**Chantier RAG normatif (deuxième chantier convenu, "les deux, en deux
+chantiers séparés") — 15 textes réglementaires du domaine public sourcés
+et rédigés, indexation bloquée par un problème d'infrastructure AWS
+inexpliqué** (2026-09-01). Suite à "Fais en sorte qu'il y est des
+données pour toutes ses disciplines" (liste complète des ~40 disciplines
+techniques d'Archiaccess) : point bloquant soulevé avant de coder — la
+plupart des Eurocodes/DTU/normes EN sont des documents AFNOR/CEN
+payants, pas indexables légalement. Question posée à l'utilisateur,
+réponse : **indexer uniquement le domaine public** (RE2020, réglementation
+incendie/accessibilité/acoustique, décrets parasismiques, guides publics),
+le reste s'appuie sur les connaissances générales du modèle Mistral.
+
+- **15 documents sourcés via WebSearch/WebFetch depuis Légifrance et le
+  Code du travail/environnement/construction** (texte intégral article
+  par article, pas des résumés) : acoustique des bâtiments (arrêté 30
+  juin 1999), zonage parasismique/Eurocode 8 (arrêté 22 octobre 2010),
+  RE2020 (décret 2021-1004), aération des logements (arrêté 24 mars
+  1982), travaux hyperbares (décret 2011-45), nomenclature ICPE
+  (R511-9), coordination SPS (R4532-1 à R4532-98), amiante/désamiantage
+  (R4412-94 à R4412-148), nomenclature loi sur l'eau/IOTA (R214-1),
+  radioprotection/radon (R1333), diagnostic PEMD/réemploi (décret
+  2021-821), mission de maîtrise d'œuvre/AMO (R2431-1 à R2431-37,
+  ex-loi MOP), sécurité incendie ERP + désenfumage (arrêté 25 juin
+  1980), assainissement collectif (arrêté 21 juillet 2015), obligation
+  de solarisation des toitures/loi APER (L171-4 CCH).
+- **Découverte technique importante** : `legifrance.gouv.fr` est
+  protégé par Cloudflare (challenge JS) et rejette systématiquement
+  curl/Playwright depuis cet environnement (403/connection reset) —
+  mais **le tool WebFetch (infrastructure Anthropic, pas le proxy de cet
+  environnement) le traverse sans problème** et extrait le texte intégral
+  des articles. À réutiliser pour toute future recherche de texte
+  réglementaire français plutôt que de retenter curl/scraping direct.
+- Script d'ingestion écrit en JS simple (pas de TS/Prisma, pour tourner
+  directement sur un bastion) répliquant `lib/rag.ts::indexDocument()` :
+  upload S3 + insertion `Document`/`DocumentChunk` + embeddings
+  `mistral-embed`, même schéma que le hub RAG existant.
+- **Bloqué à l'étape d'exécution** : le bastion EC2 (rôle IAM
+  `archiaccess-ai-sit-rag-ingest-bastion`, permissions Secrets Manager
+  database+mistral + S3 documents/ créées) ne s'enregistre jamais auprès
+  de SSM, contrairement à tous les bastions précédents de ce projet
+  (migrations, DataCacheEntry) qui avaient fonctionné en quelques
+  secondes avec un pattern identique. **Quatre tentatives, toutes
+  échouées** : sous-réseau privé eu-west-3a puis eu-west-3b (via NAT
+  instance), rôle avec redémarrage explicite de `amazon-ssm-agent` en
+  user-data, et sous-réseau public avec IP publique directe (contourne
+  entièrement le NAT) — aucune n'a produit le moindre appel
+  `ssm:UpdateInstanceInformation` en CloudTrail pour ces instances,
+  alors que la NAT instance existante (`i-0aa0ec7fe41022b6e`) continue
+  d'apparaître "Online" et d'appeler cette API toutes les 2-3 minutes
+  sans interruption pendant les mêmes tests — donc SSM fonctionne
+  normalement dans le compte/la région, le blocage est spécifique à
+  l'enregistrement de **nouvelles** instances. Vérifié et écarté comme
+  causes : security groups (RDS autorise déjà tout le CIDR VPC), NACL
+  (allow-all par défaut), options de métadonnées IMDS (identiques à la
+  NAT instance qui fonctionne), permissions boundary IAM (aucune),
+  policy `AmazonSSMManagedInstanceCore` bien attachée. Cause racine
+  **non identifiée** — à re-creuser dans une prochaine session
+  (vérifier la console Systems Manager directement : Quick Setup,
+  Fleet Manager, quota de "managed instances", ou un changement récent
+  de configuration du compte non visible via l'API depuis ici).
+- **Nettoyé** : les 3 instances EC2 de test créées pour ce diagnostic
+  ont toutes été terminées. Le rôle IAM
+  `archiaccess-ai-sit-rag-ingest-bastion` et son instance profile sont
+  laissés en place (permissions correctes, prêts à réutiliser) plutôt
+  que recréés à chaque tentative future.
+- Les 15 documents sources restent disponibles dans le scratchpad de
+  cette session (`rag-docs/*.md` + `ingest-bundle/` avec le script et le
+  bundle S3 déjà uploadé sur `s3://archiaccess-ai-sit-documents-.../ops/
+  ingest-bundle.tar.gz`) — rien à resourcer, juste à relancer
+  l'ingestion une fois le blocage SSM levé.
+
 Prochaines étapes :
 1. Pour un vrai usage (pas juste des tests manuels) : mettre en place un
    redéploiement à chaque changement de code (actuellement manuel via
