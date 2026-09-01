@@ -15,6 +15,31 @@ export interface RecentSearch {
   fetchedAt: string
 }
 
+export interface SourceCount {
+  source: string
+  count: number
+}
+
+// Les 14 connecteurs SIT existants (voir CLAUDE.md) — listés explicitement
+// pour que les sources jamais encore interrogées apparaissent à 0 plutôt
+// que d'être absentes du panneau "sources fédérées".
+const KNOWN_SOURCES = [
+  "ban",
+  "cadastre",
+  "urbanisme",
+  "georisques",
+  "dvf",
+  "dpe",
+  "entreprises",
+  "bodacc",
+  "cavites",
+  "sites-pollues",
+  "servitudes",
+  "boamp",
+  "nappes",
+  "chaleur-urbaine",
+]
+
 export async function GET() {
   const store = await cookies()
   const token = store.get(SESSION_COOKIE_NAME)?.value
@@ -24,7 +49,7 @@ export async function GET() {
 
   try {
     const prisma = await getPrisma()
-    const [totalCacheEntries, totalDocuments, recentEntries] = await Promise.all([
+    const [totalCacheEntries, totalDocuments, recentEntries, groupedBySource, documentTitles] = await Promise.all([
       prisma.dataCacheEntry.count(),
       prisma.document.count(),
       prisma.dataCacheEntry.findMany({
@@ -32,7 +57,19 @@ export async function GET() {
         take: 8,
         select: { source: true, cacheKey: true, fetchedAt: true },
       }),
+      prisma.dataCacheEntry.groupBy({ by: ["source"], _count: { source: true } }),
+      prisma.document.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 30,
+        select: { title: true, sourceType: true },
+      }),
     ])
+
+    const countsBySource = new Map(groupedBySource.map((g) => [g.source, g._count.source]))
+    const sourceCounts: SourceCount[] = KNOWN_SOURCES.map((source) => ({
+      source,
+      count: countsBySource.get(source) ?? 0,
+    }))
 
     const recentSearches: RecentSearch[] = recentEntries.map((e) => ({
       source: e.source,
@@ -45,6 +82,8 @@ export async function GET() {
       totalCacheEntries,
       totalDocuments,
       recentSearches,
+      sourceCounts,
+      documentTitles: documentTitles.map((d) => d.title),
     })
   } catch (error) {
     return NextResponse.json(

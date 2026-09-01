@@ -32,10 +32,17 @@ interface RecentSearch {
   fetchedAt: string
 }
 
+interface SourceCount {
+  source: string
+  count: number
+}
+
 interface VaultStats {
   totalCacheEntries: number
   totalDocuments: number
   recentSearches: RecentSearch[]
+  sourceCounts: SourceCount[]
+  documentTitles: string[]
 }
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -229,6 +236,8 @@ function Dashboard() {
             totalCacheEntries: data.totalCacheEntries,
             totalDocuments: data.totalDocuments,
             recentSearches: data.recentSearches,
+            sourceCounts: data.sourceCounts,
+            documentTitles: data.documentTitles,
           })
         }
       })
@@ -478,10 +487,20 @@ function Dashboard() {
         {error && <p className="text-xs text-red-600">{error}</p>}
 
         {!hasTiles && addresses.length === 0 && companies.length === 0 && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-4">
             <div className="liquid-glass-panel rounded-2xl p-4">
-              <h2 className="mb-3 text-xs font-medium text-muted-foreground">Le coffre en un coup d'œil</h2>
-              <dl className="grid grid-cols-2 gap-3 text-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-xs font-medium text-muted-foreground">Système d'Information Technique Fédéré</h2>
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  {(vaultStats?.sourceCounts.filter((s) => s.count > 0).length ?? 0)} / {vaultStats?.sourceCounts.length ?? 14} sources actives
+                </span>
+              </div>
+              <dl className="grid grid-cols-3 gap-3 text-sm">
+                <div>
+                  <dt className="text-xs text-muted-foreground">Sources fédérées</dt>
+                  <dd className="text-2xl font-medium">{vaultStats?.sourceCounts.length ?? 14}</dd>
+                </div>
                 <div>
                   <dt className="text-xs text-muted-foreground">Recherches accumulées</dt>
                   <dd className="text-2xl font-medium">{vaultStats?.totalCacheEntries ?? "…"}</dd>
@@ -491,31 +510,57 @@ function Dashboard() {
                   <dd className="text-2xl font-medium">{vaultStats?.totalDocuments ?? "…"}</dd>
                 </div>
               </dl>
-              <p className="mt-3 text-xs text-muted-foreground">
-                14 connecteurs actifs (adresse, cadastre, urbanisme, risques, DVF, DPE, entreprises, BODACC, cavités,
-                sites pollués, servitudes, BOAMP, nappes phréatiques, réseau de chaleur) + le corpus réglementaire du
-                copilote Archiaccess AI.
-              </p>
             </div>
 
-            <div className="liquid-glass-panel rounded-2xl p-4">
-              <h2 className="mb-3 text-xs font-medium text-muted-foreground">Recherches récentes</h2>
-              {vaultStats && vaultStats.recentSearches.length === 0 && (
-                <p className="text-xs text-muted-foreground">Aucune recherche pour l'instant — lancez-en une pour commencer à remplir le coffre.</p>
-              )}
-              {!vaultStats && <p className="text-xs text-muted-foreground">Chargement…</p>}
-              <ul className="space-y-1.5 text-xs">
-                {vaultStats?.recentSearches.map((s, i) => (
-                  <li key={i} className="flex items-center justify-between gap-2 text-muted-foreground">
-                    <span className="truncate">
-                      <span className="font-medium text-foreground">{SOURCE_LABELS[s.source] ?? s.source}</span>
-                      {" — "}
-                      <span className="font-mono">{s.cacheKey}</span>
-                    </span>
-                    <span className="shrink-0">{timeAgo(s.fetchedAt)}</span>
-                  </li>
-                ))}
-              </ul>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <div className="liquid-glass-panel rounded-2xl p-4 lg:col-span-1">
+                <h2 className="mb-3 text-xs font-medium text-muted-foreground">Sources fédérées</h2>
+                <ul className="space-y-1 text-xs">
+                  {(vaultStats?.sourceCounts ?? []).map((s) => (
+                    <li key={s.source} className="flex items-center justify-between gap-2 text-muted-foreground">
+                      <span className="flex items-center gap-2 truncate">
+                        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${s.count > 0 ? "bg-emerald-500" : "bg-muted-foreground/30"}`} />
+                        <span className="truncate text-foreground">{SOURCE_LABELS[s.source] ?? s.source}</span>
+                      </span>
+                      <span className="shrink-0 font-mono">{s.count}</span>
+                    </li>
+                  ))}
+                  {!vaultStats && <p className="text-muted-foreground">Chargement…</p>}
+                </ul>
+              </div>
+
+              <div className="liquid-glass-panel rounded-2xl p-4 lg:col-span-1">
+                <h2 className="mb-3 text-xs font-medium text-muted-foreground">Corpus réglementaire (coffre RAG)</h2>
+                {vaultStats && vaultStats.documentTitles.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Aucun document indexé pour l'instant.</p>
+                )}
+                <ul className="custom-scrollbar max-h-56 space-y-1.5 overflow-y-auto text-xs text-muted-foreground">
+                  {vaultStats?.documentTitles.map((title, i) => (
+                    <li key={i} className="truncate" title={title}>
+                      {title}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="liquid-glass-panel rounded-2xl p-4 lg:col-span-1">
+                <h2 className="mb-3 text-xs font-medium text-muted-foreground">Activité récente</h2>
+                {vaultStats && vaultStats.recentSearches.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Aucune recherche pour l'instant — lancez-en une pour commencer à remplir le coffre.</p>
+                )}
+                <ul className="space-y-1.5 text-xs">
+                  {vaultStats?.recentSearches.map((s, i) => (
+                    <li key={i} className="flex items-center justify-between gap-2 text-muted-foreground">
+                      <span className="truncate">
+                        <span className="font-medium text-foreground">{SOURCE_LABELS[s.source] ?? s.source}</span>
+                        {" — "}
+                        <span className="font-mono">{s.cacheKey}</span>
+                      </span>
+                      <span className="shrink-0">{timeAgo(s.fetchedAt)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         )}
