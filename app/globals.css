@@ -465,4 +465,29 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(20, 24, 28, 0.35);
   }
+
+  /* Bandeau d'activité défilant du SIT (voir app/sit/page.tsx) — piste
+     dupliquée deux fois côté JSX, la boucle se fait exactement à mi-piste. */
+  @keyframes ticker-scroll {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .ticker-track {
+    animation: ticker-scroll 40s linear infinite;
+  }
+
+  .ticker-track:hover {
+    animation-play-state: paused;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ticker-track {
+      animation: none;
+    }
+  }
 }

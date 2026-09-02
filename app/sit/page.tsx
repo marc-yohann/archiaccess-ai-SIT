@@ -486,77 +486,81 @@ function Dashboard() {
 
         {error && <p className="text-xs text-red-600">{error}</p>}
 
+        {/* Bandeau d'activité — chrome persistant, avant et après recherche,
+            pour que le SIT se ressente comme un système vivant plutôt que
+            comme un formulaire (retour utilisateur du 2026-09-01). */}
+        <div className="liquid-glass-panel overflow-hidden rounded-2xl px-4 py-2.5">
+          {vaultStats && vaultStats.recentSearches.length > 0 ? (
+            <div className="overflow-hidden">
+              <div className="ticker-track flex w-max items-center gap-8 whitespace-nowrap">
+                {[...vaultStats.recentSearches, ...vaultStats.recentSearches].map((s, i) => (
+                  <span key={i} className="flex shrink-0 items-center gap-1.5 text-xs">
+                    <span className="h-1 w-1 shrink-0 rounded-full bg-emerald-500" />
+                    <span className="font-mono font-medium text-foreground">{(SOURCE_LABELS[s.source] ?? s.source).toUpperCase()}</span>
+                    <span className="font-mono text-muted-foreground">{s.cacheKey}</span>
+                    <span className="text-muted-foreground/60">· {timeAgo(s.fetchedAt)}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              {vaultStats ? "Aucune activité pour l'instant — lancez une recherche pour commencer à alimenter le coffre." : "Chargement de l'activité du coffre…"}
+            </p>
+          )}
+        </div>
+
         {!hasTiles && addresses.length === 0 && companies.length === 0 && (
           <div className="space-y-4">
-            <div className="liquid-glass-panel rounded-2xl p-4">
-              <div className="mb-3 flex items-center justify-between">
+            <div className="liquid-glass-panel flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
+              <div className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 <h2 className="text-xs font-medium text-muted-foreground">Système d'Information Technique Fédéré</h2>
-                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  {(vaultStats?.sourceCounts.filter((s) => s.count > 0).length ?? 0)} / {vaultStats?.sourceCounts.length ?? 14} sources actives
-                </span>
               </div>
-              <dl className="grid grid-cols-3 gap-3 text-sm">
-                <div>
-                  <dt className="text-xs text-muted-foreground">Sources fédérées</dt>
-                  <dd className="text-2xl font-medium">{vaultStats?.sourceCounts.length ?? 14}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-muted-foreground">Recherches accumulées</dt>
-                  <dd className="text-2xl font-medium">{vaultStats?.totalCacheEntries ?? "…"}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-muted-foreground">Documents réglementaires</dt>
-                  <dd className="text-2xl font-medium">{vaultStats?.totalDocuments ?? "…"}</dd>
-                </div>
-              </dl>
+              <div className="flex items-center gap-4 font-mono text-xs text-muted-foreground">
+                <span>{vaultStats?.sourceCounts.filter((s) => s.count > 0).length ?? 0}/{vaultStats?.sourceCounts.length ?? 14} sources actives</span>
+                <span>{vaultStats?.totalCacheEntries ?? "…"} recherches</span>
+                <span>{vaultStats?.totalDocuments ?? "…"} documents</span>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <div className="liquid-glass-panel rounded-2xl p-4 lg:col-span-1">
-                <h2 className="mb-3 text-xs font-medium text-muted-foreground">Sources fédérées</h2>
-                <ul className="space-y-1 text-xs">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="liquid-glass-panel rounded-2xl p-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="text-xs font-medium text-muted-foreground">Sources fédérées</h2>
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {vaultStats?.sourceCounts.filter((s) => s.count > 0).length ?? 0}/{vaultStats?.sourceCounts.length ?? 14} actives
+                  </span>
+                </div>
+                <ul className="divide-y divide-border/40 text-xs">
                   {(vaultStats?.sourceCounts ?? []).map((s) => (
-                    <li key={s.source} className="flex items-center justify-between gap-2 text-muted-foreground">
+                    <li key={s.source} className="flex items-center justify-between gap-2 py-1.5">
                       <span className="flex items-center gap-2 truncate">
                         <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${s.count > 0 ? "bg-emerald-500" : "bg-muted-foreground/30"}`} />
                         <span className="truncate text-foreground">{SOURCE_LABELS[s.source] ?? s.source}</span>
                       </span>
-                      <span className="shrink-0 font-mono">{s.count}</span>
+                      <span className="shrink-0 font-mono tabular-nums text-muted-foreground">{s.count}</span>
                     </li>
                   ))}
-                  {!vaultStats && <p className="text-muted-foreground">Chargement…</p>}
+                  {!vaultStats && <li className="py-1.5 text-muted-foreground">Chargement…</li>}
                 </ul>
               </div>
 
-              <div className="liquid-glass-panel rounded-2xl p-4 lg:col-span-1">
-                <h2 className="mb-3 text-xs font-medium text-muted-foreground">Corpus réglementaire (coffre RAG)</h2>
+              <div className="liquid-glass-panel rounded-2xl p-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="text-xs font-medium text-muted-foreground">Corpus réglementaire (coffre RAG)</h2>
+                  <span className="font-mono text-xs text-muted-foreground">{vaultStats?.documentTitles.length ?? "…"} documents</span>
+                </div>
                 {vaultStats && vaultStats.documentTitles.length === 0 && (
                   <p className="text-xs text-muted-foreground">Aucun document indexé pour l'instant.</p>
                 )}
-                <ul className="custom-scrollbar max-h-56 space-y-1.5 overflow-y-auto text-xs text-muted-foreground">
+                <ul className="custom-scrollbar max-h-72 divide-y divide-border/40 overflow-y-auto text-xs">
                   {vaultStats?.documentTitles.map((title, i) => (
-                    <li key={i} className="truncate" title={title}>
-                      {title}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="liquid-glass-panel rounded-2xl p-4 lg:col-span-1">
-                <h2 className="mb-3 text-xs font-medium text-muted-foreground">Activité récente</h2>
-                {vaultStats && vaultStats.recentSearches.length === 0 && (
-                  <p className="text-xs text-muted-foreground">Aucune recherche pour l'instant — lancez-en une pour commencer à remplir le coffre.</p>
-                )}
-                <ul className="space-y-1.5 text-xs">
-                  {vaultStats?.recentSearches.map((s, i) => (
-                    <li key={i} className="flex items-center justify-between gap-2 text-muted-foreground">
-                      <span className="truncate">
-                        <span className="font-medium text-foreground">{SOURCE_LABELS[s.source] ?? s.source}</span>
-                        {" — "}
-                        <span className="font-mono">{s.cacheKey}</span>
+                    <li key={i} className="flex items-baseline gap-2 py-1.5">
+                      <span className="shrink-0 font-mono text-muted-foreground/60">{String(i + 1).padStart(2, "0")}</span>
+                      <span className="truncate text-foreground" title={title}>
+                        {title}
                       </span>
-                      <span className="shrink-0">{timeAgo(s.fetchedAt)}</span>
                     </li>
                   ))}
                 </ul>
