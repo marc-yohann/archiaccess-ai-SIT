@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Search, Send, Sparkles } from "lucide-react"
+import { Search, Send, Sparkles, Copy, Check, ExternalLink } from "lucide-react"
 import { AuthGate } from "@/components/auth-gate"
 import type { AddressResult } from "@/lib/data-sources/ban"
 import type { Parcel } from "@/lib/data-sources/cadastre"
@@ -289,12 +289,12 @@ function Dashboard() {
     }
   }
 
-  async function submitAiInput(e: React.FormEvent) {
-    e.preventDefault()
-    const text = aiInput.trim()
-    if (!text) return
-    setAiInput("")
-    await sendAiMessage(text, {
+  // Instantané courant, réutilisé par submitAiInput() et par les actions
+  // "Copier" / "Ouvrir dans Archiaccess AI" (voir aside plus bas) — même
+  // construction que celle déjà utilisée pour le contexte envoyé au
+  // copilote, pour ne pas dupliquer la liste des champs à deux endroits.
+  function currentSnapshot(): SitSnapshot {
+    return {
       address: selectedAddress,
       parcels,
       risks,
@@ -309,7 +309,29 @@ function Dashboard() {
       publicMarkets,
       groundwaterStations,
       heatNetwork,
-    })
+    }
+  }
+
+  async function submitAiInput(e: React.FormEvent) {
+    e.preventDefault()
+    const text = aiInput.trim()
+    if (!text) return
+    setAiInput("")
+    await sendAiMessage(text, currentSnapshot())
+  }
+
+  const [copyFeedback, setCopyFeedback] = useState(false)
+  async function copyFindings() {
+    const summary = formatContext(currentSnapshot())
+    if (!summary.trim()) return
+    try {
+      await navigator.clipboard.writeText(summary)
+      setCopyFeedback(true)
+      setTimeout(() => setCopyFeedback(false), 1600)
+    } catch {
+      // Presse-papiers indisponible (permissions navigateur) — rien de
+      // grave, l'employé peut toujours utiliser "Ouvrir dans Archiaccess AI".
+    }
   }
 
   async function loadBodacc(currentCompanies: Company[]): Promise<Record<string, BodaccAnnouncement[]>> {
@@ -896,9 +918,32 @@ function Dashboard() {
         <div className="mb-2 flex items-center gap-2">
           <Sparkles size={16} />
           <h2 className="text-sm font-medium">Archiaccess AI</h2>
+          {hasTiles && (
+            <div className="ml-auto flex items-center gap-1">
+              <button
+                type="button"
+                onClick={copyFindings}
+                className="liquid-glass-btn flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground"
+                title="Copier ce qui a été trouvé, à coller dans n'importe quelle conversation Archiaccess AI"
+              >
+                {copyFeedback ? <Check size={12} /> : <Copy size={12} />}
+                {copyFeedback ? "Copié" : "Copier"}
+              </button>
+              <Link
+                href={`/ai?prefill=${encodeURIComponent(formatContext(currentSnapshot()))}`}
+                className="liquid-glass-btn flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground"
+                title="Ouvrir une conversation Archiaccess AI avec ces données déjà préremplies"
+              >
+                <ExternalLink size={12} />
+                Ouvrir dans AI
+              </Link>
+            </div>
+          )}
         </div>
         <p className="mb-3 text-xs text-muted-foreground">
-          Résume automatiquement les données chargées et répond à vos questions dessus.
+          Résume automatiquement les données chargées et répond à vos questions dessus. Ce panneau se limite à cette
+          recherche — utilisez « Copier » ou « Ouvrir dans AI » pour reprendre ces données dans une conversation
+          Archiaccess AI complète.
         </p>
         <div className="custom-scrollbar flex-1 space-y-2 overflow-y-auto">
           {aiMessages.length === 0 && (

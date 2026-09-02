@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { Plus, Trash2, LogOut, Home, Menu, X, Settings, MapPin } from "lucide-react"
@@ -42,7 +43,11 @@ const SUGGESTIONS = [
 export default function AiPage() {
   return (
     <AuthGate logoSrc="/logo-ai.png" appName="Archiaccess AI">
-      <Chat />
+      {/* useSearchParams() (voir ?prefill= plus bas) exige un ancêtre
+          Suspense côté build Next.js. */}
+      <Suspense fallback={null}>
+        <Chat />
+      </Suspense>
     </AuthGate>
   )
 }
@@ -65,6 +70,17 @@ function Chat() {
       })
       .catch(() => {})
   }
+
+  // Reprise depuis /sit : le bouton "Ouvrir dans AI" du panneau intégré au
+  // SIT amène ici avec ?prefill=<ce qui a été trouvé> — préremplit la
+  // barre de saisie sans envoyer automatiquement, pour que l'employé
+  // relise/complète avant d'envoyer.
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    const prefill = searchParams.get("prefill")
+    if (prefill) setInput(prefill)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     loadConversations()
