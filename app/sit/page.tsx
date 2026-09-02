@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { Search, Send, Sparkles } from "lucide-react"
@@ -200,7 +201,11 @@ function formatContext(s: SitSnapshot): string {
 export default function SitPage() {
   return (
     <AuthGate logoSrc="/logo-sit.png" appName="Archiaccess SIT">
-      <Dashboard />
+      {/* useSearchParams() (voir ?resume= plus bas) exige un ancêtre
+          Suspense côté build Next.js. */}
+      <Suspense fallback={null}>
+        <Dashboard />
+      </Suspense>
     </AuthGate>
   )
 }
@@ -226,6 +231,19 @@ function Dashboard() {
   const [groundwaterStations, setGroundwaterStations] = useState<GroundwaterStation[] | null>(null)
   const [heatNetwork, setHeatNetwork] = useState<HeatNetworkEligibility | null>(null)
 
+  // Reprise depuis /ai : une conversation démarrée ici est titrée "SIT ·
+  // <adresse/entreprise>" (voir sendAiMessage) ; /ai propose un lien
+  // "Reprendre dans le SIT" vers /sit?resume=<même texte> pour relancer
+  // la même recherche sans que l'employé ait à la retaper.
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    const resume = searchParams.get("resume")
+    if (!resume) return
+    setQuery(resume)
+    void search({ preventDefault: () => {} } as React.FormEvent, resume)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const [vaultStats, setVaultStats] = useState<VaultStats | null>(null)
   useEffect(() => {
     fetch("/api/sit/vault-stats")
@@ -249,7 +267,7 @@ function Dashboard() {
   const [aiInput, setAiInput] = useState("")
   const [isAiSending, setIsAiSending] = useState(false)
 
-  async function sendAiMessage(text: string, snapshot: SitSnapshot) {
+  async function sendAiMessage(text: string, snapshot: SitSnapshot, title?: string) {
     if (!text.trim() || isAiSending) return
     setAiMessages((prev) => [...prev, { role: "user", content: text }])
     setIsAiSending(true)
@@ -257,7 +275,7 @@ function Dashboard() {
       const res = await fetch("/api/mistral/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId: aiConversationId, message: text, context: formatContext(snapshot) }),
+        body: JSON.stringify({ conversationId: aiConversationId, message: text, context: formatContext(snapshot), title }),
       })
       const data = await res.json()
       if (data.success) {
@@ -305,9 +323,10 @@ function Dashboard() {
     return Object.fromEntries(entries)
   }
 
-  async function search(e: React.FormEvent) {
+  async function search(e: React.FormEvent, prefill?: string) {
     e.preventDefault()
-    if (!query.trim() || isSearching) return
+    const q = (prefill ?? query).trim()
+    if (!q || isSearching) return
     setIsSearching(true)
     setError("")
     setSelectedAddress(null)
@@ -326,7 +345,7 @@ function Dashboard() {
     setAiConversationId(undefined)
     setAiMessages([])
     try {
-      const res = await fetch(`/api/sit/search?q=${encodeURIComponent(query)}`)
+      const res = await fetch(`/api/sit/search?q=${encodeURIComponent(q)}`)
       const data = await res.json()
       if (!data.success) {
         setError(data.error ?? "Recherche impossible.")
@@ -352,6 +371,7 @@ function Dashboard() {
         void sendAiMessage(
           "Fais un résumé synthétique des informations ci-dessus, pertinent pour une étude AMO/OPC (par exemple pour vérifier un partenaire de groupement). Sois concis (5-8 lignes maximum).",
           { companies: foundCompanies, bodaccBySiren: bodacc },
+          `SIT · ${foundCompanies[0].nom}`,
         )
       }
     } finally {
@@ -449,6 +469,7 @@ function Dashboard() {
         groundwaterStations: loadedGroundwater,
         heatNetwork: loadedHeatNetwork,
       },
+      `SIT · ${addr.label}`,
     )
   }
 

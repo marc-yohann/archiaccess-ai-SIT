@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
   }
 
-  const { conversationId, message, context } = (await request.json()) as {
+  const { conversationId, message, context, title } = (await request.json()) as {
     conversationId?: string
     message?: string
     // Données actuellement affichées dans le SIT (adresse/cadastre/risques/
@@ -62,6 +62,13 @@ export async function POST(request: Request) {
     // que l'employé ait à tout recopier. Absent depuis /ai (comportement
     // inchangé là-bas).
     context?: string
+    // Titre explicite pour une NOUVELLE conversation (ignoré si la
+    // conversation existe déjà). Le panneau IA de /sit envoie l'adresse
+    // ou l'entreprise réellement étudiée (préfixée "SIT · "), plutôt que
+    // de laisser le titre par défaut reprendre le prompt de résumé
+    // automatique — illisible dans la liste de conversations de /ai.
+    // Absent depuis /ai, comportement inchangé là-bas.
+    title?: string
   }
   if (!message?.trim()) {
     return NextResponse.json({ success: false, error: "Message vide." }, { status: 400 })
@@ -77,7 +84,7 @@ export async function POST(request: Request) {
         include: { messages: true },
       })
     : await prisma.conversation.create({
-        data: { userId: user.id, title: message.trim().slice(0, 80) },
+        data: { userId: user.id, title: (title?.trim() || message.trim()).slice(0, 80) },
         include: { messages: true },
       })
 

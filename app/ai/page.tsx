@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Plus, Trash2, LogOut, Home, Menu, X, Settings } from "lucide-react"
+import { Plus, Trash2, LogOut, Home, Menu, X, Settings, MapPin } from "lucide-react"
 import { AuthGate, useUser } from "@/components/auth-gate"
 
 interface ChatMessage {
@@ -15,6 +15,21 @@ interface ConversationSummary {
   id: string
   title: string | null
   updatedAt: string
+}
+
+// Convention posée côté /sit (voir app/sit/page.tsx::sendAiMessage) pour
+// signaler qu'une conversation vient d'une recherche du tableau de bord
+// fédéré plutôt que d'avoir été démarrée ici — pas de colonne dédiée en
+// base (éviterait une migration Prisma, actuellement bloquée, voir
+// CLAUDE.md "Pièges" sur le bastion SSM), juste un préfixe de titre.
+const SIT_PREFIX = "SIT · "
+
+function parseConversationTitle(title: string | null): { label: string; sitSubject: string | null } {
+  if (title?.startsWith(SIT_PREFIX)) {
+    const subject = title.slice(SIT_PREFIX.length)
+    return { label: subject, sitSubject: subject }
+  }
+  return { label: title ?? "Nouvelle conversation", sitSubject: null }
 }
 
 const SUGGESTIONS = [
@@ -142,24 +157,50 @@ function Chat() {
           Nouvelle conversation
         </button>
         <div className="custom-scrollbar flex-1 space-y-1 overflow-y-auto">
-          {conversations.map((c) => (
-            <div
-              key={c.id}
-              onClick={() => openConversation(c.id)}
-              className={`group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-sm hover:bg-black/5 ${
-                c.id === conversationId ? "liquid-glass-soft" : ""
-              }`}
-            >
-              <span className="truncate">{c.title ?? "Nouvelle conversation"}</span>
-              <button
-                onClick={(e) => deleteConversation(c.id, e)}
-                className="ml-2 shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100"
-                aria-label="Supprimer la conversation"
+          {conversations.map((c) => {
+            const { label, sitSubject } = parseConversationTitle(c.title)
+            return (
+              <div
+                key={c.id}
+                onClick={() => openConversation(c.id)}
+                className={`group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-sm hover:bg-black/5 ${
+                  c.id === conversationId ? "liquid-glass-soft" : ""
+                }`}
               >
-                <Trash2 size={14} />
-              </button>
-            </div>
-          ))}
+                <span className="flex min-w-0 items-center gap-1.5">
+                  {sitSubject && (
+                    <span
+                      className="inline-flex shrink-0 items-center rounded-full bg-black/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                      title="Conversation démarrée depuis une recherche du SIT"
+                    >
+                      SIT
+                    </span>
+                  )}
+                  <span className="truncate">{label}</span>
+                </span>
+                <span className="ml-2 flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-60">
+                  {sitSubject && (
+                    <Link
+                      href={`/sit?resume=${encodeURIComponent(sitSubject)}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="hover:!opacity-100"
+                      aria-label="Reprendre dans le SIT"
+                      title="Reprendre dans le SIT"
+                    >
+                      <MapPin size={14} />
+                    </Link>
+                  )}
+                  <button
+                    onClick={(e) => deleteConversation(c.id, e)}
+                    className="hover:!opacity-100"
+                    aria-label="Supprimer la conversation"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </span>
+              </div>
+            )
+          })}
         </div>
         <div className="flex flex-col gap-1 border-t border-black/10 pt-3 text-sm text-muted-foreground">
           <span className="truncate px-1">{user.name}</span>
