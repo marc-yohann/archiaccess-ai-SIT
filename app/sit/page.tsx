@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Home } from "lucide-react"
+import { Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Home, Layers, Map, LayoutGrid, ListChecks } from "lucide-react"
 import { AuthGate } from "@/components/auth-gate"
 import type { AddressResult } from "@/lib/data-sources/ban"
 import type { Parcel } from "@/lib/data-sources/cadastre"
@@ -78,11 +78,27 @@ const SOURCE_LABELS: Record<string, string> = {
 // — répond à "à quoi ça sert" plutôt qu'à "qu'est-ce que c'est". Même
 // regroupement partout : Sources fédérées, résultats de recherche,
 // disciplines techniques (voir TAXONOMY plus bas).
-const SOURCE_GROUPS: { label: string; sources: string[] }[] = [
-  { label: "Foncier & urbanisme", sources: ["ban", "cadastre", "urbanisme", "servitudes"] },
-  { label: "Risques & sol", sources: ["georisques", "cavites", "sites-pollues", "nappes"] },
-  { label: "Marché & acteurs", sources: ["entreprises", "bodacc", "boamp"] },
-  { label: "Énergie & valeur", sources: ["dvf", "dpe", "chaleur-urbaine"] },
+const SOURCE_GROUPS: { label: string; desc: string; sources: string[] }[] = [
+  {
+    label: "Foncier & urbanisme",
+    desc: "Constructibilité, historique de vente, zonage",
+    sources: ["ban", "cadastre", "urbanisme", "servitudes"],
+  },
+  {
+    label: "Risques & sol",
+    desc: "Contraintes géotechniques et environnementales à anticiper",
+    sources: ["georisques", "cavites", "sites-pollues", "nappes"],
+  },
+  {
+    label: "Marché & acteurs",
+    desc: "Qui intervient sur le secteur, solidité financière",
+    sources: ["entreprises", "bodacc", "boamp"],
+  },
+  {
+    label: "Énergie & valeur",
+    desc: "Performance énergétique et valeur du bien",
+    sources: ["dvf", "dpe", "chaleur-urbaine"],
+  },
 ]
 
 // Taxonomie des ~40 disciplines techniques Archiaccess — savoir-faire
@@ -192,6 +208,54 @@ const TAXONOMY: TaxonomyCategory[] = [
     ],
   },
 ]
+
+// Chips de filtre du panneau "Corpus réglementaire" — même principe que
+// le badge "Corpus" de TAXONOMY : jamais un id de document codé en dur,
+// une étiquette de discipline associée à des mots-clés, vérifiée à
+// l'affichage contre les vrais titres indexés (vaultStats.documentTitles).
+// Une chip n'apparaît que si au moins un document réel correspond.
+const DOCUMENT_TAGS: { tag: string; keywords: string[] }[] = [
+  { tag: "Accessibilité", keywords: ["accessibilité"] },
+  { tag: "Acoustique", keywords: ["acoustique"] },
+  { tag: "Amiante", keywords: ["amiante"] },
+  { tag: "AMO / MOE", keywords: ["maîtrise d'œuvre", "maîtrise d'ouvrage"] },
+  { tag: "Contrats", keywords: ["ccag"] },
+  { tag: "Eau", keywords: ["loi sur l'eau", "iota", "assainissement non collectif"] },
+  { tag: "Énergie", keywords: ["solarisation", "re2020", "réglementation environnementale"] },
+  { tag: "Environnement", keywords: ["installations classées", "icpe"] },
+  { tag: "Garanties", keywords: ["garanties de construction"] },
+  { tag: "Hyperbare", keywords: ["hyperbare"] },
+  { tag: "Incendie", keywords: ["incendie"] },
+  { tag: "Marchés publics", keywords: ["passation des marchés publics"] },
+  { tag: "Parasismique", keywords: ["parasismique"] },
+  { tag: "Qualité d'air", keywords: ["aération"] },
+  { tag: "Radon", keywords: ["radioprotection", "radon"] },
+  { tag: "Réemploi", keywords: ["pemd"] },
+  { tag: "SPS", keywords: ["coordination sps"] },
+  { tag: "VRD", keywords: ["assainissement collectif"] },
+]
+
+// 5 portes d'entrée vers le SIT (retour : "accéder aux données en
+// mettant une adresse ou une entreprise, je trouve ça pauvre" pour une
+// base pluridisciplinaire). "point" et "discipline" sont réellement
+// câblés sur la vraie recherche ; "secteur"/"carte"/"lot" demanderaient
+// une nouvelle logique de requête (par commune, carte IGN, plusieurs
+// adresses à la fois) — visibles pour montrer où va le SIT, mais
+// honnêtement marqués "Bientôt disponible" plutôt que de laisser croire
+// qu'ils fonctionnent déjà.
+type SearchMode = "point" | "secteur" | "carte" | "discipline" | "lot"
+const SEARCH_MODE_META: { id: SearchMode; label: string; icon: typeof Search }[] = [
+  { id: "point", label: "Point précis", icon: Search },
+  { id: "secteur", label: "Secteur", icon: Layers },
+  { id: "carte", label: "Carte", icon: Map },
+  { id: "discipline", label: "Discipline", icon: LayoutGrid },
+  { id: "lot", label: "Lot", icon: ListChecks },
+]
+const SOON_TEXT: Record<"secteur" | "carte" | "lot", string> = {
+  secteur: "Explorer une commune ou un département entier — pour les sources qui travaillent déjà à cette échelle (risques, DVF, cavités, marchés publics, nappes…), sans passer par une adresse précise.",
+  carte: "Sélectionner directement une zone sur une carte plutôt que taper une adresse.",
+  lot: "Analyser plusieurs adresses ou parcelles à la fois — une étude porte rarement sur un seul site.",
+}
 
 function labelFromCacheKey(key: string): string {
   const raw = key.replace(/^q:/, "")
@@ -557,6 +621,11 @@ function Dashboard() {
   const [resultsLoading, setResultsLoading] = useState(false)
 
   const [docFilter, setDocFilter] = useState("")
+  const [docTagFilter, setDocTagFilter] = useState<string | null>(null)
+
+  const [searchMode, setSearchMode] = useState<SearchMode>("point")
+  const [discGroupIndex, setDiscGroupIndex] = useState(0)
+  const [discQuery, setDiscQuery] = useState("")
   const [openTaxoCats, setOpenTaxoCats] = useState<number[]>([])
 
   // Horloge de la ligne de statut — pur affichage du temps, forcé sur
@@ -913,22 +982,100 @@ function Dashboard() {
           </Link>
         </div>
 
-        <form onSubmit={search} className="liquid-glass flex items-center gap-2 rounded-2xl p-2">
-          <Search size={18} className="ml-2 shrink-0 text-muted-foreground" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Adresse, entreprise, SIREN/SIRET… — tapez ce que vous cherchez"
-            className="flex-1 bg-transparent px-1 py-2 text-sm outline-none"
-          />
-          <button
-            type="submit"
-            disabled={isSearching}
-            className="chrome-black shrink-0 rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
-          >
-            {isSearching ? "…" : "Rechercher"}
-          </button>
-        </form>
+        {/* 5 portes d'entrée vers le SIT — voir SEARCH_MODE_META. Point
+            précis et Discipline sont réellement câblés sur search() ;
+            Secteur/Carte/Lot sont honnêtement en attente (voir SOON_TEXT) :
+            jamais un bouton qui a l'air de marcher mais ne fait rien. */}
+        <div className="liquid-glass rounded-2xl">
+          <div className="mode-tabs">
+            {SEARCH_MODE_META.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setSearchMode(m.id)}
+                className={`mode-tab${searchMode === m.id ? " active" : ""}`}
+              >
+                <m.icon size={14} />
+                {m.label}
+              </button>
+            ))}
+          </div>
+
+          {searchMode === "point" && (
+            <div className="mode-panel">
+              <p className="mode-desc">Une adresse, une entreprise ou un SIREN/SIRET précis.</p>
+              <form onSubmit={search} className="mode-row box">
+                <Search size={16} style={{ marginLeft: ".5rem", flexShrink: 0, color: "var(--muted-foreground)" }} />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Adresse, entreprise, SIREN/SIRET…"
+                  autoComplete="off"
+                />
+                <button
+                  type="submit"
+                  disabled={isSearching}
+                  className="chrome-black shrink-0 rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
+                  style={{ margin: ".25rem" }}
+                >
+                  {isSearching ? "…" : "Rechercher"}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {searchMode === "discipline" && (
+            <div className="mode-panel">
+              <p className="mode-desc">
+                Partir d'un objectif d'étude plutôt que d'une adresse — la recherche reste la même (adresse ou
+                entreprise), seul le cadre change.
+              </p>
+              <div className="disc-grid">
+                {SOURCE_GROUPS.map((g, i) => (
+                  <button
+                    key={g.label}
+                    type="button"
+                    onClick={() => setDiscGroupIndex(i)}
+                    className={`disc-card liquid-glass-soft rounded-2xl${discGroupIndex === i ? " active" : ""}`}
+                  >
+                    <div className="name">{g.label}</div>
+                    <div className="hint">{g.desc}</div>
+                  </button>
+                ))}
+              </div>
+              <form
+                onSubmit={(e) => {
+                  void search(e, discQuery)
+                  setDiscQuery("")
+                }}
+                className="mode-row box"
+              >
+                <input
+                  value={discQuery}
+                  onChange={(e) => setDiscQuery(e.target.value)}
+                  placeholder="Adresse ou entreprise…"
+                  autoComplete="off"
+                  style={{ marginLeft: ".375rem" }}
+                />
+                <button
+                  type="submit"
+                  disabled={isSearching}
+                  className="chrome-black shrink-0 rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
+                  style={{ margin: ".25rem" }}
+                >
+                  Étudier {SOURCE_GROUPS[discGroupIndex].label}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {(searchMode === "secteur" || searchMode === "carte" || searchMode === "lot") && (
+            <div className="mode-panel">
+              <p className="mode-desc">{SOON_TEXT[searchMode]}</p>
+              <p className="text-xs text-muted-foreground/70">Bientôt disponible.</p>
+            </div>
+          )}
+        </div>
 
         {error && <p className="text-xs text-red-600">{error}</p>}
 
@@ -1011,17 +1158,57 @@ function Dashboard() {
                   <Search size={13} />
                   <input
                     value={docFilter}
-                    onChange={(e) => setDocFilter(e.target.value)}
-                    placeholder="Filtrer par mot-clé…"
+                    onChange={(e) => {
+                      setDocFilter(e.target.value)
+                      if (e.target.value.trim()) setDocTagFilter(null)
+                    }}
+                    placeholder="Filtrer par discipline ou mot-clé…"
                     className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
                   />
                 </div>
+                {(() => {
+                  const titles = vaultStats?.documentTitles ?? []
+                  const availableTags = DOCUMENT_TAGS.filter((dt) =>
+                    titles.some((t) => dt.keywords.some((k) => t.toLowerCase().includes(k.toLowerCase()))),
+                  )
+                  return availableTags.length > 0 ? (
+                    <div className="mb-2.5 flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setDocTagFilter(null)}
+                        className={`tag-chip${docTagFilter === null ? " active" : ""}`}
+                        style={{ fontWeight: 600 }}
+                      >
+                        Tous
+                      </button>
+                      {availableTags.map((dt) => (
+                        <button
+                          key={dt.tag}
+                          type="button"
+                          onClick={() => {
+                            setDocTagFilter(dt.tag)
+                            setDocFilter("")
+                          }}
+                          className={`tag-chip${docTagFilter === dt.tag ? " active" : ""}`}
+                        >
+                          {dt.tag}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null
+                })()}
                 {vaultStats && vaultStats.documentTitles.length === 0 && (
                   <p className="text-xs text-muted-foreground">Aucun document indexé pour l'instant.</p>
                 )}
                 <ul className="custom-scrollbar max-h-72 divide-y divide-border/40 overflow-y-auto text-xs">
                   {(vaultStats?.documentTitles ?? [])
-                    .filter((t) => t.toLowerCase().includes(docFilter.trim().toLowerCase()))
+                    .filter((t) => {
+                      if (docTagFilter) {
+                        const dt = DOCUMENT_TAGS.find((d) => d.tag === docTagFilter)
+                        return dt ? dt.keywords.some((k) => t.toLowerCase().includes(k.toLowerCase())) : true
+                      }
+                      return t.toLowerCase().includes(docFilter.trim().toLowerCase())
+                    })
                     .map((title, i) => (
                       <li key={i}>
                         <button
@@ -1058,12 +1245,13 @@ function Dashboard() {
                     const active = counts.filter((c) => c > 0).length
                     return (
                       <div key={g.label} id={`src-group-${g.label}`}>
-                        <div className="mb-1 flex items-center justify-between text-[0.66rem] font-medium uppercase tracking-wide text-muted-foreground/80">
+                        <div className="mb-0.5 flex items-center justify-between text-[0.66rem] font-medium uppercase tracking-wide text-muted-foreground/80">
                           <span>{g.label}</span>
                           <span className="font-mono">
                             {active}/{g.sources.length}
                           </span>
                         </div>
+                        <p className="mb-1 text-[0.68rem] text-muted-foreground/75">{g.desc}</p>
                         <ul className="divide-y divide-border/40">
                           {g.sources.map((src, i) => (
                             <li key={src} className="flex items-center justify-between gap-2 py-1.5">
@@ -1242,17 +1430,16 @@ function Dashboard() {
                 </Link>
               </>
             )}
-            {aiMessages.length > 0 && (
-              <button
-                type="button"
-                onClick={resetConversation}
-                className="liquid-glass-btn flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground"
-                title="Vider ce panneau et repartir de zéro"
-              >
-                <Plus size={12} />
-                Nouvelle conversation
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={resetConversation}
+              disabled={aiMessages.length === 0}
+              className="liquid-glass-btn flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground disabled:opacity-40"
+              title="Vider ce panneau et repartir de zéro"
+            >
+              <Plus size={12} />
+              Nouvelle conversation
+            </button>
           </div>
         </div>
         <p className="mb-3 text-xs text-muted-foreground">
