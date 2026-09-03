@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight } from "lucide-react"
+import { Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Home } from "lucide-react"
 import { AuthGate } from "@/components/auth-gate"
 import type { AddressResult } from "@/lib/data-sources/ban"
 import type { Parcel } from "@/lib/data-sources/cadastre"
@@ -900,7 +900,15 @@ function Dashboard() {
             <Image src="/logo-sit.png" alt="Archiaccess SIT" width={40} height={40} />
             <h1 className="text-lg font-medium">Système d'Information Technique</h1>
           </div>
-          <Link href="/" className="text-sm text-muted-foreground hover:underline">
+          {/* Bouton pilule en verre chromé, cohérent avec le reste de
+              l'app — un lien texte simple détonnait à côté des boutons
+              en verre utilisés partout ailleurs (retour utilisateur,
+              jamais porté depuis l'artéfact). */}
+          <Link
+            href="/"
+            className="liquid-glass-pill flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium"
+          >
+            <Home size={13} />
             Accueil
           </Link>
         </div>
