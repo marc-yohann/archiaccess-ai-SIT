@@ -214,6 +214,16 @@ const TAXONOMY: TaxonomyCategory[] = [
 // une étiquette de discipline associée à des mots-clés, vérifiée à
 // l'affichage contre les vrais titres indexés (vaultStats.documentTitles).
 // Une chip n'apparaît que si au moins un document réel correspond.
+// Questions suggérées du panneau Archiaccess AI — mêmes 3 disciplines que
+// l'artéfact, mais jamais liées à un id de document en dur : résolues à
+// l'affichage contre les vrais titres indexés (voir suggestedQuestions()
+// plus bas). N'apparaît que si un document réel correspond.
+const SUGGESTED_QUESTION_TEMPLATES: { tag: string; question: string }[] = [
+  { tag: "Accessibilité", question: "Quelles sont les obligations PMR pour un ERP neuf ?" },
+  { tag: "Contrats", question: "Quels sont les délais de recours après réception (CCAG-Travaux) ?" },
+  { tag: "Marchés publics", question: "À partir de quel seuil faut-il une procédure formalisée ?" },
+]
+
 const DOCUMENT_TAGS: { tag: string; keywords: string[] }[] = [
   { tag: "Accessibilité", keywords: ["accessibilité"] },
   { tag: "Acoustique", keywords: ["acoustique"] },
@@ -961,6 +971,14 @@ function Dashboard() {
   const showLanding = !hasTiles && !resultsLoading && addresses.length === 0 && companies.length === 0
   const recentStudies = vaultStats?.recentStudies ?? []
 
+  // Questions suggérées : résolues contre les vrais titres indexés, pas
+  // fabriquées — une question ne s'affiche que si un document réel existe.
+  const suggestedQuestions = SUGGESTED_QUESTION_TEMPLATES.map((t) => {
+    const dt = DOCUMENT_TAGS.find((d) => d.tag === t.tag)
+    const title = dt ? vaultStats?.documentTitles.find((ti) => dt.keywords.some((k) => ti.toLowerCase().includes(k.toLowerCase()))) : undefined
+    return title ? { tag: t.tag, question: t.question, title } : null
+  }).filter((x): x is { tag: string; question: string; title: string } => x !== null)
+
   return (
     <main className="glass-scene flex h-screen w-full flex-col overflow-hidden lg:flex-row">
       <div className="custom-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto p-4">
@@ -1069,7 +1087,23 @@ function Dashboard() {
             </div>
           )}
 
-          {(searchMode === "secteur" || searchMode === "carte" || searchMode === "lot") && (
+          {searchMode === "carte" && (
+            <div className="mode-panel">
+              <p className="mode-desc">
+                Sélectionner directement une zone sur la carte plutôt que taper une adresse — carte de France,
+                cohérente avec les sources connectées (BAN, IGN, Géorisques, DVF…).
+              </p>
+              <div className="map-box">
+                <FranceOutline />
+              </div>
+              <p className="mt-2 text-[0.68rem] text-muted-foreground/80">
+                Aperçu schématique (contour approximatif) — l'intégration d'un vrai fond de carte (tuiles IGN) n'est
+                pas encore construite.
+              </p>
+            </div>
+          )}
+
+          {(searchMode === "secteur" || searchMode === "lot") && (
             <div className="mode-panel">
               <p className="mode-desc">{SOON_TEXT[searchMode]}</p>
               <p className="text-xs text-muted-foreground/70">Bientôt disponible.</p>
@@ -1272,6 +1306,7 @@ function Dashboard() {
               </div>
             </div>
 
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="liquid-glass-panel rounded-2xl p-4">
               <h2 className="mb-2 text-xs font-medium text-muted-foreground">Disciplines techniques</h2>
               <p className="mb-2 text-xs text-muted-foreground">
@@ -1329,6 +1364,19 @@ function Dashboard() {
                   )
                 })}
               </div>
+            </div>
+
+            <div className="liquid-glass-panel rounded-2xl p-4">
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-xs font-medium text-muted-foreground">Aperçu carte</h2>
+                <button type="button" onClick={() => setSearchMode("carte")} className="text-xs text-muted-foreground hover:underline">
+                  Voir la carte →
+                </button>
+              </div>
+              <button type="button" onClick={() => setSearchMode("carte")} className="map-box map-box-mini block w-full cursor-pointer">
+                <FranceOutline />
+              </button>
+            </div>
             </div>
           </div>
         )}
@@ -1501,6 +1549,24 @@ function Dashboard() {
             </div>
           )}
         </div>
+        {suggestedQuestions.length > 0 && (
+          <div className="mt-3">
+            <p className="mb-1.5 text-xs font-medium text-muted-foreground">Questions suggérées, à partir du corpus</p>
+            <div className="flex flex-col gap-1.5">
+              {suggestedQuestions.map((s) => (
+                <button
+                  key={s.tag}
+                  type="button"
+                  onClick={() => sendAiMessage(s.question, currentSnapshot(), undefined, s.title)}
+                  className="liquid-glass-soft flex items-center gap-2 rounded-xl px-2.5 py-2 text-left text-xs"
+                >
+                  <span className="doc-tag">{s.tag}</span>
+                  <span>{s.question}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <form onSubmit={submitAiInput} className="mt-3 flex gap-2">
           <input
             value={aiInput}
@@ -1522,6 +1588,16 @@ function Dashboard() {
   )
 }
 
+
+// Contour schématique de la France — pas un vrai fond de carte (aucune
+// tuile IGN chargée), voir la note affichée à côté dans l'onglet Carte.
+function FranceOutline() {
+  return (
+    <svg className="map-france" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+      <path d="M46 4 L56 6 L60 3 L66 8 L64 14 L70 15 L74 22 L82 24 L88 30 L86 38 L90 44 L84 50 L88 58 L80 62 L78 70 L70 72 L68 80 L60 82 L56 90 L50 86 L44 92 L40 84 L32 82 L28 74 L20 70 L18 62 L12 58 L14 50 L10 42 L16 36 L14 28 L22 24 L24 16 L32 14 L36 8 L42 10 Z" />
+    </svg>
+  )
+}
 
 function DocumentUpload() {
   const [title, setTitle] = useState("")

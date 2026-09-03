@@ -989,4 +989,32 @@
     outline: 2px solid rgba(16, 185, 129, 0.55);
     outline-offset: -1px;
   }
+
+  /* Aperçu carte — contour schématique de la France (voir app/sit/page.tsx),
+     pas un vrai fond de carte (aucune tuile IGN chargée) : la note sous le
+     contour le dit explicitement, pour ne jamais laisser croire à une
+     précision qui n'existe pas. */
+  .map-box {
+    position: relative;
+    height: 190px;
+    border-radius: 14px;
+    overflow: hidden;
+    background:
+      linear-gradient(rgba(20, 24, 28, 0.05) 1px, transparent 1px) 0 0 / 24px 24px,
+      linear-gradient(90deg, rgba(20, 24, 28, 0.05) 1px, transparent 1px) 0 0 / 24px 24px,
+      color-mix(in oklch, var(--foreground) 4%, transparent);
+    border: 1px solid color-mix(in oklch, var(--border) 100%, transparent 30%);
+  }
+  .map-box-mini {
+    height: 150px;
+  }
+  .map-france {
+    position: absolute;
+    inset: 8% 30%;
+    width: 40%;
+    height: 84%;
+    fill: color-mix(in oklch, var(--foreground) 6%, transparent);
+    stroke: color-mix(in oklch, var(--foreground) 16%, transparent);
+    stroke-width: 1;
+  }
 }
