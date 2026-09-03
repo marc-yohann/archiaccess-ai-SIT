@@ -15,6 +15,14 @@ export interface RecentSearch {
   fetchedAt: string
 }
 
+// Sources dont la cacheKey est un texte tapé par l'employé (adresse ou
+// entreprise) — les seules utilisables pour "Reprendre une étude
+// récente" (voir app/sit/page.tsx). Les 10 autres connecteurs sont
+// interrogés en parallèle à chaque adresse sélectionnée : les mélanger
+// au flux global "recentEntries" noierait les entrées adresse/entreprise
+// sous ces écritures groupées, d'où une requête dédiée.
+const STUDY_SOURCES = ["ban", "entreprises"]
+
 export interface SourceCount {
   source: string
   count: number
@@ -49,12 +57,18 @@ export async function GET() {
 
   try {
     const prisma = await getPrisma()
-    const [totalCacheEntries, totalDocuments, recentEntries, groupedBySource, documentTitles] = await Promise.all([
+    const [totalCacheEntries, totalDocuments, recentEntries, recentStudyEntries, groupedBySource, documentTitles] = await Promise.all([
       prisma.dataCacheEntry.count(),
       prisma.document.count(),
       prisma.dataCacheEntry.findMany({
         orderBy: { fetchedAt: "desc" },
         take: 8,
+        select: { source: true, cacheKey: true, fetchedAt: true },
+      }),
+      prisma.dataCacheEntry.findMany({
+        where: { source: { in: STUDY_SOURCES } },
+        orderBy: { fetchedAt: "desc" },
+        take: 6,
         select: { source: true, cacheKey: true, fetchedAt: true },
       }),
       prisma.dataCacheEntry.groupBy({ by: ["source"], _count: { source: true } }),
@@ -77,11 +91,22 @@ export async function GET() {
       fetchedAt: e.fetchedAt.toISOString(),
     }))
 
+    // Dédupliqué par cacheKey (une même adresse/entreprise recherchée
+    // deux fois ne doit apparaître qu'une fois, à sa date la plus récente).
+    const seenKeys = new Set<string>()
+    const recentStudies: RecentSearch[] = []
+    for (const e of recentStudyEntries) {
+      if (seenKeys.has(e.cacheKey)) continue
+      seenKeys.add(e.cacheKey)
+      recentStudies.push({ source: e.source, cacheKey: e.cacheKey, fetchedAt: e.fetchedAt.toISOString() })
+    }
+
     return NextResponse.json({
       success: true,
       totalCacheEntries,
       totalDocuments,
       recentSearches,
+      recentStudies,
       sourceCounts,
       documentTitles: documentTitles.map((d) => d.title),
     })
