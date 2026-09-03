@@ -940,8 +940,15 @@ function Dashboard() {
                 {[...vaultStats.recentSearches, ...vaultStats.recentSearches].map((s, i) => (
                   <span key={i} className="ticker-item flex shrink-0 items-center gap-1.5 text-xs">
                     <span className="h-1 w-1 shrink-0 rounded-full bg-emerald-500" />
-                    <span className="font-mono font-medium text-foreground">{(SOURCE_LABELS[s.source] ?? s.source).toUpperCase()}</span>
-                    <span className="font-mono text-muted-foreground">{s.cacheKey}</span>
+                    <span className="font-medium text-foreground">{SOURCE_LABELS[s.source] ?? s.source}</span>
+                    {/* Le contenu de la cacheKey n'est un texte humain lisible
+                        que pour ban/entreprises (ce que l'employé a tapé) —
+                        pour les autres connecteurs c'est un code technique
+                        (INSEE, coordonnées, préfixe de section…) qui n'a rien
+                        à faire sous les yeux de l'utilisateur final. */}
+                    {(s.source === "ban" || s.source === "entreprises") && (
+                      <span className="text-muted-foreground">{labelFromCacheKey(s.cacheKey)}</span>
+                    )}
                     <span className="text-muted-foreground/60">· {timeAgo(s.fetchedAt)}</span>
                   </span>
                 ))}
