@@ -1035,7 +1035,12 @@ function Dashboard() {
             incompatibilité backdrop-filter/GPU côté navigateur avec le
             blur plus intense de .liquid-glass — .liquid-glass-panel est
             visuellement très proche et déjà éprouvé sur cette page. */}
-        <div className="liquid-glass-panel rounded-2xl">
+        {/* .liquid-glass-deep (relief renforcé, déjà dans le système,
+            jusque-là jamais utilisé) plutôt que .liquid-glass-panel :
+            retour utilisateur — la barre n'avait pas assez de présence
+            visuelle pour être vue/utilisée sur son écran. Fond plus
+            opaque, contour plus marqué, mêmes couleurs du système. */}
+        <div className="liquid-glass liquid-glass-deep rounded-2xl">
           <div className="mode-tabs">
             {SEARCH_MODE_META.map((m) => (
               <button
