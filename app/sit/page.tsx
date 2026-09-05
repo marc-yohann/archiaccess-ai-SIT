@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Home, Layers, Map, LayoutGrid, ListChecks } from "lucide-react"
+import { Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Home, Layers, Map, LayoutGrid, ListChecks, PanelRightClose, PanelRightOpen } from "lucide-react"
 import { AuthGate } from "@/components/auth-gate"
 import type { AddressResult } from "@/lib/data-sources/ban"
 import type { Parcel } from "@/lib/data-sources/cadastre"
@@ -632,6 +632,27 @@ function Dashboard() {
 
   const [docFilter, setDocFilter] = useState("")
   const [docTagFilter, setDocTagFilter] = useState<string | null>(null)
+
+  // Panneau Archiaccess AI redimensionnable/repliable (retour : "rend le
+  // chat AI modulaire") — largeur ajustable par glisser sur le bord
+  // gauche (desktop uniquement), replié = simple bande verticale.
+  const [aiWidth, setAiWidth] = useState(384)
+  const [aiCollapsed, setAiCollapsed] = useState(false)
+
+  function startAiResize(e: React.MouseEvent) {
+    e.preventDefault()
+    const startX = e.clientX
+    const startWidth = aiWidth
+    function onMove(ev: MouseEvent) {
+      setAiWidth(Math.min(640, Math.max(280, startWidth + (startX - ev.clientX))))
+    }
+    function onUp() {
+      window.removeEventListener("mousemove", onMove)
+      window.removeEventListener("mouseup", onUp)
+    }
+    window.addEventListener("mousemove", onMove)
+    window.addEventListener("mouseup", onUp)
+  }
 
   const [searchMode, setSearchMode] = useState<SearchMode>("point")
   const [discGroupIndex, setDiscGroupIndex] = useState(0)
@@ -1452,7 +1473,35 @@ function Dashboard() {
         <DocumentUpload />
       </div>
 
-      <aside className="liquid-glass-panel flex h-[45vh] w-full shrink-0 flex-col p-4 lg:h-screen lg:w-96">
+      <aside
+        className={
+          aiCollapsed
+            ? "liquid-glass-panel relative flex h-14 w-full shrink-0 flex-col overflow-hidden p-3 lg:h-screen lg:w-14"
+            : "liquid-glass-panel relative flex h-[45vh] w-full shrink-0 flex-col p-4 lg:h-screen lg:w-[var(--ai-width)]"
+        }
+        style={!aiCollapsed ? ({ "--ai-width": `${aiWidth}px` } as React.CSSProperties) : undefined}
+      >
+        {/* Poignée de redimensionnement — bord gauche, desktop uniquement
+            (retour : "rend le chat AI modulaire"). */}
+        {!aiCollapsed && (
+          <div
+            onMouseDown={startAiResize}
+            className="absolute -left-1.5 top-0 hidden h-full w-3 cursor-col-resize lg:block"
+            title="Glisser pour redimensionner"
+          />
+        )}
+        {aiCollapsed ? (
+          <button
+            type="button"
+            onClick={() => setAiCollapsed(false)}
+            className="flex h-full w-full items-center justify-center gap-2 text-muted-foreground lg:flex-col"
+            title="Afficher le panneau Archiaccess AI"
+          >
+            <Sparkles size={16} />
+            <span className="text-sm font-medium lg:hidden">Archiaccess AI</span>
+          </button>
+        ) : (
+          <>
         <div className="mb-2 flex items-center gap-2">
           <Sparkles size={16} />
           <h2 className="text-sm font-medium">Archiaccess AI</h2>
@@ -1487,6 +1536,14 @@ function Dashboard() {
             >
               <Plus size={12} />
               Nouvelle conversation
+            </button>
+            <button
+              type="button"
+              onClick={() => setAiCollapsed(true)}
+              className="liquid-glass-btn rounded-lg p-1.5 text-muted-foreground"
+              title="Replier le panneau"
+            >
+              <PanelRightClose size={14} />
             </button>
           </div>
         </div>
@@ -1583,6 +1640,8 @@ function Dashboard() {
             <Send size={14} />
           </button>
         </form>
+          </>
+        )}
       </aside>
     </main>
   )
