@@ -1025,7 +1025,17 @@ function Dashboard() {
             précis et Discipline sont réellement câblés sur search() ;
             Secteur/Carte/Lot sont honnêtement en attente (voir SOON_TEXT) :
             jamais un bouton qui a l'air de marcher mais ne fait rien. */}
-        <div className="liquid-glass rounded-2xl">
+        {/* .liquid-glass-panel plutôt que .liquid-glass : retour utilisateur
+            "toujours pareil" — cette barre ne s'affichait pas (DOM/CSS
+            pourtant corrects, confirmé par inspection). Seuls deux
+            endroits de la page utilisaient .liquid-glass (base, blur plus
+            fort) au lieu de .liquid-glass-panel — tout le reste (ticker,
+            statut, corpus, sources...) qui utilise .liquid-glass-panel
+            s'affiche sans problème pour cet utilisateur. Probable
+            incompatibilité backdrop-filter/GPU côté navigateur avec le
+            blur plus intense de .liquid-glass — .liquid-glass-panel est
+            visuellement très proche et déjà éprouvé sur cette page. */}
+        <div className="liquid-glass-panel rounded-2xl">
           <div className="mode-tabs">
             {SEARCH_MODE_META.map((m) => (
               <button
@@ -1689,7 +1699,7 @@ function DocumentUpload() {
   }
 
   return (
-    <div className="liquid-glass rounded-3xl p-6">
+    <div className="liquid-glass-panel rounded-3xl p-6">
       <h2 className="mb-1 text-sm font-medium text-muted-foreground">Ajouter une étude (Markdown)</h2>
       <p className="mb-3 text-xs text-muted-foreground">
         Indexée pour que le copilote Archiaccess AI puisse s'en servir comme contexte (recherche par similarité, pgvector).
