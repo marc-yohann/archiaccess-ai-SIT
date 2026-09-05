@@ -1035,7 +1035,7 @@ function Dashboard() {
             incompatibilité backdrop-filter/GPU côté navigateur avec le
             blur plus intense de .liquid-glass — .liquid-glass-panel est
             visuellement très proche et déjà éprouvé sur cette page. */}
-        <div className="liquid-glass-panel rounded-2xl">
+        <div className="liquid-glass-panel rounded-2xl" style={{ border: "4px solid red", background: "yellow", minHeight: 120 }}>
           <div className="mode-tabs">
             {SEARCH_MODE_META.map((m) => (
               <button
