@@ -78,24 +78,28 @@ const SOURCE_LABELS: Record<string, string> = {
 // — répond à "à quoi ça sert" plutôt qu'à "qu'est-ce que c'est". Même
 // regroupement partout : Sources fédérées, résultats de recherche,
 // disciplines techniques (voir TAXONOMY plus bas).
-const SOURCE_GROUPS: { label: string; desc: string; sources: string[] }[] = [
+const SOURCE_GROUPS: { label: string; short: string; desc: string; sources: string[] }[] = [
   {
     label: "Foncier & urbanisme",
+    short: "le foncier",
     desc: "Constructibilité, historique de vente, zonage",
     sources: ["ban", "cadastre", "urbanisme", "servitudes"],
   },
   {
     label: "Risques & sol",
+    short: "les risques et sols",
     desc: "Contraintes géotechniques et environnementales à anticiper",
     sources: ["georisques", "cavites", "sites-pollues", "nappes"],
   },
   {
     label: "Marché & acteurs",
+    short: "le marché",
     desc: "Qui intervient sur le secteur, solidité financière",
     sources: ["entreprises", "bodacc", "boamp"],
   },
   {
     label: "Énergie & valeur",
+    short: "l'énergie et la valeur",
     desc: "Performance énergétique et valeur du bien",
     sources: ["dvf", "dpe", "chaleur-urbaine"],
   },
@@ -1081,9 +1085,10 @@ function Dashboard() {
           {searchMode === "discipline" && (
             <div className="mode-panel">
               <p className="mode-desc">
-                Partir d'un objectif d'étude plutôt que d'une adresse — la recherche reste la même (adresse ou
-                entreprise), seul le cadre change.
+                Partir d'un objectif d'étude plutôt que d'une adresse — chaque discipline demande l'échelle qui lui
+                correspond.
               </p>
+              <p className="mb-1.5 text-[0.66rem] font-medium uppercase tracking-wide text-muted-foreground/80">Données du SIT</p>
               <div className="disc-grid">
                 {SOURCE_GROUPS.map((g, i) => (
                   <button
@@ -1107,7 +1112,7 @@ function Dashboard() {
                 <input
                   value={discQuery}
                   onChange={(e) => setDiscQuery(e.target.value)}
-                  placeholder="Adresse ou entreprise…"
+                  placeholder="Adresse ou parcelle…"
                   autoComplete="off"
                   style={{ marginLeft: ".375rem" }}
                 />
@@ -1117,9 +1122,75 @@ function Dashboard() {
                   className="chrome-black shrink-0 rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
                   style={{ margin: ".25rem" }}
                 >
-                  Étudier {SOURCE_GROUPS[discGroupIndex].label}
+                  Étudier {SOURCE_GROUPS[discGroupIndex].short}
                 </button>
               </form>
+
+              {/* Taxonomie des ~40 disciplines techniques Archiaccess — portée
+                  ici depuis son ancien emplacement (panneau permanent à côté
+                  de "Aperçu carte") pour rester contextuelle à l'onglet
+                  Discipline plutôt que visible en permanence hors sujet
+                  (retour de comparaison avec l'exploration de référence).
+                  Contenu et logique inchangés (badges Corpus/Données
+                  SIT/Connaissances générales calculés à l'affichage). */}
+              <p className="mb-1.5 mt-4 text-[0.66rem] font-medium uppercase tracking-wide text-muted-foreground/80">
+                Disciplines techniques Archiaccess
+              </p>
+              <p className="mode-desc">
+                La plupart sont du savoir-faire d'ingénierie, pas des données interrogeables — chaque discipline
+                indique honnêtement ce qui est réellement disponible.
+              </p>
+              <div className="taxo custom-scrollbar">
+                {TAXONOMY.map((c, ci) => {
+                  const open = openTaxoCats.includes(ci)
+                  return (
+                    <div key={c.cat} className={`taxo-cat${open ? " open" : ""}`}>
+                      <button
+                        type="button"
+                        className="taxo-cat-btn"
+                        onClick={() => setOpenTaxoCats((prev) => (prev.includes(ci) ? prev.filter((x) => x !== ci) : [...prev, ci]))}
+                      >
+                        <span>{c.cat}</span>
+                        <ChevronRight size={12} className="taxo-chevron" />
+                      </button>
+                      <ul className="taxo-items">
+                        {c.items.map((item) => {
+                          const corpusTitle = item.corpusKeyword
+                            ? vaultStats?.documentTitles.find((t) => t.toLowerCase().includes(item.corpusKeyword!.toLowerCase()))
+                            : undefined
+                          return (
+                            <li
+                              key={item.name}
+                              onClick={() => {
+                                if (corpusTitle) {
+                                  askAboutDocument(corpusTitle)
+                                } else if (item.group) {
+                                  document.getElementById(`src-group-${item.group}`)?.scrollIntoView({ block: "center", behavior: "smooth" })
+                                } else {
+                                  void sendAiMessage(
+                                    `Que peux-tu me dire sur "${item.name}" ?`,
+                                    currentSnapshot(),
+                                    undefined,
+                                  )
+                                }
+                              }}
+                            >
+                              <span className="item-name">{item.name}</span>
+                              {corpusTitle ? (
+                                <span className="taxo-badge corpus">Corpus</span>
+                              ) : item.group ? (
+                                <span className="taxo-badge sit">Données SIT</span>
+                              ) : (
+                                <span className="taxo-badge general">Connaissances générales</span>
+                              )}
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
 
@@ -1355,66 +1426,10 @@ function Dashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="liquid-glass-panel rounded-2xl p-4">
-              <h2 className="mb-2 text-xs font-medium text-muted-foreground">Disciplines techniques</h2>
-              <p className="mb-2 text-xs text-muted-foreground">
-                La plupart sont du savoir-faire d'ingénierie, pas des données interrogeables — chaque discipline indique
-                honnêtement ce qui est réellement disponible.
-              </p>
-              <div className="taxo custom-scrollbar">
-                {TAXONOMY.map((c, ci) => {
-                  const open = openTaxoCats.includes(ci)
-                  return (
-                    <div key={c.cat} className={`taxo-cat${open ? " open" : ""}`}>
-                      <button
-                        type="button"
-                        className="taxo-cat-btn"
-                        onClick={() => setOpenTaxoCats((prev) => (prev.includes(ci) ? prev.filter((x) => x !== ci) : [...prev, ci]))}
-                      >
-                        <span>{c.cat}</span>
-                        <ChevronRight size={12} className="taxo-chevron" />
-                      </button>
-                      <ul className="taxo-items">
-                        {c.items.map((item) => {
-                          const corpusTitle = item.corpusKeyword
-                            ? vaultStats?.documentTitles.find((t) => t.toLowerCase().includes(item.corpusKeyword!.toLowerCase()))
-                            : undefined
-                          return (
-                            <li
-                              key={item.name}
-                              onClick={() => {
-                                if (corpusTitle) {
-                                  askAboutDocument(corpusTitle)
-                                } else if (item.group) {
-                                  document.getElementById(`src-group-${item.group}`)?.scrollIntoView({ block: "center", behavior: "smooth" })
-                                } else {
-                                  void sendAiMessage(
-                                    `Que peux-tu me dire sur "${item.name}" ?`,
-                                    currentSnapshot(),
-                                    undefined,
-                                  )
-                                }
-                              }}
-                            >
-                              <span className="item-name">{item.name}</span>
-                              {corpusTitle ? (
-                                <span className="taxo-badge corpus">Corpus</span>
-                              ) : item.group ? (
-                                <span className="taxo-badge sit">Données SIT</span>
-                              ) : (
-                                <span className="taxo-badge general">Connaissances générales</span>
-                              )}
-                            </li>
-                          )
-                        })}
-                      </ul>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
+            {/* La taxonomie des disciplines techniques vivait ici — déplacée
+                dans l'onglet "Discipline" de la barre de recherche pour
+                rester contextuelle plutôt que visible en permanence hors
+                sujet (voir ce bloc dans SEARCH_MODE "discipline" ci-dessus). */}
             <div className="liquid-glass-panel rounded-2xl p-4">
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-xs font-medium text-muted-foreground">Aperçu carte</h2>
@@ -1425,7 +1440,6 @@ function Dashboard() {
               <button type="button" onClick={() => setSearchMode("carte")} className="map-box map-box-mini block w-full cursor-pointer">
                 <FranceOutline />
               </button>
-            </div>
             </div>
           </div>
         )}
