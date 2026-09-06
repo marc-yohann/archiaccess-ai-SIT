@@ -961,6 +961,13 @@
   }
   .mode-row input {
     flex: 1;
+    /* min-width:0 — sans ça, le bouton (shrink-0) déborde du panneau sur
+       petit écran : un enfant flex garde par défaut min-width:auto
+       (respecte sa taille de contenu), donc "flex:1" seul ne suffit pas
+       à le laisser rétrécir sous cette taille intrinsèque quand la place
+       manque (retour utilisateur : bouton "Rechercher" qui dépasse la
+       carte au format téléphone, mesuré en Chromium à 390px de large). */
+    min-width: 0;
     background: transparent;
     border: none;
     outline: none;

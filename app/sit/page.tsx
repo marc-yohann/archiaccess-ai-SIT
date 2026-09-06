@@ -617,7 +617,13 @@ function resultItems(s: SitSnapshot): ResultGroup[] {
 // réutilisé à l'identique par "Secteur" et "Lot" (résultats groupés depuis
 // resultItems(), sur un SitSnapshot différent à chaque fois, jamais de
 // duplication de la logique d'affichage).
-function ResultGroups({ groups }: { groups: ResultGroup[] }) {
+// onItemClick optionnel : quand fourni, une tuile avec résultat devient
+// cliquable pour en discuter avec Archiaccess AI (même principe que les
+// items de la taxonomie Discipline, jamais de citation fabriquée — la
+// question posée cite le texte réel affiché sur la tuile). Retour
+// utilisateur : "lorsqu'une recherche est faite on ne peut pas cliquer
+// dessus".
+function ResultGroups({ groups, onItemClick }: { groups: ResultGroup[]; onItemClick?: (item: ResultItem) => void }) {
   return (
     <>
       {groups.map((g) => (
@@ -631,10 +637,22 @@ function ResultGroups({ groups }: { groups: ResultGroup[] }) {
           <div className="results-grid">
             {g.items.map((it, i) =>
               it.body ? (
-                <div key={i} className="liquid-glass-panel rounded-2xl p-4">
-                  <h4 className="tile-head">{it.source}</h4>
-                  <p className="tile-body">{it.body}</p>
-                </div>
+                onItemClick ? (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => onItemClick(it)}
+                    className="liquid-glass-panel rounded-2xl p-4 text-left transition-shadow hover:shadow-md"
+                  >
+                    <h4 className="tile-head">{it.source}</h4>
+                    <p className="tile-body">{it.body}</p>
+                  </button>
+                ) : (
+                  <div key={i} className="liquid-glass-panel rounded-2xl p-4">
+                    <h4 className="tile-head">{it.source}</h4>
+                    <p className="tile-body">{it.body}</p>
+                  </div>
+                )
               ) : (
                 <div key={i} className="tile-empty">
                   <span className="empty-dot" />
@@ -1747,7 +1765,10 @@ function Dashboard() {
 
         {hasTiles && !resultsLoading && (
           <div>
-            <ResultGroups groups={resultItems(currentSnapshot())} />
+            <ResultGroups
+              groups={resultItems(currentSnapshot())}
+              onItemClick={(it) => void sendAiMessage(`Peux-tu m'en dire plus sur "${it.source}" : ${it.body}`, currentSnapshot())}
+            />
           </div>
         )}
 
@@ -1760,15 +1781,21 @@ function Dashboard() {
                 {secteurResult.commune.population ? ` · ${secteurResult.commune.population.toLocaleString("fr-FR")} habitants` : ""}
               </p>
             </div>
-            <ResultGroups
-              groups={resultItems({
+            {(() => {
+              const snapshot: SitSnapshot = {
                 risks: secteurResult.risks,
                 cavites: secteurResult.cavites,
                 pollutedSites: secteurResult.pollutedSites,
                 groundwaterStations: secteurResult.groundwaterStations,
                 publicMarkets: secteurResult.publicMarkets,
-              })}
-            />
+              }
+              return (
+                <ResultGroups
+                  groups={resultItems(snapshot)}
+                  onItemClick={(it) => void sendAiMessage(`Peux-tu m'en dire plus sur "${it.source}" (${secteurResult.commune.city}) : ${it.body}`, snapshot)}
+                />
+              )
+            })()}
           </div>
         )}
 
@@ -1791,21 +1818,30 @@ function Dashboard() {
                         Ouvrir dans Point précis →
                       </button>
                     </div>
-                    <ResultGroups
-                      groups={resultItems({
-                        parcels: row.bundle.parcels,
-                        risks: row.bundle.risks,
-                        mutations: row.bundle.mutations,
-                        urbanZones: row.bundle.urbanZones,
-                        dpeRecords: row.bundle.dpeRecords,
-                        cavites: row.bundle.cavites,
-                        pollutedSites: row.bundle.pollutedSites,
-                        servitudes: row.bundle.servitudes,
-                        publicMarkets: row.bundle.publicMarkets,
-                        groundwaterStations: row.bundle.groundwaterStations,
-                        heatNetwork: row.bundle.heatNetwork,
-                      })}
-                    />
+                    {(() => {
+                      const bundle = row.bundle!
+                      const snapshot: SitSnapshot = {
+                        parcels: bundle.parcels,
+                        risks: bundle.risks,
+                        mutations: bundle.mutations,
+                        urbanZones: bundle.urbanZones,
+                        dpeRecords: bundle.dpeRecords,
+                        cavites: bundle.cavites,
+                        pollutedSites: bundle.pollutedSites,
+                        servitudes: bundle.servitudes,
+                        publicMarkets: bundle.publicMarkets,
+                        groundwaterStations: bundle.groundwaterStations,
+                        heatNetwork: bundle.heatNetwork,
+                      }
+                      return (
+                        <ResultGroups
+                          groups={resultItems(snapshot)}
+                          onItemClick={(it) =>
+                            void sendAiMessage(`Peux-tu m'en dire plus sur "${it.source}" (${bundle.address.label}) : ${it.body}`, snapshot)
+                          }
+                        />
+                      )
+                    })()}
                   </>
                 ) : (
                   <p className="text-sm text-muted-foreground">
@@ -1849,10 +1885,14 @@ function Dashboard() {
           </button>
         ) : (
           <>
-        <div className="mb-2 flex items-center gap-2">
+        {/* flex-wrap : sur téléphone, le titre + jusqu'à 4 boutons (Copier,
+            Ouvrir dans AI, Nouvelle conversation, replier) ne tiennent pas
+            sur une seule ligne — débordait du panneau plutôt que de passer
+            à la ligne (mesuré en Chromium à 390px de large). */}
+        <div className="mb-2 flex flex-wrap items-center gap-2">
           <Sparkles size={16} />
           <h2 className="text-sm font-medium">Archiaccess AI</h2>
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
             {hasTiles && (
               <>
                 <button
