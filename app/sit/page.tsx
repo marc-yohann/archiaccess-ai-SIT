@@ -1157,8 +1157,18 @@ function Dashboard() {
             de réinterprétation "signaux externes" (nouveaux marchés BOAMP
             pertinents, alertes BODACC sur partenaires connus), qui
             demanderait une détection de nouveauté/pertinence côté
-            backend non construite. */}
-        <div className="liquid-glass-panel ticker-fade overflow-hidden rounded-2xl px-4 py-2.5">
+            backend non construite.
+            overflow-visible (pas -hidden) sur CE conteneur : même bug que
+            la barre de recherche (voir commit précédent) — un enfant
+            direct d'un .liquid-glass-panel devient position:relative (règle
+            partagée du verre liquide) et un Chromium avec overflow:hidden +
+            isolation:isolate sur le parent ignore alors sa hauteur, qui
+            retombe à padding seul. Le masquage horizontal réel du
+            défilement (le survol qui doit rester coupé) est fait par le
+            wrapper interne juste en dessous, qui garde overflow-hidden —
+            diagnostiqué et vérifié en Chromium avant ce changement, voir
+            conversation. */}
+        <div className="liquid-glass-panel ticker-fade overflow-visible rounded-2xl px-4 py-2.5">
           {vaultStats && vaultStats.recentSearches.length > 0 ? (
             <div className="overflow-hidden">
               <div className="ticker-track flex w-max items-center gap-8 whitespace-nowrap">
@@ -1186,7 +1196,10 @@ function Dashboard() {
           )}
         </div>
 
-        <div className="liquid-glass-panel flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
+        {/* overflow-visible : même bug/même correctif que le bandeau
+            d'activité ci-dessus — sans clipping horizontal à préserver ici,
+            rien d'autre à garder intact. */}
+        <div className="liquid-glass-panel overflow-visible flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
           <div className="flex items-center gap-2">
             <span className="status-dot" />
             <h2 className="text-xs font-medium text-muted-foreground">Système d'Information Technique Fédéré — actif</h2>
