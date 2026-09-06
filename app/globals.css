@@ -222,8 +222,21 @@
   }
 
   /* Main dashboard shell */
+  /* overflow: visible (pas hidden) — cause racine identifiée par mesure
+     réelle en navigateur (Chromium/Playwright, boundingClientRect +
+     getComputedStyle) : sur un conteneur .liquid-glass empilant plusieurs
+     enfants en flux normal (voir la barre de recherche à onglets,
+     app/sit/page.tsx), overflow:hidden faisait résoudre la hauteur
+     automatique du conteneur à 0 (clientHeight 0, scrollHeight du contenu
+     réel 138px) et donc tout le contenu (onglets + champ de recherche)
+     disparaissait, invisible mais toujours présent dans le DOM. Confirmé en
+     isolant la propriété responsable par overrides successifs : seule sa
+     suppression restaure la hauteur réelle, aucune autre propriété testée
+     (display, contain, isolation, backdrop-filter) n'a d'effet. Les
+     pseudo-éléments ::before/::after ont déjà border-radius:inherit, donc
+     le clip aux coins arrondis ne dépendait pas de cet overflow. */
   .liquid-glass {
-    overflow: hidden;
+    overflow: visible;
     background: linear-gradient(
       168deg,
       rgba(255, 255, 255, 0.62) 0%,
