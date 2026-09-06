@@ -123,92 +123,125 @@ interface TaxonomyCategory {
 }
 const TAXONOMY: TaxonomyCategory[] = [
   {
-    cat: "Structures et génie civil",
+    cat: "Structure (gros œuvre)",
     items: [
-      { name: "Béton armé et précontraint (Eurocode 2)" },
-      { name: "Construction métallique et mixte (Eurocode 3 & 4)" },
-      { name: "Structure bois et biosourcée (Eurocode 5)" },
-      { name: "Ouvrages d'art et génie civil lourd" },
-      { name: "Diagnostic et renforcement structurel" },
-      { name: "Génie parasismique et dynamique (Eurocode 8)", corpusKeyword: "parasismique" },
+      { name: "Béton armé (calcul des armatures, coffrage, ferraillage)" },
+      { name: "Béton précontraint (câbles de précontrainte)" },
+      { name: "Structure métallique (charpentes, poutres, poteaux acier)" },
+      { name: "Structure bois (charpentes, ossatures, lamellé-collé CLT)" },
+      { name: "Structure mixte (acier-béton, bois-béton)" },
+      { name: "Maçonnerie (murs porteurs, voiles)" },
+      { name: "Ouvrages d'art (ponts, viaducs, tunnels, passerelles)" },
+      { name: "Structures spéciales (silos, réservoirs, cuves, pylônes)" },
     ],
   },
   {
-    cat: "Sol, sous-sol et terrassement",
+    cat: "Géotechnique et sols",
     items: [
-      { name: "Géotechnique (missions G1 à G5)", group: "Risques & sol" },
-      { name: "Hydrogéologie et rabattement de nappe", group: "Risques & sol" },
-      { name: "Dépollution des sols et sites industriels", group: "Risques & sol" },
-      { name: "Terrassement et mouvements de terre" },
+      { name: "Études de sol (missions G1 à G5)", group: "Risques & sol" },
+      { name: "Fondations spéciales (pieux, puits, micropieux, jet-grouting)" },
+      { name: "Soutènement (murs, parois moulées, rideaux de palplanches)" },
+      { name: "Renforcement de sols (inclusions rigides, colonnes ballastées, drainage)" },
+      { name: "Stabilité des pentes (glissements de terrain, affaissements)" },
+      { name: "Interaction sol-structure" },
     ],
   },
   {
-    cat: "Enveloppe du bâtiment et thermique",
+    cat: "Fluides et génie climatique (CVC)",
     items: [
-      { name: "Thermique et énergétique (RE2020, STD)", corpusKeyword: "environnementale" },
-      { name: "Façades complexes et ingénierie verrière" },
-      { name: "Étanchéité et toitures" },
-      { name: "Conception passive et bas carbone (ACV)" },
+      { name: "Chauffage (gaz, fioul, bois, pompe à chaleur)" },
+      { name: "Ventilation (VMC simple/double flux, naturelle)" },
+      { name: "Climatisation (gainable, split, eau glacée)" },
+      { name: "Plomberie sanitaire (eau froide, eau chaude, évacuations)" },
+      { name: "Fluides spéciaux (gaz médicaux, air comprimé, fluides industriels)" },
+      { name: "Désenfumage (extracteurs de fumée, ventilation)", corpusKeyword: "incendie" },
+      { name: "Réseaux d'incendie (sprinklers, colonnes sèches et humides)" },
+      { name: "Piscines et bassins (traitement de l'eau, filtration)" },
     ],
   },
   {
-    cat: "Fluides, réseaux et énergie (MEP)",
+    cat: "Thermique et énergétique",
     items: [
-      { name: "CVC (chauffage, ventilation, climatisation)" },
-      { name: "Plomberie et sanitaires" },
-      { name: "Électricité courants forts (CFO)" },
-      { name: "Électricité courants faibles (CFA)" },
-      { name: "Sécurité incendie active (SSI, désenfumage)", corpusKeyword: "incendie" },
-      { name: "GTC / GTB et domotique" },
-      { name: "Réseaux de chaleur et énergies renouvelables", group: "Énergie & valeur", corpusKeyword: "solarisation" },
+      { name: "Réglementation thermique (RE2020, RT2012)", corpusKeyword: "re2020" },
+      { name: "Simulation thermique dynamique (STD)" },
+      { name: "Analyse du cycle de vie (ACV, bilan carbone)" },
+      { name: "Énergies renouvelables (solaire, géothermie)", group: "Énergie & valeur", corpusKeyword: "solarisation" },
+      { name: "Audit énergétique (DPE)", group: "Énergie & valeur" },
+      { name: "Confort d'été (surchauffes, rafraîchissement)" },
     ],
   },
   {
-    cat: "Acoustique, lumière et confort intérieur",
+    cat: "Acoustique",
     items: [
-      { name: "Acoustique environnementale et du bâtiment", corpusKeyword: "acoustique" },
-      { name: "Éclairagisme et facteur de lumière du jour" },
+      { name: "Acoustique bâtiment (isolation aérienne et d'impact)", corpusKeyword: "acoustique" },
+      { name: "Acoustique environnementale (impact sonore, nuisances)" },
+      { name: "Acoustique des salles (auditoriums, cinémas)" },
+    ],
+  },
+  {
+    cat: "VRD et aménagement extérieur",
+    items: [
+      { name: "Voirie (chaussées, trottoirs, parkings, pistes cyclables)" },
+      { name: "Réseaux secs (électricité, gaz, téléphonie, fibre)" },
+      { name: "Réseaux humides (eau potable, eaux usées, eaux pluviales)" },
+      { name: "Assainissement (séparatif, unitaire, stations de relevage)", corpusKeyword: "assainissement" },
+      { name: "Éclairage public (luminaires, implantation)" },
+      { name: "Espaces verts (arrosage, drainage, plantations)" },
+    ],
+  },
+  {
+    cat: "Sécurité, accessibilité et incendie",
+    items: [
+      { name: "Sécurité incendie (SSI, détection, alarme, compartimentage)", corpusKeyword: "incendie" },
+      { name: "Accessibilité PMR", corpusKeyword: "accessibilité" },
+      { name: "Sécurité des ERP (Établissements Recevant du Public)" },
+      { name: "Sûreté (contrôle d'accès, vidéosurveillance, anti-intrusion)" },
+    ],
+  },
+  {
+    cat: "Économie de la construction",
+    items: [
+      { name: "Métré (quantification des ouvrages)" },
+      { name: "Étude de prix (chiffrage, estimation des coûts)" },
+      { name: "Planification (plannings, délais)" },
+    ],
+  },
+  {
+    cat: "Environnement et développement durable",
+    items: [
+      { name: "HQE (Haute Qualité Environnementale)" },
       { name: "Qualité de l'air intérieur (QAI)", corpusKeyword: "aération" },
+      { name: "Dépollution des sols (traitement des terres polluées)", group: "Risques & sol" },
     ],
   },
   {
-    cat: "Travaux Publics, voirie et réseaux extérieurs",
+    cat: "Diagnostic et pathologie",
     items: [
-      { name: "VRD (voirie et réseaux divers)", corpusKeyword: "assainissement" },
-      { name: "Hydraulique urbaine et assainissement", corpusKeyword: "eau" },
-      { name: "Infrastructures ferroviaires" },
-      { name: "Infrastructures portuaires, maritimes et fluviales" },
-      { name: "Éclairage public et signalisation routière" },
+      { name: "Diagnostic structurel (inspection de bâtiments existants)" },
+      { name: "Pathologie des matériaux (fissuration, corrosion, pourrissement)" },
+      { name: "Diagnostic amiante (repérage avant travaux)", corpusKeyword: "amiante" },
+      { name: "Diagnostic plomb (peintures au plomb)" },
+      { name: "Diagnostic termites" },
+      { name: "Diagnostic électrique" },
+      { name: "Diagnostic gaz" },
     ],
   },
   {
-    cat: "Environnement, paysage et écologie",
+    cat: "Spécialités de niche et ouvrages spécifiques",
     items: [
-      { name: "Écologie appliquée et biodiversité" },
-      { name: "Aménagement paysager et génie végétal" },
-      { name: "Économie circulaire et réemploi (PEMD)", corpusKeyword: "PEMD" },
-    ],
-  },
-  {
-    cat: "Management de projet, méthode et pilotage",
-    items: [
-      { name: "Économie de la construction (métrés, CCTP, DPGF)" },
-      { name: "OPC (ordonnancement, pilotage, coordination)", corpusKeyword: "maîtrise d'œuvre" },
-      { name: "Méthodes et préparation de chantier" },
-      { name: "Management BIM et synthèse" },
-      { name: "Sécurité et prévention (SPS)", corpusKeyword: "SPS" },
-      { name: "Assistance à Maîtrise d'Ouvrage (AMO)", corpusKeyword: "maîtrise d'œuvre" },
-    ],
-  },
-  {
-    cat: "Disciplines de niche et hyperspécialisées",
-    items: [
-      { name: "Scénographie et muséographie" },
-      { name: "Salles blanches et environnements contrôlés" },
-      { name: "Ingénierie nucléaire et radioprotection", corpusKeyword: "radioprotection" },
-      { name: "Aménagements subaquatiques et travaux hyperbares", corpusKeyword: "hyperbare" },
-      { name: "Démolition, déconstruction et désamiantage", corpusKeyword: "amiante" },
-      { name: "Ouvrages en terre armée et géosynthétiques" },
+      { name: "Parasismique (conception et renforcement en zone sismique)", corpusKeyword: "parasismique" },
+      { name: "Ouvrages souterrains (tunnels, métros, galeries)" },
+      { name: "Ouvrages maritimes (ports, digues, barrages)" },
+      { name: "Infrastructures linéaires (routes, voies ferrées, pistes aéronautiques)" },
+      { name: "Génie civil nucléaire", corpusKeyword: "radioprotection" },
+      { name: "Vibratoire et dynamique (trafic, machines)" },
+      { name: "Pyrotechnie et explosion (dimensionnement anti-souffle)" },
+      { name: "Résistance au feu (stabilité des structures sous incendie)", corpusKeyword: "incendie" },
+      { name: "BIM (modélisation 3D et gestion des données)" },
+      { name: "Infiltrométrie (test d'étanchéité à l'air)" },
+      { name: "GTB / GTC (automatisation et pilotage)" },
+      { name: "Réseaux VDI (câblage structuré, téléphonie, WiFi)" },
+      { name: "Monuments historiques (réhabilitation du bâti ancien)" },
     ],
   },
 ]
@@ -1692,10 +1725,18 @@ function Dashboard() {
 
 // Contour schématique de la France — pas un vrai fond de carte (aucune
 // tuile IGN chargée), voir la note affichée à côté dans l'onglet Carte.
+// Contour schématique de la France métropolitaine ("l'Hexagone") — l'ancien
+// tracé était un polygone arbitraire sans rapport avec la vraie forme
+// (retour utilisateur : "ce n'est pas la France"). Simplifié à une
+// vingtaine de points repérables (pointe bretonne à l'ouest, presqu'île du
+// Cotentin au nord-ouest, bulge alsacien au nord-est, arc méditerranéen et
+// pyrénéen au sud) — reste un aperçu schématique, pas un tracé
+// cartographique précis (voir le texte "contour approximatif" affiché
+// sous la carte).
 function FranceOutline() {
   return (
     <svg className="map-france" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-      <path d="M46 4 L56 6 L60 3 L66 8 L64 14 L70 15 L74 22 L82 24 L88 30 L86 38 L90 44 L84 50 L88 58 L80 62 L78 70 L70 72 L68 80 L60 82 L56 90 L50 86 L44 92 L40 84 L32 82 L28 74 L20 70 L18 62 L12 58 L14 50 L10 42 L16 36 L14 28 L22 24 L24 16 L32 14 L36 8 L42 10 Z" />
+      <path d="M48 6 L58 10 L68 18 L66 30 L72 40 L68 50 L66 62 L55 68 L45 66 L38 62 L28 58 L22 66 L18 76 L14 66 L10 56 L8 46 L4 42 L10 36 L14 30 L10 24 L16 20 L24 14 L36 8 Z" />
     </svg>
   )
 }
