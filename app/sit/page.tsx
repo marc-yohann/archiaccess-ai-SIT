@@ -6,7 +6,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Home, Layers, Map, LayoutGrid, ListChecks, PanelRightClose, PanelRightOpen } from "lucide-react"
 import { AuthGate } from "@/components/auth-gate"
-import type { AddressResult } from "@/lib/data-sources/ban"
+import type { AddressResult, CommuneResult } from "@/lib/data-sources/ban"
 import type { Parcel } from "@/lib/data-sources/cadastre"
 import type { CommuneRisks } from "@/lib/data-sources/georisques"
 import type { Mutation } from "@/lib/data-sources/dvf"
@@ -72,6 +72,7 @@ const SOURCE_LABELS: Record<string, string> = {
   boamp: "BOAMP",
   nappes: "Nappes phréatiques",
   "chaleur-urbaine": "Réseau de chaleur",
+  commune: "Commune",
 }
 
 // Regroupées par usage d'étude plutôt que par ordre technique d'intégration
@@ -284,12 +285,10 @@ const DOCUMENT_TAGS: { tag: string; keywords: string[] }[] = [
 
 // 5 portes d'entrée vers le SIT (retour : "accéder aux données en
 // mettant une adresse ou une entreprise, je trouve ça pauvre" pour une
-// base pluridisciplinaire). "point" et "discipline" sont réellement
-// câblés sur la vraie recherche ; "secteur"/"carte"/"lot" demanderaient
-// une nouvelle logique de requête (par commune, carte IGN, plusieurs
-// adresses à la fois) — visibles pour montrer où va le SIT, mais
-// honnêtement marqués "Bientôt disponible" plutôt que de laisser croire
-// qu'ils fonctionnent déjà.
+// base pluridisciplinaire). "point", "discipline", "secteur" et "lot"
+// sont réellement câblés sur la vraie recherche ; "carte" reste un aperçu
+// schématique honnête (voir FranceOutline plus bas) — l'intégration d'un
+// vrai fond de carte (tuiles IGN) n'est pas construite.
 type SearchMode = "point" | "secteur" | "carte" | "discipline" | "lot"
 const SEARCH_MODE_META: { id: SearchMode; label: string; icon: typeof Search }[] = [
   { id: "point", label: "Point précis", icon: Search },
@@ -298,11 +297,6 @@ const SEARCH_MODE_META: { id: SearchMode; label: string; icon: typeof Search }[]
   { id: "discipline", label: "Discipline", icon: LayoutGrid },
   { id: "lot", label: "Lot", icon: ListChecks },
 ]
-const SOON_TEXT: Record<"secteur" | "carte" | "lot", string> = {
-  secteur: "Explorer une commune ou un département entier — pour les sources qui travaillent déjà à cette échelle (risques, DVF, cavités, marchés publics, nappes…), sans passer par une adresse précise.",
-  carte: "Sélectionner directement une zone sur une carte plutôt que taper une adresse.",
-  lot: "Analyser plusieurs adresses ou parcelles à la fois — une étude porte rarement sur un seul site.",
-}
 
 function labelFromCacheKey(key: string): string {
   const raw = key.replace(/^q:/, "")
@@ -340,6 +334,47 @@ interface SitSnapshot {
   publicMarkets?: PublicMarket[] | null
   groundwaterStations?: GroundwaterStation[] | null
   heatNetwork?: HeatNetworkEligibility | null
+}
+
+// Résultat complet pour une adresse — même 10 connecteurs que
+// selectAddress() ci-dessous, factorisés dans fetchAddressBundle() pour
+// être réutilisés à l'identique par le mode "Lot" (plusieurs adresses).
+interface AddressBundle {
+  address: AddressResult
+  parcels: Parcel[]
+  risks: CommuneRisks | null
+  mutations: Mutation[]
+  urbanZones: UrbanZone[]
+  dpeRecords: DpeRecord[]
+  cavites: CavitesResult | null
+  pollutedSites: PollutedSitesResult | null
+  servitudes: Servitude[]
+  publicMarkets: PublicMarket[]
+  groundwaterStations: GroundwaterStation[]
+  heatNetwork: HeatNetworkEligibility | null
+}
+
+// Résultat pour le mode "Secteur" (échelle commune) — seuls les
+// connecteurs qui acceptent nativement un code INSEE/département sans
+// adresse précise (vérifié par appel réel avant d'écrire ce mode, voir
+// conversation) : géorisques, cavités, sites pollués, nappes, BOAMP. DVF
+// est exclu — pas d'endpoint par commune (seulement par section
+// cadastrale, une commune peut en compter plus d'une centaine), ce que le
+// panneau "Secteur" indique explicitement plutôt que de le passer sous
+// silence.
+interface SecteurResult {
+  commune: CommuneResult
+  risks: CommuneRisks | null
+  cavites: CavitesResult | null
+  pollutedSites: PollutedSitesResult | null
+  groundwaterStations: GroundwaterStation[]
+  publicMarkets: PublicMarket[]
+}
+
+interface LotRow {
+  query: string
+  bundle: AddressBundle | null
+  error: string | null
 }
 
 function formatContext(s: SitSnapshot): string {
@@ -578,6 +613,42 @@ function resultItems(s: SitSnapshot): ResultGroup[] {
     .filter((g) => g.items.length > 0)
 }
 
+// Rendu des groupes de résultats — extrait du bloc "Point précis" pour être
+// réutilisé à l'identique par "Secteur" et "Lot" (résultats groupés depuis
+// resultItems(), sur un SitSnapshot différent à chaque fois, jamais de
+// duplication de la logique d'affichage).
+function ResultGroups({ groups }: { groups: ResultGroup[] }) {
+  return (
+    <>
+      {groups.map((g) => (
+        <div key={g.group} className="results-group">
+          <div className="results-group-head">
+            <h3 className="text-xs font-medium">{g.group}</h3>
+            <span className="text-xs text-muted-foreground">
+              {g.items.filter((it) => it.body).length}/{g.items.length} avec résultat
+            </span>
+          </div>
+          <div className="results-grid">
+            {g.items.map((it, i) =>
+              it.body ? (
+                <div key={i} className="liquid-glass-panel rounded-2xl p-4">
+                  <h4 className="tile-head">{it.source}</h4>
+                  <p className="tile-body">{it.body}</p>
+                </div>
+              ) : (
+                <div key={i} className="tile-empty">
+                  <span className="empty-dot" />
+                  <span className="empty-source">{it.source}</span> — {it.empty}
+                </div>
+              ),
+            )}
+          </div>
+        </div>
+      ))}
+    </>
+  )
+}
+
 // Mise en forme légère des réponses du copilote (gras **texte**, listes
 // "- item") — texte échappé avant tout, pour que dangerouslySetInnerHTML
 // ne puisse jamais injecter de balise venant de la réponse du modèle.
@@ -625,6 +696,56 @@ export default function SitPage() {
       </Suspense>
     </AuthGate>
   )
+}
+
+// Nombre maximum d'adresses acceptées par "Lot" en une recherche — plafond
+// délibéré pour rester dans le temps d'une requête Lambda (chaque adresse
+// déclenche les 10 mêmes appels que "Point précis") et ne pas multiplier
+// sans limite les appels aux API publiques externes.
+const LOT_MAX = 10
+
+// Les 10 mêmes connecteurs que "Point précis", factorisés pour être
+// réutilisés à l'identique par le mode "Lot" (une adresse à la fois,
+// jamais de logique dupliquée) — voir selectAddress() et searchLot().
+async function fetchAddressBundle(addr: AddressResult): Promise<AddressBundle> {
+  const [lon, lat] = addr.coordinates
+  const codeDepartement = departmentCodeFromCityCode(addr.citycode)
+  const [parcelsRes, risksRes, urbanismeRes, dpeRes, cavitesRes, sitesPolluesRes, servitudesRes, boampRes, nappesRes, chaleurRes] =
+    await Promise.all([
+      fetch(`/api/sit/parcels?lon=${lon}&lat=${lat}`).then((r) => r.json()),
+      fetch(`/api/sit/risks?codeInsee=${addr.citycode}`).then((r) => r.json()),
+      fetch(`/api/sit/urbanisme?lon=${lon}&lat=${lat}`).then((r) => r.json()),
+      fetch(`/api/sit/dpe?lon=${lon}&lat=${lat}`).then((r) => r.json()),
+      fetch(`/api/sit/cavites?codeInsee=${addr.citycode}`).then((r) => r.json()),
+      fetch(`/api/sit/sites-pollues?codeInsee=${addr.citycode}`).then((r) => r.json()),
+      fetch(`/api/sit/servitudes?lon=${lon}&lat=${lat}`).then((r) => r.json()),
+      fetch(`/api/sit/boamp?codeDepartement=${codeDepartement}`).then((r) => r.json()),
+      fetch(`/api/sit/nappes?codeInsee=${addr.citycode}`).then((r) => r.json()),
+      fetch(`/api/sit/chaleur-urbaine?lon=${lon}&lat=${lat}`).then((r) => r.json()),
+    ])
+
+  const parcels: Parcel[] = parcelsRes.success ? parcelsRes.parcels : []
+  const risks: CommuneRisks | null = risksRes.success ? risksRes.risks : null
+  const urbanZones: UrbanZone[] = urbanismeRes.success ? urbanismeRes.zones : []
+  const dpeRecords: DpeRecord[] = dpeRes.success ? dpeRes.records : []
+  const cavites: CavitesResult | null = cavitesRes.success ? { total: cavitesRes.total, cavites: cavitesRes.cavites } : null
+  const pollutedSites: PollutedSitesResult | null = sitesPolluesRes.success
+    ? { totalCasias: sitesPolluesRes.totalCasias, totalInstructions: sitesPolluesRes.totalInstructions, sites: sitesPolluesRes.sites }
+    : null
+  const servitudes: Servitude[] = servitudesRes.success ? servitudesRes.servitudes : []
+  const publicMarkets: PublicMarket[] = boampRes.success ? boampRes.markets : []
+  const groundwaterStations: GroundwaterStation[] = nappesRes.success ? nappesRes.stations : []
+  const heatNetwork: HeatNetworkEligibility | null = chaleurRes.success ? chaleurRes.eligibility : null
+
+  let mutations: Mutation[] = []
+  if (parcels[0]) {
+    const dvfRes = await fetch(
+      `/api/sit/dvf?codeCommune=${parcels[0].codeInsee}&sectionPrefixe=${parcels[0].sectionPrefixe}`,
+    ).then((r) => r.json())
+    if (dvfRes.success) mutations = dvfRes.mutations
+  }
+
+  return { address: addr, parcels, risks, mutations, urbanZones, dpeRecords, cavites, pollutedSites, servitudes, publicMarkets, groundwaterStations, heatNetwork }
 }
 
 function Dashboard() {
@@ -695,6 +816,13 @@ function Dashboard() {
   const [discGroupIndex, setDiscGroupIndex] = useState(0)
   const [discQuery, setDiscQuery] = useState("")
   const [openTaxoCats, setOpenTaxoCats] = useState<number[]>([])
+  const [secteurQuery, setSecteurQuery] = useState("")
+  const [isSecteurSearching, setIsSecteurSearching] = useState(false)
+  const [secteurResult, setSecteurResult] = useState<SecteurResult | null>(null)
+  const [secteurError, setSecteurError] = useState("")
+  const [lotInput, setLotInput] = useState("")
+  const [isLotSearching, setIsLotSearching] = useState(false)
+  const [lotResults, setLotResults] = useState<LotRow[] | null>(null)
 
   // Horloge de la ligne de statut — pur affichage du temps, forcé sur
   // Europe/Paris (cohérent avec des données françaises), aucune donnée
@@ -940,85 +1068,130 @@ function Dashboard() {
     setGroundwaterStations(null)
     setHeatNetwork(null)
 
-    const [lon, lat] = addr.coordinates
-    const codeDepartement = departmentCodeFromCityCode(addr.citycode)
-    const [
-      parcelsRes,
-      risksRes,
-      urbanismeRes,
-      dpeRes,
-      cavitesRes,
-      sitesPolluesRes,
-      servitudesRes,
-      boampRes,
-      nappesRes,
-      chaleurRes,
-    ] = await Promise.all([
-      fetch(`/api/sit/parcels?lon=${lon}&lat=${lat}`).then((r) => r.json()),
-      fetch(`/api/sit/risks?codeInsee=${addr.citycode}`).then((r) => r.json()),
-      fetch(`/api/sit/urbanisme?lon=${lon}&lat=${lat}`).then((r) => r.json()),
-      fetch(`/api/sit/dpe?lon=${lon}&lat=${lat}`).then((r) => r.json()),
-      fetch(`/api/sit/cavites?codeInsee=${addr.citycode}`).then((r) => r.json()),
-      fetch(`/api/sit/sites-pollues?codeInsee=${addr.citycode}`).then((r) => r.json()),
-      fetch(`/api/sit/servitudes?lon=${lon}&lat=${lat}`).then((r) => r.json()),
-      fetch(`/api/sit/boamp?codeDepartement=${codeDepartement}`).then((r) => r.json()),
-      fetch(`/api/sit/nappes?codeInsee=${addr.citycode}`).then((r) => r.json()),
-      fetch(`/api/sit/chaleur-urbaine?lon=${lon}&lat=${lat}`).then((r) => r.json()),
-    ])
-
-    const loadedParcels: Parcel[] = parcelsRes.success ? parcelsRes.parcels : []
-    const loadedRisks: CommuneRisks | null = risksRes.success ? risksRes.risks : null
-    const loadedUrbanZones: UrbanZone[] = urbanismeRes.success ? urbanismeRes.zones : []
-    const loadedDpe: DpeRecord[] = dpeRes.success ? dpeRes.records : []
-    const loadedCavites: CavitesResult | null = cavitesRes.success ? { total: cavitesRes.total, cavites: cavitesRes.cavites } : null
-    const loadedPollutedSites: PollutedSitesResult | null = sitesPolluesRes.success
-      ? { totalCasias: sitesPolluesRes.totalCasias, totalInstructions: sitesPolluesRes.totalInstructions, sites: sitesPolluesRes.sites }
-      : null
-    const loadedServitudes: Servitude[] = servitudesRes.success ? servitudesRes.servitudes : []
-    const loadedPublicMarkets: PublicMarket[] = boampRes.success ? boampRes.markets : []
-    const loadedGroundwater: GroundwaterStation[] = nappesRes.success ? nappesRes.stations : []
-    const loadedHeatNetwork: HeatNetworkEligibility | null = chaleurRes.success ? chaleurRes.eligibility : null
-    setParcels(loadedParcels)
-    setRisks(loadedRisks)
-    setUrbanZones(loadedUrbanZones)
-    setDpeRecords(loadedDpe)
-    setCavites(loadedCavites)
-    setPollutedSites(loadedPollutedSites)
-    setServitudes(loadedServitudes)
-    setPublicMarkets(loadedPublicMarkets)
-    setGroundwaterStations(loadedGroundwater)
-    setHeatNetwork(loadedHeatNetwork)
-
-    let loadedMutations: Mutation[] = []
-    if (loadedParcels[0]) {
-      const dvfRes = await fetch(
-        `/api/sit/dvf?codeCommune=${loadedParcels[0].codeInsee}&sectionPrefixe=${loadedParcels[0].sectionPrefixe}`,
-      ).then((r) => r.json())
-      if (dvfRes.success) loadedMutations = dvfRes.mutations
-    }
-    setMutations(loadedMutations)
+    const bundle = await fetchAddressBundle(addr)
+    setParcels(bundle.parcels)
+    setRisks(bundle.risks)
+    setUrbanZones(bundle.urbanZones)
+    setDpeRecords(bundle.dpeRecords)
+    setCavites(bundle.cavites)
+    setPollutedSites(bundle.pollutedSites)
+    setServitudes(bundle.servitudes)
+    setPublicMarkets(bundle.publicMarkets)
+    setGroundwaterStations(bundle.groundwaterStations)
+    setHeatNetwork(bundle.heatNetwork)
+    setMutations(bundle.mutations)
     setResultsLoading(false)
 
     void sendAiMessage(
       "Fais un résumé synthétique des informations ci-dessus (adresse, cadastre, urbanisme, risques, DVF, DPE, cavités, sites pollués, servitudes, marchés publics, nappes phréatiques, réseau de chaleur), pertinent pour une étude technique AMO/OPC. Sois concis (5-8 lignes maximum), et signale si une donnée importante manque.",
       {
         address: addr,
-        parcels: loadedParcels,
-        risks: loadedRisks,
-        mutations: loadedMutations,
-        urbanZones: loadedUrbanZones,
-        dpeRecords: loadedDpe,
+        parcels: bundle.parcels,
+        risks: bundle.risks,
+        mutations: bundle.mutations,
+        urbanZones: bundle.urbanZones,
+        dpeRecords: bundle.dpeRecords,
         companies,
         bodaccBySiren,
-        cavites: loadedCavites,
-        pollutedSites: loadedPollutedSites,
-        servitudes: loadedServitudes,
-        publicMarkets: loadedPublicMarkets,
-        groundwaterStations: loadedGroundwater,
-        heatNetwork: loadedHeatNetwork,
+        cavites: bundle.cavites,
+        pollutedSites: bundle.pollutedSites,
+        servitudes: bundle.servitudes,
+        publicMarkets: bundle.publicMarkets,
+        groundwaterStations: bundle.groundwaterStations,
+        heatNetwork: bundle.heatNetwork,
       },
       `SIT · ${addr.label}`,
     )
+  }
+
+  // Recherche à l'échelle d'une commune ("Secteur") — résout le nom de
+  // commune en code INSEE (BAN, type=municipality), puis interroge les
+  // seuls connecteurs qui acceptent nativement ce code sans adresse
+  // précise (voir SecteurResult plus haut : DVF exclu, expliqué dans le
+  // panneau).
+  async function searchSecteur(e: React.FormEvent, prefill?: string) {
+    e.preventDefault()
+    const q = (prefill ?? secteurQuery).trim()
+    if (!q || isSecteurSearching) return
+    setIsSecteurSearching(true)
+    setSecteurError("")
+    setSecteurResult(null)
+    try {
+      const res = await fetch(`/api/sit/commune?q=${encodeURIComponent(q)}`).then((r) => r.json())
+      if (!res.success || res.communes.length === 0) {
+        setSecteurError(res.error ?? "Aucune commune trouvée pour cette recherche.")
+        return
+      }
+      const commune: CommuneResult = res.communes[0]
+      const codeDepartement = departmentCodeFromCityCode(commune.citycode)
+      const [risksRes, cavitesRes, sitesPolluesRes, nappesRes, boampRes] = await Promise.all([
+        fetch(`/api/sit/risks?codeInsee=${commune.citycode}`).then((r) => r.json()),
+        fetch(`/api/sit/cavites?codeInsee=${commune.citycode}`).then((r) => r.json()),
+        fetch(`/api/sit/sites-pollues?codeInsee=${commune.citycode}`).then((r) => r.json()),
+        fetch(`/api/sit/nappes?codeInsee=${commune.citycode}`).then((r) => r.json()),
+        fetch(`/api/sit/boamp?codeDepartement=${codeDepartement}`).then((r) => r.json()),
+      ])
+      const result: SecteurResult = {
+        commune,
+        risks: risksRes.success ? risksRes.risks : null,
+        cavites: cavitesRes.success ? { total: cavitesRes.total, cavites: cavitesRes.cavites } : null,
+        pollutedSites: sitesPolluesRes.success
+          ? { totalCasias: sitesPolluesRes.totalCasias, totalInstructions: sitesPolluesRes.totalInstructions, sites: sitesPolluesRes.sites }
+          : null,
+        groundwaterStations: nappesRes.success ? nappesRes.stations : [],
+        publicMarkets: boampRes.success ? boampRes.markets : [],
+      }
+      setSecteurResult(result)
+      void sendAiMessage(
+        "Fais un résumé synthétique des informations ci-dessus à l'échelle de cette commune (risques, cavités, sites pollués, nappes phréatiques, marchés publics du département), pertinent pour une étude AMO/OPC. Sois concis (5-8 lignes maximum).",
+        {
+          risks: result.risks,
+          cavites: result.cavites,
+          pollutedSites: result.pollutedSites,
+          groundwaterStations: result.groundwaterStations,
+          publicMarkets: result.publicMarkets,
+        },
+        `SIT secteur · ${commune.city}`,
+      )
+    } finally {
+      setIsSecteurSearching(false)
+    }
+  }
+
+  // Recherche sur plusieurs adresses ("Lot") — même bundle par adresse que
+  // "Point précis" (fetchAddressBundle), simplement répété pour chaque
+  // ligne saisie. Plafonné à LOT_MAX pour rester dans le temps d'une
+  // requête Lambda et ne pas multiplier les appels aux API publiques sans
+  // limite.
+  async function searchLot(e: React.FormEvent) {
+    e.preventDefault()
+    if (isLotSearching) return
+    const queries = lotInput
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .slice(0, LOT_MAX)
+    if (queries.length === 0) return
+    setIsLotSearching(true)
+    setLotResults(null)
+    try {
+      const rows = await Promise.all(
+        queries.map(async (q): Promise<LotRow> => {
+          try {
+            const res = await fetch(`/api/sit/search?q=${encodeURIComponent(q)}`).then((r) => r.json())
+            const addr: AddressResult | undefined = res.success ? res.addresses[0] : undefined
+            if (!addr) return { query: q, bundle: null, error: "Aucune adresse trouvée." }
+            const bundle = await fetchAddressBundle(addr)
+            return { query: q, bundle, error: null }
+          } catch {
+            return { query: q, bundle: null, error: "Recherche impossible." }
+          }
+        }),
+      )
+      setLotResults(rows)
+    } finally {
+      setIsLotSearching(false)
+    }
   }
 
   const hasTiles = selectedAddress || companies.length > 0
@@ -1059,8 +1232,8 @@ function Dashboard() {
         </div>
 
         {/* 5 portes d'entrée vers le SIT — voir SEARCH_MODE_META. Point
-            précis et Discipline sont réellement câblés sur search() ;
-            Secteur/Carte/Lot sont honnêtement en attente (voir SOON_TEXT) :
+            précis, Discipline, Secteur et Lot sont réellement câblés ;
+            Carte reste un aperçu schématique honnête (voir FranceOutline) :
             jamais un bouton qui a l'air de marcher mais ne fait rien. */}
         {/* .liquid-glass-panel plutôt que .liquid-glass : retour utilisateur
             "toujours pareil" — cette barre ne s'affichait pas (DOM/CSS
@@ -1243,10 +1416,67 @@ function Dashboard() {
             </div>
           )}
 
-          {(searchMode === "secteur" || searchMode === "lot") && (
+          {searchMode === "secteur" && (
             <div className="mode-panel">
-              <p className="mode-desc">{SOON_TEXT[searchMode]}</p>
-              <p className="text-xs text-muted-foreground/70">Bientôt disponible.</p>
+              <p className="mode-desc">
+                Explorer une commune entière — pour les sources qui travaillent déjà à cette échelle (risques,
+                cavités, sites pollués, nappes phréatiques, marchés publics du département), sans passer par une
+                adresse précise.
+              </p>
+              <form onSubmit={searchSecteur} className="mode-row box">
+                <input
+                  value={secteurQuery}
+                  onChange={(e) => setSecteurQuery(e.target.value)}
+                  placeholder="Nom de commune…"
+                  autoComplete="off"
+                  style={{ marginLeft: ".5rem" }}
+                />
+                <button
+                  type="submit"
+                  disabled={isSecteurSearching}
+                  className="chrome-black shrink-0 rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
+                  style={{ margin: ".25rem" }}
+                >
+                  {isSecteurSearching ? "…" : "Étudier la commune"}
+                </button>
+              </form>
+              {/* DVF exclu délibérément — pas d'endpoint par commune (voir
+                  SecteurResult) : dit explicitement plutôt que passé sous
+                  silence, pour ne pas laisser croire à une couverture qui
+                  n'existe pas. */}
+              <p className="mt-2 text-[0.68rem] text-muted-foreground/80">
+                DVF n'est pas couvert ici — l'API n'a pas d'accès par commune entière (seulement par section
+                cadastrale, une commune peut en compter plus d'une centaine), interroger toutes les sections
+                dépasserait le temps d'une recherche. Reste disponible adresse par adresse via "Point précis".
+              </p>
+              {secteurError && <p className="mt-2 text-xs text-red-600">{secteurError}</p>}
+            </div>
+          )}
+
+          {searchMode === "lot" && (
+            <div className="mode-panel">
+              <p className="mode-desc">
+                Analyser plusieurs adresses ou parcelles à la fois — une étude porte rarement sur un seul site. Une
+                adresse par ligne, {LOT_MAX} maximum.
+              </p>
+              <form onSubmit={searchLot} className="flex flex-col gap-2">
+                <textarea
+                  value={lotInput}
+                  onChange={(e) => setLotInput(e.target.value)}
+                  placeholder={"Une adresse par ligne…\nex : 51 rue de Vesle, Reims"}
+                  rows={4}
+                  autoComplete="off"
+                  className="w-full resize-y rounded-xl border p-2.5 text-sm outline-none placeholder:text-muted-foreground"
+                  style={{ borderColor: "color-mix(in oklch, var(--border) 100%, transparent 30%)" }}
+                />
+                <button
+                  type="submit"
+                  disabled={isLotSearching}
+                  className="chrome-black shrink-0 self-end rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
+                >
+                  {isLotSearching ? "…" : "Étudier le lot"}
+                </button>
+              </form>
             </div>
           )}
         </div>
@@ -1517,29 +1747,71 @@ function Dashboard() {
 
         {hasTiles && !resultsLoading && (
           <div>
-            {resultItems(currentSnapshot()).map((g) => (
-              <div key={g.group} className="results-group">
-                <div className="results-group-head">
-                  <h3 className="text-xs font-medium">{g.group}</h3>
-                  <span className="text-xs text-muted-foreground">
-                    {g.items.filter((it) => it.body).length}/{g.items.length} avec résultat
-                  </span>
-                </div>
-                <div className="results-grid">
-                  {g.items.map((it, i) =>
-                    it.body ? (
-                      <div key={i} className="liquid-glass-panel rounded-2xl p-4">
-                        <h4 className="tile-head">{it.source}</h4>
-                        <p className="tile-body">{it.body}</p>
-                      </div>
-                    ) : (
-                      <div key={i} className="tile-empty">
-                        <span className="empty-dot" />
-                        <span className="empty-source">{it.source}</span> — {it.empty}
-                      </div>
-                    ),
-                  )}
-                </div>
+            <ResultGroups groups={resultItems(currentSnapshot())} />
+          </div>
+        )}
+
+        {secteurResult && (
+          <div className="space-y-3">
+            <div className="liquid-glass-panel rounded-2xl p-4">
+              <h2 className="text-sm font-medium">{secteurResult.commune.city}</h2>
+              <p className="text-xs text-muted-foreground">
+                {secteurResult.commune.postcode}
+                {secteurResult.commune.population ? ` · ${secteurResult.commune.population.toLocaleString("fr-FR")} habitants` : ""}
+              </p>
+            </div>
+            <ResultGroups
+              groups={resultItems({
+                risks: secteurResult.risks,
+                cavites: secteurResult.cavites,
+                pollutedSites: secteurResult.pollutedSites,
+                groundwaterStations: secteurResult.groundwaterStations,
+                publicMarkets: secteurResult.publicMarkets,
+              })}
+            />
+          </div>
+        )}
+
+        {lotResults && (
+          <div className="space-y-4">
+            {lotResults.map((row, i) => (
+              <div key={i} className="liquid-glass-panel rounded-2xl p-4">
+                {row.bundle ? (
+                  <>
+                    <div className="mb-2 flex items-center justify-between">
+                      <h2 className="text-sm font-medium">{row.bundle.address.label}</h2>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchMode("point")
+                          void selectAddress(row.bundle!.address)
+                        }}
+                        className="text-xs text-muted-foreground hover:underline"
+                      >
+                        Ouvrir dans Point précis →
+                      </button>
+                    </div>
+                    <ResultGroups
+                      groups={resultItems({
+                        parcels: row.bundle.parcels,
+                        risks: row.bundle.risks,
+                        mutations: row.bundle.mutations,
+                        urbanZones: row.bundle.urbanZones,
+                        dpeRecords: row.bundle.dpeRecords,
+                        cavites: row.bundle.cavites,
+                        pollutedSites: row.bundle.pollutedSites,
+                        servitudes: row.bundle.servitudes,
+                        publicMarkets: row.bundle.publicMarkets,
+                        groundwaterStations: row.bundle.groundwaterStations,
+                        heatNetwork: row.bundle.heatNetwork,
+                      })}
+                    />
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">{row.query}</span> — {row.error ?? "Aucun résultat."}
+                  </p>
+                )}
               </div>
             ))}
           </div>
