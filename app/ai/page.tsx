@@ -4,12 +4,17 @@ import { useEffect, useRef, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Plus, Trash2, LogOut, Home, Menu, X, Settings, MapPin } from "lucide-react"
+import { Plus, Trash2, LogOut, Home, Menu, X, Settings, MapPin, Copy, Check, RefreshCw } from "lucide-react"
 import { AuthGate, useUser } from "@/components/auth-gate"
+import { formatReply } from "@/lib/format-reply"
 
 interface ChatMessage {
   role: "user" | "assistant"
   content: string
+  // Question à l'origine de cette réponse — absent sur les messages
+  // "user", permet de régénérer sans dupliquer la bulle question (voir
+  // regenerate(), même principe que le panneau IA de /sit).
+  forText?: string
 }
 
 interface ConversationSummary {
@@ -60,7 +65,9 @@ function Chat() {
   const [input, setInput] = useState("")
   const [isSending, setIsSending] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [copiedMsgIndex, setCopiedMsgIndex] = useState<number | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   function loadConversations() {
     fetch("/api/mistral/conversations")
@@ -117,6 +124,15 @@ function Chat() {
     window.location.reload()
   }
 
+  async function fetchReply(text: string) {
+    const res = await fetch("/api/mistral/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ conversationId, message: text }),
+    })
+    return res.json()
+  }
+
   async function send(e: React.FormEvent, prefill?: string) {
     e.preventDefault()
     const text = (prefill ?? input).trim()
@@ -125,21 +141,44 @@ function Chat() {
     setMessages((prev) => [...prev, { role: "user", content: text }])
     setIsSending(true)
     try {
-      const res = await fetch("/api/mistral/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId, message: text }),
-      })
-      const data = await res.json()
+      const data = await fetchReply(text)
       if (data.success) {
         setConversationId(data.conversationId)
-        setMessages((prev) => [...prev, { role: "assistant", content: data.reply }])
+        setMessages((prev) => [...prev, { role: "assistant", content: data.reply, forText: text }])
         loadConversations()
       } else {
         setMessages((prev) => [...prev, { role: "assistant", content: `Erreur : ${data.error}` }])
       }
     } finally {
       setIsSending(false)
+      inputRef.current?.focus()
+    }
+  }
+
+  // Régénère une réponse assistant sans dupliquer la bulle "question" —
+  // renvoie exactement la même question, remplace juste le contenu de la
+  // bulle assistant existante (même principe que app/sit/page.tsx).
+  async function regenerate(index: number) {
+    const msg = messages[index]
+    if (msg.role !== "assistant" || !msg.forText || isSending) return
+    setIsSending(true)
+    try {
+      const data = await fetchReply(msg.forText)
+      setMessages((prev) =>
+        prev.map((m, i) => (i === index ? { ...m, content: data.success ? data.reply : `Erreur : ${data.error}` } : m)),
+      )
+    } finally {
+      setIsSending(false)
+    }
+  }
+
+  async function copyMessage(index: number, content: string) {
+    try {
+      await navigator.clipboard.writeText(content)
+      setCopiedMsgIndex(index)
+      setTimeout(() => setCopiedMsgIndex((cur) => (cur === index ? null : cur)), 1400)
+    } catch {
+      // Presse-papiers indisponible — pas grave, l'employé peut sélectionner/copier à la main.
     }
   }
 
@@ -268,23 +307,48 @@ function Chat() {
           </div>
         ) : (
           <div ref={scrollRef} className="custom-scrollbar mx-auto w-full max-w-3xl flex-1 space-y-3 overflow-y-auto p-6">
-            {messages.map((m, i) => (
-              <div key={i} className={m.role === "user" ? "text-right" : "text-left"}>
-                <span
-                  className={
-                    m.role === "user"
-                      ? "chrome-black inline-block max-w-[80%] rounded-2xl px-3 py-2 text-sm text-white"
-                      : "liquid-glass-soft inline-block max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm"
-                  }
-                >
-                  {m.content}
-                </span>
-              </div>
-            ))}
+            {messages.map((m, i) =>
+              m.role === "user" ? (
+                <div key={i} className="text-right">
+                  <span className="chrome-black inline-block max-w-[80%] rounded-2xl px-3 py-2 text-sm text-white">
+                    {m.content}
+                  </span>
+                </div>
+              ) : (
+                <div key={i} className="text-left">
+                  <span className="liquid-glass-soft inline-block max-w-[80%] rounded-2xl px-3 py-2 text-sm">
+                    <span className="ai-msg-assistant" dangerouslySetInnerHTML={{ __html: formatReply(m.content) }} />
+                    <span className="mt-1 flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => copyMessage(i, m.content)}
+                        title="Copier la réponse"
+                        className="rounded-md p-1 text-muted-foreground/70 hover:bg-black/5 hover:text-foreground"
+                      >
+                        {copiedMsgIndex === i ? <Check size={11} /> : <Copy size={11} />}
+                      </button>
+                      {m.forText && (
+                        <button
+                          type="button"
+                          onClick={() => regenerate(i)}
+                          title="Régénérer la réponse"
+                          disabled={isSending}
+                          className="rounded-md p-1 text-muted-foreground/70 hover:bg-black/5 hover:text-foreground disabled:opacity-40"
+                        >
+                          <RefreshCw size={11} />
+                        </button>
+                      )}
+                    </span>
+                  </span>
+                </div>
+              ),
+            )}
             {isSending && (
               <div className="text-left">
-                <span className="liquid-glass-soft inline-block rounded-2xl px-3 py-2 text-sm text-muted-foreground">
-                  Archiaccess AI écrit…
+                <span className="liquid-glass-soft inline-flex items-center gap-1 rounded-2xl px-3 py-2.5">
+                  <span className="think-dot" />
+                  <span className="think-dot" />
+                  <span className="think-dot" />
                 </span>
               </div>
             )}
@@ -293,6 +357,8 @@ function Chat() {
 
         <form onSubmit={send} className="mx-auto flex w-full max-w-3xl gap-2 p-4 pt-0">
           <input
+            ref={inputRef}
+            autoFocus
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Poser une question…"

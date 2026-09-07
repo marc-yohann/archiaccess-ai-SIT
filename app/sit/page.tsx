@@ -19,6 +19,7 @@ import type { PollutedSitesResult } from "@/lib/data-sources/sites-pollues"
 import type { Servitude } from "@/lib/data-sources/servitudes"
 import type { PublicMarket } from "@/lib/data-sources/boamp"
 import { departmentCodeFromCityCode } from "@/lib/insee"
+import { formatReply } from "@/lib/format-reply"
 import type { GroundwaterStation } from "@/lib/data-sources/nappes"
 import type { HeatNetworkEligibility } from "@/lib/data-sources/chaleur-urbaine"
 
@@ -670,34 +671,6 @@ function ResultGroups({ groups, onItemClick }: { groups: ResultGroup[]; onItemCl
 // Mise en forme légère des réponses du copilote (gras **texte**, listes
 // "- item") — texte échappé avant tout, pour que dangerouslySetInnerHTML
 // ne puisse jamais injecter de balise venant de la réponse du modèle.
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-}
-function formatReply(text: string): string {
-  const lines = text.split("\n")
-  const bold = (s: string) => s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-  let html = ""
-  let inList = false
-  for (const raw of lines) {
-    const line = escapeHtml(raw.trim())
-    if (line.startsWith("- ")) {
-      if (!inList) {
-        html += "<ul>"
-        inList = true
-      }
-      html += `<li>${bold(line.slice(2))}</li>`
-    } else {
-      if (inList) {
-        html += "</ul>"
-        inList = false
-      }
-      if (line) html += `<p>${bold(line)}</p>`
-    }
-  }
-  if (inList) html += "</ul>"
-  return html
-}
-
 // Tableau de bord du SIT : recherche universelle (adresse OU entreprise —
 // voir CLAUDE.md, "je veux pas que ce soit l'adresse seulement"), tous
 // les résultats affichés simultanément en tuiles denses plutôt qu'un
