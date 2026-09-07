@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
-import { chatCompletion, type MistralMessage } from "@/lib/mistral"
+import { chatCompletion, MistralApiError, type MistralMessage } from "@/lib/mistral"
 import { searchSimilarChunks } from "@/lib/rag"
 
 // Retranscrit du document "Consignes pour Archiaccess AI" fourni par
@@ -132,7 +132,24 @@ export async function POST(request: Request) {
     { role: "user", content: message },
   ]
 
-  const reply = await chatCompletion(history)
+  // Un échec de l'appel Mistral (rate limit, panne ponctuelle...) ne doit
+  // jamais faire planter la route sans réponse JSON : sans ce try/catch,
+  // l'employé ne voyait ni réponse ni message d'erreur, juste un silence
+  // (voir CLAUDE.md, incident du 2026-09-07 — 429 "Rate limit exceeded"
+  // non rattrapé). Le message renvoyé à l'employé reste générique, sans
+  // jamais nommer le fournisseur/modèle (convention du produit) ; le
+  // détail réel part dans les logs serveur pour le diagnostic.
+  let reply: string
+  try {
+    reply = await chatCompletion(history)
+  } catch (err) {
+    console.error("Échec de l'appel au copilote :", err)
+    const rateLimited = err instanceof MistralApiError && err.status === 429
+    const message = rateLimited
+      ? "Le copilote est momentanément surchargé. Réessayez dans quelques instants."
+      : "Le copilote est temporairement indisponible. Réessayez dans quelques instants."
+    return NextResponse.json({ success: false, error: message }, { status: 502 })
+  }
 
   await prisma.message.create({
     data: { conversationId: conversation.id, role: "ASSISTANT", content: reply },

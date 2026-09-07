@@ -126,13 +126,22 @@ function Chat() {
     window.location.reload()
   }
 
+  // Toute panne (réseau, réponse non-JSON d'un plantage inattendu côté
+  // serveur...) retombe sur ce message plutôt que de laisser l'appelant
+  // planter en silence — voir CLAUDE.md, incident "l'IA ne répond plus"
+  // (2026-09-07) : un rejet de promesse non rattrapé ne montrait
+  // strictement rien à l'employé.
   async function fetchReply(text: string) {
-    const res = await fetch("/api/mistral/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ conversationId, message: text }),
-    })
-    return res.json()
+    try {
+      const res = await fetch("/api/mistral/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId, message: text }),
+      })
+      return await res.json()
+    } catch {
+      return { success: false, error: "Le copilote est temporairement indisponible. Réessayez dans quelques instants." }
+    }
   }
 
   async function send(e: React.FormEvent, prefill?: string) {

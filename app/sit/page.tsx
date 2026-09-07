@@ -864,13 +864,22 @@ function Dashboard() {
   const [isAiSending, setIsAiSending] = useState(false)
   const [copiedMsgIndex, setCopiedMsgIndex] = useState<number | null>(null)
 
+  // Toute panne (réseau, réponse non-JSON d'un plantage inattendu côté
+  // serveur...) retombe sur ce message plutôt que de laisser l'appelant
+  // planter en silence — voir CLAUDE.md, incident "l'IA ne répond plus"
+  // (2026-09-07) : un rejet de promesse non rattrapé ne montrait
+  // strictement rien à l'employé.
   async function fetchAiReply(text: string, snapshot: SitSnapshot, title?: string) {
-    const res = await fetch("/api/mistral/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ conversationId: aiConversationId, message: text, context: formatContext(snapshot), title }),
-    })
-    return res.json()
+    try {
+      const res = await fetch("/api/mistral/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId: aiConversationId, message: text, context: formatContext(snapshot), title }),
+      })
+      return await res.json()
+    } catch {
+      return { success: false, error: "Le copilote est temporairement indisponible. Réessayez dans quelques instants." }
+    }
   }
 
   async function sendAiMessage(text: string, snapshot: SitSnapshot, title?: string, citation?: string) {

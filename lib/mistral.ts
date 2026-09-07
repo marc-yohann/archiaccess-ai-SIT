@@ -21,6 +21,19 @@ export interface MistralMessage {
   content: string
 }
 
+// Erreur typée (status HTTP joint) plutôt qu'un Error générique — permet
+// à l'appelant (route /api/mistral/chat) de distinguer un simple
+// rate-limit (429, transitoire) d'une vraie panne, sans reparser le
+// message. Voir CLAUDE.md, piège "l'IA ne répond plus" (2026-09-07) :
+// un 429 non attrapé ici faisait planter la route sans réponse JSON, donc
+// sans aucun message côté employé — juste un silence.
+export class MistralApiError extends Error {
+  constructor(public status: number, body: string) {
+    super(`Mistral API a répondu ${status} : ${body}`)
+    this.name = "MistralApiError"
+  }
+}
+
 export async function chatCompletion(messages: MistralMessage[]): Promise<string> {
   const apiKey = await getMistralApiKey()
 
@@ -35,7 +48,7 @@ export async function chatCompletion(messages: MistralMessage[]): Promise<string
 
   if (!res.ok) {
     const body = await res.text().catch(() => "")
-    throw new Error(`Mistral API a répondu ${res.status} : ${body}`)
+    throw new MistralApiError(res.status, body)
   }
 
   const data = (await res.json()) as { choices: Array<{ message: { content: string } }> }
