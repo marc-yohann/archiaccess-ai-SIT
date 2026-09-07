@@ -1,0 +1,69 @@
+name: Apply SIT search entrypoint bar
+
+on:
+  push:
+    branches:
+      - claude/archiaccess-sit-build-kunkji
+    paths:
+      - '.github/workflows/apply-sit-search-bar.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/archiaccess-sit-build-kunkji
+          fetch-depth: 0
+
+      - name: Update SIT search entrypoints
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('app/sit/page.tsx')
+          s = p.read_text(encoding='utf-8')
+
+          old_import = 'Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Home, Layers, Map, LayoutGrid, ListChecks, PanelRightClose, PanelRightOpen'
+          new_import = 'Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Home, Layers, Map, LayoutGrid, ListChecks, PanelRightClose, PanelRightOpen, MapPin, Building2, FolderKanban, FileText, Hash'
+          if old_import in s and new_import not in s:
+              s = s.replace(old_import, new_import, 1)
+
+          pattern = re.compile(r'const SEARCH_MODE_META: \{ id: SearchMode; label: string; icon: typeof Search \}\[\] = \[.*?\n\]\n', re.S)
+          replacement = '''const SEARCH_MODE_META: { id: SearchMode; label: string; icon: typeof Search }[] = [
+  // Nouvelles portes d'entrée du SIT. Les entrées qui n'ont pas encore
+  // leur connecteur métier dédié réutilisent volontairement le moteur
+  // existant plutôt que de simuler une recherche non construite.
+  { id: "point", label: "LOCALISER", icon: MapPin },
+  { id: "point", label: "ACTEUR", icon: Building2 },
+  { id: "lot", label: "PROJET", icon: FolderKanban },
+  { id: "point", label: "DOCUMENT", icon: FileText },
+  { id: "point", label: "RÉFÉRENCE", icon: Hash },
+  { id: "discipline", label: "BESOIN", icon: Sparkles },
+]
+'''
+          if not pattern.search(s):
+              raise SystemExit('SEARCH_MODE_META block not found')
+          s = pattern.sub(replacement, s, count=1)
+
+          old_key = 'key={m.id}'
+          new_key = 'key={`${m.id}-${m.label}`} '
+          if old_key in s:
+              s = s.replace(old_key, new_key.strip(), 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit and remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/sit/page.tsx
+          git diff --cached --quiet || git commit -m "feat: modernize SIT search entrypoints"
+          git rm -f .github/workflows/apply-sit-search-bar.yml
+          git commit -m "chore: remove temporary SIT migration workflow"
+          git push origin HEAD:claude/archiaccess-sit-build-kunkji
