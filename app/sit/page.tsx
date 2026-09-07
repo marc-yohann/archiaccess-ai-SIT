@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Home, Layers, Map, LayoutGrid, ListChecks, PanelRightClose, PanelRightOpen } from "lucide-react"
 import { AuthGate } from "@/components/auth-gate"
+import { AutoGrowTextarea } from "@/components/auto-grow-textarea"
 import type { AddressResult, CommuneResult } from "@/lib/data-sources/ban"
 import type { Parcel } from "@/lib/data-sources/cadastre"
 import type { CommuneRisks } from "@/lib/data-sources/georisques"
@@ -859,6 +860,7 @@ function Dashboard() {
   const [aiConversationId, setAiConversationId] = useState<string>()
   const [aiMessages, setAiMessages] = useState<ChatMessage[]>([])
   const [aiInput, setAiInput] = useState("")
+  const aiFormRef = useRef<HTMLFormElement>(null)
   const [isAiSending, setIsAiSending] = useState(false)
   const [copiedMsgIndex, setCopiedMsgIndex] = useState<number | null>(null)
 
@@ -1984,12 +1986,14 @@ function Dashboard() {
             </div>
           </div>
         )}
-        <form onSubmit={submitAiInput} className="mt-3 flex gap-2">
-          <input
+        <form ref={aiFormRef} onSubmit={submitAiInput} className="mt-3 flex items-end gap-2">
+          <AutoGrowTextarea
             value={aiInput}
-            onChange={(e) => setAiInput(e.target.value)}
-            placeholder="Une question sur ces données…"
-            className="liquid-glass-inset flex-1 rounded-xl px-3 py-2 text-xs outline-none"
+            onChange={setAiInput}
+            onSubmit={() => aiFormRef.current?.requestSubmit()}
+            disabled={isAiSending}
+            placeholder="Une question sur ces données… (Maj+Entrée pour une nouvelle ligne)"
+            className="liquid-glass-inset flex-1 resize-none rounded-xl px-3 py-2 text-xs outline-none"
           />
           <button
             type="submit"

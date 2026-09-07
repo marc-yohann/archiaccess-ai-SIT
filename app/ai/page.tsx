@@ -6,6 +6,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Plus, Trash2, LogOut, Home, Menu, X, Settings, MapPin, Copy, Check, RefreshCw } from "lucide-react"
 import { AuthGate, useUser } from "@/components/auth-gate"
+import { AutoGrowTextarea } from "@/components/auto-grow-textarea"
 import { formatReply } from "@/lib/format-reply"
 
 interface ChatMessage {
@@ -67,7 +68,8 @@ function Chat() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [copiedMsgIndex, setCopiedMsgIndex] = useState<number | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const formRef = useRef<HTMLFormElement>(null)
 
   function loadConversations() {
     fetch("/api/mistral/conversations")
@@ -355,14 +357,16 @@ function Chat() {
           </div>
         )}
 
-        <form onSubmit={send} className="mx-auto flex w-full max-w-3xl gap-2 p-4 pt-0">
-          <input
+        <form ref={formRef} onSubmit={send} className="mx-auto flex w-full max-w-3xl items-end gap-2 p-4 pt-0">
+          <AutoGrowTextarea
             ref={inputRef}
             autoFocus
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Poser une question…"
-            className="liquid-glass-inset flex-1 rounded-xl px-3 py-2 text-sm outline-none"
+            onChange={setInput}
+            onSubmit={() => formRef.current?.requestSubmit()}
+            disabled={isSending}
+            placeholder="Poser une question… (Maj+Entrée pour une nouvelle ligne)"
+            className="liquid-glass-inset flex-1 resize-none rounded-xl px-3 py-2 text-sm outline-none"
           />
           <button
             type="submit"
