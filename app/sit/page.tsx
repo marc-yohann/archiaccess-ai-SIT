@@ -2106,10 +2106,18 @@ function Dashboard() {
 // pyrénéen au sud) — reste un aperçu schématique, pas un tracé
 // cartographique précis (voir le texte "contour approximatif" affiché
 // sous la carte).
+// Tracé recalculé à partir de coordonnées géographiques réelles simplifiées
+// (Dunkerque, Cotentin, pointe bretonne, embouchure de la Gironde,
+// frontière pyrénéenne, delta du Rhône, Nice, Strasbourg…) plutôt que
+// dessiné à l'oeil — retour utilisateur (photo de carte de France à
+// l'appui) : le tracé précédent ne se reconnaissait pas comme la France.
+// viewBox élargi (140x100, la France est plus large que haute) pour ne
+// pas déformer les proportions. Reste un aperçu schématique, pas un tracé
+// cartographique précis (voir le texte sous la carte).
 function FranceOutline() {
   return (
-    <svg className="map-france" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-      <path d="M48 6 L58 10 L68 18 L66 30 L72 40 L68 50 L66 62 L55 68 L45 66 L38 62 L28 58 L22 66 L18 76 L14 66 L10 56 L8 46 L4 42 L10 36 L14 30 L10 24 L16 20 L24 14 L36 8 Z" />
+    <svg className="map-france" viewBox="0 0 140 100" preserveAspectRatio="xMidYMid meet">
+      <path d="M79 0 L73 1 L68 3 L53 17 L33 16 L28 22 L33 28 L0 30 L8 40 L26 44 L30 55 L38 70 L31 88 L55 96 L86 100 L100 90 L115 88 L135 85 L138 84 L139 41 L140 28 L125 10 Z" />
     </svg>
   )
 }

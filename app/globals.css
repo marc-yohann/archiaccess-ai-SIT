@@ -1030,9 +1030,11 @@
   }
   .map-france {
     position: absolute;
-    inset: 8% 30%;
-    width: 40%;
-    height: 84%;
+    /* inset/width/height ajustés pour le nouveau viewBox 140x100 (France
+       plus large que haute) — voir FranceOutline, app/sit/page.tsx. */
+    inset: 15% 19%;
+    width: 62%;
+    height: 70%;
     /* fill/stroke relevés (6%/16% -> 12%/55%) : le tracé était présent
        dans le DOM et correctement positionné, mais quasiment invisible à
        l'oeil (retour utilisateur "on ne voit pas la carte de la France"),
