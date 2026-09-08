@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Home, Layers, Map, LayoutGrid, ListChecks, PanelRightClose, PanelRightOpen } from "lucide-react"
+import { Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Home, Layers, Map, LayoutGrid, ListChecks, PanelRightClose, PanelRightOpen, MapPin, Building2, FolderKanban, FileText, Hash } from "lucide-react"
 import { AuthGate } from "@/components/auth-gate"
 import { AutoGrowTextarea } from "@/components/auto-grow-textarea"
 import type { AddressResult, CommuneResult } from "@/lib/data-sources/ban"
@@ -293,11 +293,29 @@ const DOCUMENT_TAGS: { tag: string; keywords: string[] }[] = [
 // vrai fond de carte (tuiles IGN) n'est pas construite.
 type SearchMode = "point" | "secteur" | "carte" | "discipline" | "lot"
 const SEARCH_MODE_META: { id: SearchMode; label: string; icon: typeof Search }[] = [
-  { id: "point", label: "Point précis", icon: Search },
+  { id: "point", label: "Recherche", icon: Search },
   { id: "secteur", label: "Secteur", icon: Layers },
   { id: "carte", label: "Carte", icon: Map },
   { id: "discipline", label: "Discipline", icon: LayoutGrid },
   { id: "lot", label: "Lot", icon: ListChecks },
+]
+
+// Catégories d'entrée de la recherche universelle ("Point précis") — ne
+// pilotent que l'intitulé affiché et le placeholder du même champ, pas un
+// traitement backend distinct : /api/sit/search reste la seule route
+// interrogée (détection adresse/entreprise/SIREN/SIRET déjà en place).
+// Introduire un vrai routage par catégorie (ex : recherche documentaire
+// DCE/CCTP, recherche par marché BOAMP) demanderait de nouveaux
+// connecteurs — non fait ici, pas simulé non plus (voir mode-desc
+// ci-dessous, qui le dit explicitement).
+type SearchCategory = "localiser" | "acteur" | "projet" | "document" | "reference" | "besoin"
+const SEARCH_CATEGORIES: { id: SearchCategory; label: string; icon: typeof MapPin; items: string[]; placeholder: string }[] = [
+  { id: "localiser", label: "Localiser", icon: MapPin, items: ["Adresse", "Parcelle", "GPS", "Commune"], placeholder: "Adresse, parcelle, coordonnées GPS ou commune…" },
+  { id: "acteur", label: "Acteur", icon: Building2, items: ["Entreprise", "SIREN", "SIRET", "Acheteur"], placeholder: "Entreprise, SIREN/SIRET ou acheteur public…" },
+  { id: "projet", label: "Projet", icon: FolderKanban, items: ["Opération", "Chantier", "Lot", "Étude"], placeholder: "Opération, chantier, lot ou étude…" },
+  { id: "document", label: "Document", icon: FileText, items: ["DCE", "CCTP", "CCAP", "Rapport", "Diagnostic"], placeholder: "DCE, CCTP, CCAP, rapport ou diagnostic…" },
+  { id: "reference", label: "Référence", icon: Hash, items: ["Marché", "DPE", "Cadastre", "Identifiant administratif"], placeholder: "Marché, DPE, référence cadastrale ou identifiant administratif…" },
+  { id: "besoin", label: "Besoin", icon: Sparkles, items: ["Discipline", "Problématique technique", "Type d'ouvrage"], placeholder: "Discipline, problématique technique ou type d'ouvrage…" },
 ]
 
 function labelFromCacheKey(key: string): string {
@@ -805,6 +823,7 @@ function Dashboard() {
   }
 
   const [searchMode, setSearchMode] = useState<SearchMode>("point")
+  const [searchCategory, setSearchCategory] = useState<SearchCategory>("localiser")
   const [discGroupIndex, setDiscGroupIndex] = useState(0)
   const [discQuery, setDiscQuery] = useState("")
   const [openTaxoCats, setOpenTaxoCats] = useState<number[]>([])
@@ -1233,10 +1252,13 @@ function Dashboard() {
           </Link>
         </div>
 
-        {/* 5 portes d'entrée vers le SIT — voir SEARCH_MODE_META. Point
-            précis, Discipline, Secteur et Lot sont réellement câblés ;
-            Carte reste un aperçu schématique honnête (voir FranceOutline) :
-            jamais un bouton qui a l'air de marcher mais ne fait rien. */}
+        {/* 5 onglets — voir SEARCH_MODE_META. "Recherche" (ex-"Point précis",
+            renommé pour ne plus concurrencer visuellement les 6 catégories
+            qui y sont maintenant le point d'entrée principal — voir
+            SEARCH_CATEGORIES), Discipline, Secteur et Lot sont réellement
+            câblés ; Carte reste un aperçu schématique honnête (voir
+            FranceOutline) : jamais un bouton qui a l'air de marcher mais ne
+            fait rien. */}
         {/* .liquid-glass-panel plutôt que .liquid-glass : retour utilisateur
             "toujours pareil" — cette barre ne s'affichait pas (DOM/CSS
             pourtant corrects, confirmé par inspection). Seuls deux
@@ -1269,13 +1291,66 @@ function Dashboard() {
 
           {searchMode === "point" && (
             <div className="mode-panel">
-              <p className="mode-desc">Une adresse, une entreprise ou un SIREN/SIRET précis.</p>
-              <form onSubmit={search} className="mode-row box">
+              <p className="mode-desc">La recherche fédérée du SIT, organisée par point d'entrée.</p>
+              {/* Eyebrow — même patron que les libellés de section du panneau
+                  Discipline juste à côté ("Données du SIT", "Disciplines
+                  techniques Archiaccess") : réutilisé ici pour que la grille
+                  se lise comme LE point d'entrée principal plutôt que comme
+                  un bloc parmi d'autres (retour utilisateur : la grille doit
+                  être immédiatement identifiable comme les 6 portes
+                  d'entrée). */}
+              <p className="mb-2 text-[0.66rem] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                6 portes d'entrée
+              </p>
+              {/* disc-grid/disc-card : classes déjà en place pour la grille de
+                  sélection "Discipline" (SOURCE_GROUPS) — même langage
+                  (verre liquide, ring vert à la sélection), réutilisées
+                  plutôt que dupliquées. Poids visuel légèrement renforcé
+                  (icône plus grande, libellé en gras, teinte verte sur la
+                  carte active en plus du ring) pour que cette grille
+                  ressorte comme le point d'entrée principal — sans nouvelle
+                  couleur ni nouveau composant, seulement le vert déjà utilisé
+                  partout ailleurs comme accent "actif" (status-dot, chips du
+                  corpus). */}
+              <div className="disc-grid">
+                {SEARCH_CATEGORIES.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setSearchCategory(c.id)}
+                    className={`disc-card liquid-glass-soft rounded-2xl${searchCategory === c.id ? " active" : ""}`}
+                    // Gris (pas vert) : cette grille est un sélecteur de
+                    // contexte, pas un indicateur "actif/en ligne" comme le
+                    // vert utilisé ailleurs (status-dot, taxo-badge.corpus)
+                    // — override en style inline pour ne pas changer
+                    // .disc-card.active globalement (partagé avec la grille
+                    // Discipline juste à côté, dont le ring reste vert).
+                    style={
+                      searchCategory === c.id
+                        ? {
+                            background: "color-mix(in oklch, var(--foreground) 8%, transparent)",
+                            outline: "2px solid color-mix(in oklch, var(--foreground) 35%, transparent)",
+                            outlineOffset: "-1px",
+                          }
+                        : undefined
+                    }
+                  >
+                    <div className="name flex items-center gap-2">
+                      <span className="liquid-glass-btn flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+                        <c.icon size={15} />
+                      </span>
+                      <span className="font-semibold uppercase tracking-wide">{c.label}</span>
+                    </div>
+                    <div className="hint">{c.items.join(" · ")}</div>
+                  </button>
+                ))}
+              </div>
+              <form onSubmit={search} className="mode-row box liquid-glass-soft mt-3">
                 <Search size={16} style={{ marginLeft: ".5rem", flexShrink: 0, color: "var(--muted-foreground)" }} />
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Adresse, entreprise, SIREN/SIRET…"
+                  placeholder={SEARCH_CATEGORIES.find((c) => c.id === searchCategory)!.placeholder}
                   autoComplete="off"
                 />
                 <button
@@ -1449,7 +1524,7 @@ function Dashboard() {
               <p className="mt-2 text-[0.68rem] text-muted-foreground/80">
                 DVF n'est pas couvert ici — l'API n'a pas d'accès par commune entière (seulement par section
                 cadastrale, une commune peut en compter plus d'une centaine), interroger toutes les sections
-                dépasserait le temps d'une recherche. Reste disponible adresse par adresse via "Point précis".
+                dépasserait le temps d'une recherche. Reste disponible adresse par adresse via "Recherche".
               </p>
               {secteurError && <p className="mt-2 text-xs text-red-600">{secteurError}</p>}
             </div>
@@ -1799,7 +1874,7 @@ function Dashboard() {
                         }}
                         className="text-xs text-muted-foreground hover:underline"
                       >
-                        Ouvrir dans Point précis →
+                        Ouvrir dans Recherche →
                       </button>
                     </div>
                     {(() => {
