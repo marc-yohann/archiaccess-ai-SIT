@@ -1033,8 +1033,12 @@
     inset: 8% 30%;
     width: 40%;
     height: 84%;
-    fill: color-mix(in oklch, var(--foreground) 6%, transparent);
-    stroke: color-mix(in oklch, var(--foreground) 16%, transparent);
-    stroke-width: 1;
+    /* fill/stroke relevés (6%/16% -> 12%/55%) : le tracé était présent
+       dans le DOM et correctement positionné, mais quasiment invisible à
+       l'oeil (retour utilisateur "on ne voit pas la carte de la France"),
+       confirmé par rendu Chromium comparatif avant/après. */
+    fill: color-mix(in oklch, var(--foreground) 12%, transparent);
+    stroke: color-mix(in oklch, var(--foreground) 55%, transparent);
+    stroke-width: 1.5;
   }
 }
