@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import Image from "next/image"
 import { Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Home, Layers, Map, LayoutGrid, ListChecks, PanelRightClose, PanelRightOpen, MapPin, Building2, FolderKanban, FileText, Hash } from "lucide-react"
@@ -21,6 +22,20 @@ import type { Servitude } from "@/lib/data-sources/servitudes"
 import type { PublicMarket } from "@/lib/data-sources/boamp"
 import { departmentCodeFromCityCode } from "@/lib/insee"
 import { formatReply } from "@/lib/format-reply"
+import type { SitMapMarker } from "@/components/sit-map"
+
+// mapbox-gl touche `window` dès son import — chargé uniquement côté
+// client, jamais pendant la génération statique de /sit (voir
+// components/sit-map.tsx).
+const SitMap = dynamic(() => import("@/components/sit-map"), { ssr: false })
+
+// Aperçu miniature (bouton "Voir la carte →") : une image statique plutôt
+// qu'une 2e instance Mapbox GL/WebGL toujours montée en arrière-plan sur
+// l'écran d'accueil — même jeton public, API Static Images de Mapbox
+// (une vraie carte, pas un contour dessiné).
+const MAPBOX_PREVIEW_URL = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+  ? `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/2.5,46.6,4.6,0/300x150@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`
+  : null
 import type { GroundwaterStation } from "@/lib/data-sources/nappes"
 import type { HeatNetworkEligibility } from "@/lib/data-sources/chaleur-urbaine"
 
@@ -287,10 +302,9 @@ const DOCUMENT_TAGS: { tag: string; keywords: string[] }[] = [
 
 // 5 portes d'entrée vers le SIT (retour : "accéder aux données en
 // mettant une adresse ou une entreprise, je trouve ça pauvre" pour une
-// base pluridisciplinaire). "point", "discipline", "secteur" et "lot"
-// sont réellement câblés sur la vraie recherche ; "carte" reste un aperçu
-// schématique honnête (voir FranceOutline plus bas) — l'intégration d'un
-// vrai fond de carte (tuiles IGN) n'est pas construite.
+// base pluridisciplinaire). Toutes réellement câblées, "carte" compris
+// depuis l'intégration de la vraie carte interactive (voir
+// components/sit-map.tsx, Mapbox GL en projection globe).
 type SearchMode = "point" | "secteur" | "carte" | "discipline" | "lot"
 const SEARCH_MODE_META: { id: SearchMode; label: string; icon: typeof Search }[] = [
   { id: "point", label: "Recherche", icon: Search },
@@ -1255,10 +1269,10 @@ function Dashboard() {
         {/* 5 onglets — voir SEARCH_MODE_META. "Recherche" (ex-"Point précis",
             renommé pour ne plus concurrencer visuellement les 6 catégories
             qui y sont maintenant le point d'entrée principal — voir
-            SEARCH_CATEGORIES), Discipline, Secteur et Lot sont réellement
-            câblés ; Carte reste un aperçu schématique honnête (voir
-            FranceOutline) : jamais un bouton qui a l'air de marcher mais ne
-            fait rien. */}
+            SEARCH_CATEGORIES), Discipline, Secteur, Lot et Carte (vraie
+            carte interactive, voir components/sit-map.tsx) sont tous
+            réellement câblés : jamais un bouton qui a l'air de marcher mais
+            ne fait rien. */}
         {/* .liquid-glass-panel plutôt que .liquid-glass : retour utilisateur
             "toujours pareil" — cette barre ne s'affichait pas (DOM/CSS
             pourtant corrects, confirmé par inspection). Seuls deux
@@ -1480,16 +1494,18 @@ function Dashboard() {
           {searchMode === "carte" && (
             <div className="mode-panel">
               <p className="mode-desc">
-                Sélectionner directement une zone sur la carte plutôt que taper une adresse — carte de France,
+                Naviguer directement sur la carte plutôt que taper une adresse — du globe jusqu'à la France,
                 cohérente avec les sources connectées (BAN, IGN, Géorisques, DVF…).
               </p>
               <div className="map-box">
-                <FranceOutline />
+                <SitMap
+                  marker={
+                    selectedAddress
+                      ? ({ coordinates: selectedAddress.coordinates, label: selectedAddress.label } as SitMapMarker)
+                      : undefined
+                  }
+                />
               </div>
-              <p className="mt-2 text-[0.68rem] text-muted-foreground/80">
-                Aperçu schématique (contour approximatif) — l'intégration d'un vrai fond de carte (tuiles IGN) n'est
-                pas encore construite.
-              </p>
             </div>
           )}
 
@@ -1778,7 +1794,10 @@ function Dashboard() {
                 </button>
               </div>
               <button type="button" onClick={() => setSearchMode("carte")} className="map-box map-box-mini block w-full cursor-pointer">
-                <FranceOutline />
+                {MAPBOX_PREVIEW_URL ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- image statique externe (API Mapbox), pas un asset local
+                  <img src={MAPBOX_PREVIEW_URL} alt="Aperçu de la carte de France" className="h-full w-full object-cover" />
+                ) : null}
               </button>
             </div>
           </div>
@@ -2095,32 +2114,6 @@ function Dashboard() {
   )
 }
 
-
-// Contour schématique de la France — pas un vrai fond de carte (aucune
-// tuile IGN chargée), voir la note affichée à côté dans l'onglet Carte.
-// Contour schématique de la France métropolitaine ("l'Hexagone") — l'ancien
-// tracé était un polygone arbitraire sans rapport avec la vraie forme
-// (retour utilisateur : "ce n'est pas la France"). Simplifié à une
-// vingtaine de points repérables (pointe bretonne à l'ouest, presqu'île du
-// Cotentin au nord-ouest, bulge alsacien au nord-est, arc méditerranéen et
-// pyrénéen au sud) — reste un aperçu schématique, pas un tracé
-// cartographique précis (voir le texte "contour approximatif" affiché
-// sous la carte).
-// Tracé recalculé à partir de coordonnées géographiques réelles simplifiées
-// (Dunkerque, Cotentin, pointe bretonne, embouchure de la Gironde,
-// frontière pyrénéenne, delta du Rhône, Nice, Strasbourg…) plutôt que
-// dessiné à l'oeil — retour utilisateur (photo de carte de France à
-// l'appui) : le tracé précédent ne se reconnaissait pas comme la France.
-// viewBox élargi (140x100, la France est plus large que haute) pour ne
-// pas déformer les proportions. Reste un aperçu schématique, pas un tracé
-// cartographique précis (voir le texte sous la carte).
-function FranceOutline() {
-  return (
-    <svg className="map-france" viewBox="0 0 140 100" preserveAspectRatio="xMidYMid meet">
-      <path d="M79 0 L73 1 L68 3 L53 17 L33 16 L28 22 L33 28 L0 30 L8 40 L26 44 L30 55 L38 70 L31 88 L55 96 L86 100 L100 90 L115 88 L135 85 L138 84 L139 41 L140 28 L125 10 Z" />
-    </svg>
-  )
-}
 
 function DocumentUpload() {
   const [title, setTitle] = useState("")

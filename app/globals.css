@@ -1010,10 +1010,11 @@
     outline-offset: -1px;
   }
 
-  /* Aperçu carte — contour schématique de la France (voir app/sit/page.tsx),
-     pas un vrai fond de carte (aucune tuile IGN chargée) : la note sous le
-     contour le dit explicitement, pour ne jamais laisser croire à une
-     précision qui n'existe pas. */
+  /* Conteneur de la carte interactive (voir components/sit-map.tsx, Mapbox
+     GL) — le fond en grille reste visible pendant le chargement des tuiles
+     et sert de repli si NEXT_PUBLIC_MAPBOX_TOKEN n'est pas configuré (voir
+     SitMap). overflow:hidden habille le canevas Mapbox aux coins arrondis
+     du système sans y toucher. */
   .map-box {
     position: relative;
     height: 190px;
@@ -1028,19 +1029,29 @@
   .map-box-mini {
     height: 150px;
   }
-  .map-france {
-    position: absolute;
-    /* inset/width/height ajustés pour le nouveau viewBox 140x100 (France
-       plus large que haute) — voir FranceOutline, app/sit/page.tsx. */
-    inset: 15% 19%;
-    width: 62%;
-    height: 70%;
-    /* fill/stroke relevés (6%/16% -> 12%/55%) : le tracé était présent
-       dans le DOM et correctement positionné, mais quasiment invisible à
-       l'oeil (retour utilisateur "on ne voit pas la carte de la France"),
-       confirmé par rendu Chromium comparatif avant/après. */
-    fill: color-mix(in oklch, var(--foreground) 12%, transparent);
-    stroke: color-mix(in oklch, var(--foreground) 55%, transparent);
-    stroke-width: 1.5;
+
+  /* Habillage discret des contrôles Mapbox (zoom, attribution) pour
+     rester dans le langage verre liquide plutôt que le chrome par défaut
+     de Mapbox — l'attribution elle-même n'est jamais masquée (obligatoire
+     dans les conditions d'utilisation Mapbox), seulement stylée en plus
+     petit/discret comme le reste des libellés du produit. */
+  .mapboxgl-ctrl-group {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.22) 100%);
+    backdrop-filter: blur(16px) saturate(110%);
+    -webkit-backdrop-filter: blur(16px) saturate(110%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 10px !important;
+    box-shadow: 0 2px 10px -4px rgba(30, 35, 45, 0.15);
+    overflow: hidden;
+  }
+  .mapboxgl-ctrl-group button {
+    background: transparent;
+  }
+  .mapboxgl-ctrl-group button:hover {
+    background: rgba(20, 24, 28, 0.06);
+  }
+  .mapboxgl-ctrl-attrib {
+    font-size: 0.62rem !important;
+    background: transparent !important;
   }
 }
