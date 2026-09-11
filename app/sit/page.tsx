@@ -1117,6 +1117,16 @@ function Dashboard() {
     setMutations(bundle.mutations)
     setResultsLoading(false)
 
+    // Persiste dans le référentiel territorial (Phase 1 — Site/Parcelle/
+    // Bâtiment, voir prisma/schema.prisma et app/api/sit/sites) ce qui
+    // vient d'être récupéré en direct. Tâche de fond : un échec ici ne
+    // doit jamais affecter la recherche elle-même, déjà affichée.
+    void fetch("/api/sit/sites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address: addr, parcels: bundle.parcels, dpeRecords: bundle.dpeRecords }),
+    }).catch(() => {})
+
     void sendAiMessage(
       "Fais un résumé synthétique des informations ci-dessus (adresse, cadastre, urbanisme, risques, DVF, DPE, cavités, sites pollués, servitudes, marchés publics, nappes phréatiques, réseau de chaleur), pertinent pour une étude technique AMO/OPC. Sois concis (5-8 lignes maximum), et signale si une donnée importante manque.",
       {

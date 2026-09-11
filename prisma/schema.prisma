@@ -109,6 +109,100 @@ model DocumentChunk {
   @@index([documentId])
 }
 
+// Référentiel territorial du SIT (Phase 1 : Site/Localisation/Parcelle/
+// Bâtiment — voir CLAUDE.md et l'audit du 2026-09-11). Contrairement à
+// DataCacheEntry ci-dessous (blobs JSON opaques par connecteur, sans lien
+// entre eux), ces modèles structurent et relient la donnée déjà
+// réellement récupérée par les connecteurs existants (lib/data-sources/*)
+// — aucune nouvelle source de données introduite ici, uniquement une
+// couche relationnelle par-dessus ce qui est déjà vérifié réel. Un champ
+// nullable resté vide signifie "aucune source réelle ne le fournit
+// actuellement", jamais une valeur à deviner côté UI.
+
+// Un SITE = un emplacement précis déjà étudié (adresse sélectionnée via
+// "Recherche"). Créé/mis à jour à la sélection d'une adresse
+// (selectAddress(), app/sit/page.tsx) — jamais créé à vide.
+model Site {
+  id        String   @id @default(cuid())
+  label     String // AddressResult.label (BAN) — ex: "12 rue de Vesle, 51100 Reims"
+  citycode  String // code INSEE (BAN)
+  postcode  String
+  city      String
+  longitude Float
+  latitude  Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parcelles Parcelle[]
+  batiments Batiment[]
+  sources   SiteSource[]
+
+  // Une même adresse recherchée plusieurs fois ne doit pas créer plusieurs
+  // sites — un seul enregistrement mis à jour dans le temps.
+  @@unique([citycode, label])
+  @@index([citycode])
+}
+
+// Structure la donnée déjà réelle de lib/data-sources/cadastre.ts (type
+// Parcel) — mêmes champs, rien de plus.
+model Parcelle {
+  id             String   @id @default(cuid())
+  siteId         String
+  site           Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  idu            String // identifiant nationale de parcelle cadastrale
+  section        String
+  sectionPrefixe String
+  numero         String
+  contenanceM2   Float
+  codeInsee      String
+  commune        String
+  geometry       Json // GeoJSON.MultiPolygon réel (cadastre.ts), jamais approximé
+  createdAt      DateTime @default(now())
+
+  @@unique([idu])
+  @@index([siteId])
+}
+
+// Structure la donnée déjà réelle de lib/data-sources/dpe.ts (type
+// DpeRecord) — seule source réelle disponible pour "bâtiment" à ce jour.
+// anneeConstruction n'existe dans aucun connecteur actuel : le champ est
+// prévu (section "Bâtiment" du brief) mais restera toujours null tant
+// qu'aucune source réelle ne le fournit — jamais déduit ni inventé.
+model Batiment {
+  id                String   @id @default(cuid())
+  siteId            String
+  site              Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  // Nullable en théorie (une future source non-DPE pourrait ne pas en
+  // avoir), mais toujours renseigné en pratique aujourd'hui — seule
+  // source réelle actuelle (lib/data-sources/dpe.ts) le fournit toujours.
+  // @unique : identifiant national ADEME, permet un upsert idempotent
+  // plutôt que de dupliquer la ligne à chaque nouvelle recherche de la
+  // même adresse.
+  numeroDpe         String?  @unique
+  typeBatiment      String?
+  surfaceHabitable  Float?
+  etiquetteEnergie  String?
+  etiquetteGes      String?
+  anneeConstruction Int?
+  createdAt         DateTime @default(now())
+
+  @@index([siteId])
+}
+
+// Traçabilité (brief, section "Sources") : une ligne par connecteur déjà
+// interrogé avec succès pour ce site, pour pouvoir afficher "Source :
+// DVF, récupéré le [date]" plutôt qu'une donnée sans provenance.
+model SiteSource {
+  id        String   @id @default(cuid())
+  siteId    String
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  source    String // même vocabulaire que DataCacheEntry.source ("cadastre", "dvf", "dpe"...)
+  fetchedAt DateTime @default(now())
+
+  @@unique([siteId, source])
+  @@index([siteId])
+}
+
 // "Coffre" du SIT — voir CLAUDE.md, décision utilisateur du 2026-08-31 :
 // chaque recherche (cadastre, DVF, entreprises, urbanisme, DPE, BODACC,
 // Géorisques, adresse) interroge TOUJOURS la source en direct (données à
