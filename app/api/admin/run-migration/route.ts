@@ -147,6 +147,53 @@ const MIGRATIONS: PendingMigration[] = [
       `ALTER TABLE "ActeurSource" ADD CONSTRAINT "ActeurSource_acteurId_fkey" FOREIGN KEY ("acteurId") REFERENCES "Acteur"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
     ],
   },
+  {
+    name: "20260912150000_ingestion_engine",
+    checksum: "33456d7d252c0ae4444318e6640ff7d667fc76c8c5d21b4ba83f7fa573f8b2ae",
+    statements: [
+      `ALTER TABLE "Acteur" ALTER COLUMN "nom" DROP NOT NULL`,
+      `CREATE TYPE "IngestionStatus" AS ENUM ('PENDING', 'RUNNING', 'PAUSED', 'COMPLETED', 'FAILED', 'CANCELLED')`,
+      `CREATE TABLE "IngestionJob" (
+        "id" TEXT NOT NULL,
+        "source" TEXT NOT NULL,
+        "dataset" TEXT NOT NULL,
+        "partition" TEXT NOT NULL,
+        "datasetVersion" TEXT,
+        "status" "IngestionStatus" NOT NULL DEFAULT 'PENDING',
+        "startedAt" TIMESTAMP(3),
+        "completedAt" TIMESTAMP(3),
+        "lastHeartbeatAt" TIMESTAMP(3),
+        "checkpoint" JSONB,
+        "recordsRead" INTEGER NOT NULL DEFAULT 0,
+        "recordsProcessed" INTEGER NOT NULL DEFAULT 0,
+        "recordsInserted" INTEGER NOT NULL DEFAULT 0,
+        "recordsUpdated" INTEGER NOT NULL DEFAULT 0,
+        "recordsRejected" INTEGER NOT NULL DEFAULT 0,
+        "errorCount" INTEGER NOT NULL DEFAULT 0,
+        "lastError" TEXT,
+        "retryCount" INTEGER NOT NULL DEFAULT 0,
+        "nextRunAt" TIMESTAMP(3),
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL,
+        CONSTRAINT "IngestionJob_pkey" PRIMARY KEY ("id")
+      )`,
+      `CREATE TABLE "Risque" (
+        "id" TEXT NOT NULL,
+        "codeInsee" TEXT NOT NULL,
+        "commune" TEXT NOT NULL,
+        "risks" JSONB NOT NULL,
+        "seismicZone" TEXT,
+        "radonPotential" TEXT,
+        "retrievedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL,
+        CONSTRAINT "Risque_pkey" PRIMARY KEY ("id")
+      )`,
+      `CREATE UNIQUE INDEX "IngestionJob_source_dataset_partition_key" ON "IngestionJob"("source", "dataset", "partition")`,
+      `CREATE INDEX "IngestionJob_source_status_idx" ON "IngestionJob"("source", "status")`,
+      `CREATE UNIQUE INDEX "Risque_codeInsee_key" ON "Risque"("codeInsee")`,
+      `CREATE INDEX "Risque_codeInsee_idx" ON "Risque"("codeInsee")`,
+    ],
+  },
 ]
 
 export async function POST(request: Request) {

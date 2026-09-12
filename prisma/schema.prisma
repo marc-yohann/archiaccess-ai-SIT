@@ -93,9 +93,9 @@ model Document {
 }
 
 model DocumentChunk {
-  id         String   @id @default(cuid())
+  id         String                       @id @default(cuid())
   documentId String
-  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  document   Document                     @relation(fields: [documentId], references: [id], onDelete: Cascade)
   chunkIndex Int
   content    String
   // Dimension 1024 = celle de mistral-embed, vérifiée par appel réel à
@@ -103,8 +103,8 @@ model DocumentChunk {
   // nativement le type vector : Unsupported() le laisse de côté côté
   // client, les insertions/recherches par similarité passeront par du
   // SQL brut ($queryRaw / $executeRaw) avec l'opérateur pgvector <=>.
-  embedding Unsupported("vector(1024)")?
-  createdAt DateTime @default(now())
+  embedding  Unsupported("vector(1024)")?
+  createdAt  DateTime                     @default(now())
 
   @@index([documentId])
 }
@@ -240,7 +240,13 @@ enum ActeurType {
 model Acteur {
   id            String      @id @default(cuid())
   siren         String      @unique
-  nom           String
+  // Nullable depuis l'ingestion nationale SIRENE (2026-09-12) : le fichier
+  // StockEtablissement (établissements) ne porte pas la dénomination
+  // légale — celle-ci vit dans StockUniteLegale, pas encore ingéré. Reste
+  // toujours renseigné pour un Acteur créé via la recherche ponctuelle
+  // (Phase 2, l'API de recherche donne toujours un nom). Jamais de valeur
+  // fabriquée pour combler l'absence.
+  nom           String?
   nomCommercial String?
   codeNaf       String?
   statut        String?
@@ -294,6 +300,88 @@ model ActeurSource {
 
   @@unique([acteurId, source])
   @@index([acteurId])
+}
+
+// Moteur d'ingestion national (voir CLAUDE.md et l'audit du 2026-09-12,
+// "transformation en data platform") — par opposition au coffre
+// (DataCacheEntry ci-dessous, une entrée = une recherche ponctuelle d'un
+// employé), IngestionJob suit un traitement en masse qui tourne pour son
+// propre compte, sans utilisateur derrière : téléchargement d'un fichier
+// bulk officiel, itération exhaustive d'une API à cardinalité bornée...
+// Une ligne = une partition technique d'une source (ex: la phase
+// "download" du stock SIRENE, ou une tranche de communes Géorisques) —
+// jamais une notion de priorité métier. Le détail de la reprise (curseur,
+// offset, dernier code INSEE traité...) est propre à chaque runner et
+// vit dans checkpoint (JSON), pas dans des colonnes dédiées : ça évite une
+// migration à chaque nouvelle source.
+enum IngestionStatus {
+  PENDING
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model IngestionJob {
+  id        String @id @default(cuid())
+  source    String // "sirene", "georisques"...
+  dataset   String // "stock-etablissement", "risques-communes"...
+  partition String // "download", "process", "communes:00000-05000"... — unité de reprise, jamais une zone privilégiée
+
+  // Millésime/version réelle constatée à la source (ex: "20260901" pour
+  // le fichier StockEtablissement) — traçabilité, jamais déduit.
+  datasetVersion String?
+
+  status          IngestionStatus @default(PENDING)
+  startedAt       DateTime?
+  completedAt     DateTime?
+  lastHeartbeatAt DateTime?
+
+  // État de reprise propre au runner (ex: { phase: "download", bytesDownloaded, totalBytes }
+  // ou { phase: "process", rowsSkipped, rowsProcessed } pour SIRENE ; { lastCodeInsee } pour Géorisques).
+  checkpoint Json?
+
+  recordsRead      Int @default(0)
+  recordsProcessed Int @default(0)
+  recordsInserted  Int @default(0)
+  recordsUpdated   Int @default(0)
+  recordsRejected  Int @default(0)
+
+  errorCount Int       @default(0)
+  lastError  String?
+  retryCount Int       @default(0)
+  nextRunAt  DateTime? // backoff : ne pas retenter avant cette date après une erreur
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Une même partition d'une source ne doit jamais avoir deux jobs
+  // concurrents — reprise = mise à jour de la même ligne, jamais une
+  // nouvelle ligne.
+  @@unique([source, dataset, partition])
+  @@index([source, status])
+}
+
+// Structure à l'échelle nationale la donnée déjà réelle de
+// lib/data-sources/georisques.ts (type CommuneRisks) — même principe que
+// Site/Acteur : aucune nouvelle source, une couche relationnelle sur ce
+// qui est déjà vérifié réel. Clé = codeInsee (donnée communale) : une
+// commune peut être couverte par l'ingestion nationale sans qu'aucune
+// adresse de cette commune n'ait jamais été recherchée via "Site" —
+// jamais forcé dans une relation à Site pour ne pas fabriquer un lien
+// qui n'existe pas.
+model Risque {
+  id             String   @id @default(cuid())
+  codeInsee      String   @unique
+  commune        String
+  risks          Json // Risk[] tel que retourné par georisques.ts — jamais reformaté/deviné
+  seismicZone    String?
+  radonPotential String?
+  retrievedAt    DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([codeInsee])
 }
 
 // "Coffre" du SIT — voir CLAUDE.md, décision utilisateur du 2026-08-31 :
