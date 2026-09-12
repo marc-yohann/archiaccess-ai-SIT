@@ -8,10 +8,29 @@ import { withVault } from "@/lib/data-vault"
 
 const BASE_URL = "https://recherche-entreprises.api.gouv.fr/search"
 
+// Coordonnées/commune/code postal du siège — présents dans la réponse
+// brute de l'API (vérifié par appel réel, audit Phase 2 du 2026-09-11)
+// mais jusqu'ici jamais repris dans Company : pure perte d'info, pas un
+// manque de source. Regroupés à part plutôt qu'aplatis dans Company pour
+// que leur origine commune (le siège, pas l'entreprise en général) reste
+// explicite (voir Etablissement, prisma/schema.prisma, qui structure ces
+// mêmes champs).
+export interface CompanySiege {
+  siret: string | null
+  adresse: string | null
+  codePostal: string | null
+  codeInsee: string | null // "commune" côté API — code INSEE, pas le nom
+  communeLibelle: string | null
+  latitude: number | null
+  longitude: number | null
+  actif: boolean | null
+}
+
 export interface Company {
   siren: string
   siret: string | null
   nom: string
+  nomCommercial: string | null
   sigle: string | null
   activitePrincipale: string | null
   categorieEntreprise: string | null
@@ -19,6 +38,7 @@ export interface Company {
   etatAdministratif: "actif" | "cessé" | null
   adresse: string | null
   dirigeants: string[]
+  siege: CompanySiege
 }
 
 interface RawResult {
@@ -33,6 +53,13 @@ interface RawResult {
   siege: {
     siret: string | null
     adresse: string | null
+    code_postal: string | null
+    commune: string | null
+    libelle_commune: string | null
+    latitude: string | null
+    longitude: string | null
+    nom_commercial: string | null
+    etat_administratif: string | null
   }
   dirigeants?: Array<{ nom?: string; prenoms?: string; denomination?: string; type_dirigeant?: string }>
 }
@@ -66,6 +93,7 @@ async function fetchCompaniesLive(query: string, limit: number): Promise<Company
     siren: r.siren,
     siret: r.siege?.siret ?? null,
     nom: r.nom_raison_sociale ?? r.nom_complet,
+    nomCommercial: r.siege?.nom_commercial ?? null,
     sigle: r.sigle,
     activitePrincipale: r.activite_principale,
     categorieEntreprise: r.categorie_entreprise,
@@ -73,6 +101,16 @@ async function fetchCompaniesLive(query: string, limit: number): Promise<Company
     etatAdministratif: r.etat_administratif === "A" ? "actif" : r.etat_administratif === "C" ? "cessé" : null,
     adresse: r.siege?.adresse ?? null,
     dirigeants: (r.dirigeants ?? []).map(dirigeantLabel).filter((v): v is string => v !== null),
+    siege: {
+      siret: r.siege?.siret ?? null,
+      adresse: r.siege?.adresse ?? null,
+      codePostal: r.siege?.code_postal ?? null,
+      codeInsee: r.siege?.commune ?? null,
+      communeLibelle: r.siege?.libelle_commune ?? null,
+      latitude: r.siege?.latitude ? Number(r.siege.latitude) : null,
+      longitude: r.siege?.longitude ? Number(r.siege.longitude) : null,
+      actif: r.siege?.etat_administratif ? r.siege.etat_administratif === "A" : null,
+    },
   }))
 }
 

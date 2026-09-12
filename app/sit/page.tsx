@@ -1075,6 +1075,20 @@ function Dashboard() {
       const bodacc = await loadBodacc(foundCompanies)
       setBodaccBySiren(bodacc)
 
+      // Persiste dans le référentiel des acteurs (Phase 2 — Acteur/
+      // Etablissement, voir prisma/schema.prisma et app/api/sit/acteurs) ce
+      // qui vient d'être trouvé. Contrairement à l'adresse (qui exige un
+      // clic explicite dans selectAddress()), toute entreprise trouvée est
+      // traitée : tâche de fond, un échec ici ne doit jamais affecter la
+      // recherche elle-même, déjà affichée.
+      if (foundCompanies.length > 0) {
+        void fetch("/api/sit/acteurs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ companies: foundCompanies }),
+        }).catch(() => {})
+      }
+
       if (foundAddresses.length === 0 && foundCompanies.length > 0) {
         // Que des entreprises : rien à sélectionner, on peut résumer tout de suite.
         void sendAiMessage(

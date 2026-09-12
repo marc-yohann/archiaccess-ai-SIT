@@ -133,9 +133,10 @@ model Site {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  parcelles Parcelle[]
-  batiments Batiment[]
-  sources   SiteSource[]
+  parcelles      Parcelle[]
+  batiments      Batiment[]
+  sources        SiteSource[]
+  etablissements Etablissement[] // Phase 2 — voir modèle Etablissement plus bas
 
   // Une même adresse recherchée plusieurs fois ne doit pas créer plusieurs
   // sites — un seul enregistrement mis à jour dans le temps.
@@ -201,6 +202,98 @@ model SiteSource {
 
   @@unique([siteId, source])
   @@index([siteId])
+}
+
+// Référentiel des acteurs du SIT (Phase 2 — voir audit du 2026-09-12).
+// Même principe que Site/Parcelle/Batiment : structure et relie la
+// donnée déjà réellement récupérée par lib/data-sources/entreprises.ts
+// (SIRENE) et lib/data-sources/bodacc.ts — aucune nouvelle source. Un
+// champ nullable signifie "aucune source réelle ne le fournit
+// actuellement", jamais une valeur devinée.
+
+// Aucune source publique ne permet de déduire ce qu'est une entreprise
+// pour un projet donné (architecte, AMO, entreprise générale...) — ce
+// n'est jamais assigné automatiquement, seulement par un humain, plus
+// tard (pas d'interface d'assignation construite dans cette phase).
+enum ActeurType {
+  ARCHITECTE
+  BUREAU_ETUDES
+  AMO
+  OPC
+  ECONOMISTE
+  GEOMETRE
+  CONTROLEUR_TECHNIQUE
+  COORDONNATEUR_SPS
+  DIAGNOSTIQUEUR
+  ENTREPRISE_GENERALE
+  ENTREPRISE_SPECIALISEE
+  FOURNISSEUR
+  FABRICANT
+  PROMOTEUR
+  MAITRE_OUVRAGE
+  ACHETEUR_PUBLIC
+}
+
+// Un ACTEUR = une entreprise (SIRENE) déjà rencontrée dans une recherche
+// (recherche universelle "Recherche", catégorie ACTEUR). Identifié par
+// SIREN (stable, national).
+model Acteur {
+  id            String      @id @default(cuid())
+  siren         String      @unique
+  nom           String
+  nomCommercial String?
+  codeNaf       String?
+  statut        String?
+  dateCreation  String?
+  type          ActeurType?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  etablissements Etablissement[]
+  sources        ActeurSource[]
+}
+
+// Structure lib/data-sources/entreprises.ts::Company.siege une fois
+// étendu (code postal, commune, coordonnées — présents dans l'API mais
+// ignorés jusqu'ici, voir l'audit Phase 2). Un seul établissement par
+// entreprise pour l'instant (le siège) : l'API de recherche ne renvoie
+// pas la liste complète des établissements sans un appel dédié non
+// encore vérifié.
+model Etablissement {
+  id         String   @id @default(cuid())
+  acteurId   String
+  acteur     Acteur   @relation(fields: [acteurId], references: [id], onDelete: Cascade)
+  siret      String   @unique
+  adresse    String?
+  codePostal String?
+  codeInsee  String?
+  commune    String?
+  latitude   Float?
+  longitude  Float?
+  estSiege   Boolean  @default(false)
+  actif      Boolean?
+  // Résolu via lib/data-sources/ban.ts::searchAddress() sur l'adresse
+  // SIRENE (même mécanisme que la persistance Site de la Phase 1) — pas
+  // une correspondance de texte brute. Nullable tant que la résolution
+  // n'a pas réussi ou n'a pas encore été tentée.
+  siteId     String?
+  site       Site?    @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+
+  @@index([acteurId])
+  @@index([siteId])
+}
+
+// Traçabilité — même principe que SiteSource.
+model ActeurSource {
+  id        String   @id @default(cuid())
+  acteurId  String
+  acteur    Acteur   @relation(fields: [acteurId], references: [id], onDelete: Cascade)
+  source    String // "entreprises", "bodacc"...
+  fetchedAt DateTime @default(now())
+
+  @@unique([acteurId, source])
+  @@index([acteurId])
 }
 
 // "Coffre" du SIT — voir CLAUDE.md, décision utilisateur du 2026-08-31 :
