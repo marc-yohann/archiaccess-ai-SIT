@@ -14,7 +14,12 @@ generator client {
 
 datasource db {
   provider   = "postgresql"
-  extensions = [vector]
+  // postgis ajouté Phase 3 (2026-09-13) — vérifié compatible en local
+  // avec vector (coexistent sans conflit, Postgres 16). Compatibilité
+  // RDS réelle non vérifiée cette session (pas d'accès réseau à
+  // l'instance) mais officiellement supportée par RDS Postgres — à
+  // confirmer avant déploiement (voir le rapport).
+  extensions = [vector, postgis]
 }
 
 // Compte employé individuel — remplace le mot de passe d'équipe partagé
@@ -123,15 +128,24 @@ model DocumentChunk {
 // "Recherche"). Créé/mis à jour à la sélection d'une adresse
 // (selectAddress(), app/sit/page.tsx) — jamais créé à vide.
 model Site {
-  id        String   @id @default(cuid())
+  id        String                                @id @default(cuid())
   label     String // AddressResult.label (BAN) — ex: "12 rue de Vesle, 51100 Reims"
   citycode  String // code INSEE (BAN)
   postcode  String
   city      String
   longitude Float
   latitude  Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // Colonne géométrique additive (Phase 3, PostGIS) — longitude/latitude
+  // restent la source de vérité et ne sont jamais retirées (compatibilité
+  // préservée) ; geom est backfillée depuis ces deux colonnes et tenue à
+  // jour par le code applicatif à chaque upsert. SRID 4326 = WGS84,
+  // cohérent avec les coordonnées déjà produites par tous les connecteurs
+  // existants. Unsupported() : Prisma ne modélise pas nativement le type
+  // geometry (même principe que Unsupported("vector(1024)") sur
+  // DocumentChunk.embedding) — accès via $queryRaw/$executeRaw.
+  geom      Unsupported("geometry(Point, 4326)")?
+  createdAt DateTime                              @default(now())
+  updatedAt DateTime                              @updatedAt
 
   parcelles      Parcelle[]
   batiments      Batiment[]
@@ -147,9 +161,9 @@ model Site {
 // Structure la donnée déjà réelle de lib/data-sources/cadastre.ts (type
 // Parcel) — mêmes champs, rien de plus.
 model Parcelle {
-  id             String   @id @default(cuid())
+  id             String                                       @id @default(cuid())
   siteId         String
-  site           Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  site           Site                                         @relation(fields: [siteId], references: [id], onDelete: Cascade)
   idu            String // identifiant nationale de parcelle cadastrale
   section        String
   sectionPrefixe String
@@ -158,7 +172,10 @@ model Parcelle {
   codeInsee      String
   commune        String
   geometry       Json // GeoJSON.MultiPolygon réel (cadastre.ts), jamais approximé
-  createdAt      DateTime @default(now())
+  // Même colonne additive que Site.geom — backfillée depuis geometry
+  // (GeoJSON) ci-dessus, jamais une source de vérité indépendante.
+  geom           Unsupported("geometry(MultiPolygon, 4326)")?
+  createdAt      DateTime                                     @default(now())
 
   @@unique([idu])
   @@index([siteId])
@@ -238,22 +255,33 @@ enum ActeurType {
 // (recherche universelle "Recherche", catégorie ACTEUR). Identifié par
 // SIREN (stable, national).
 model Acteur {
-  id            String      @id @default(cuid())
-  siren         String      @unique
-  // Nullable depuis l'ingestion nationale SIRENE (2026-09-12) : le fichier
-  // StockEtablissement (établissements) ne porte pas la dénomination
-  // légale — celle-ci vit dans StockUniteLegale, pas encore ingéré. Reste
-  // toujours renseigné pour un Acteur créé via la recherche ponctuelle
-  // (Phase 2, l'API de recherche donne toujours un nom). Jamais de valeur
-  // fabriquée pour combler l'absence.
-  nom           String?
-  nomCommercial String?
-  codeNaf       String?
-  statut        String?
-  dateCreation  String?
-  type          ActeurType?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id                  String      @id @default(cuid())
+  siren               String      @unique
+  // Nullable : reste vide pour un Acteur connu seulement via
+  // StockEtablissement (pas de dénomination à ce niveau) tant que
+  // StockUniteLegale ne l'a pas encore renseigné, ou pour de rares
+  // unités légales réellement purgées côté INSEE. Une fois
+  // StockUniteLegale ingéré (Phase 3, 2026-09-12), rempli pour la quasi-
+  // totalité des SIREN réels : denominationUniteLegale pour une personne
+  // morale, prénom+nom pour une personne physique (entrepreneur
+  // individuel) — jamais de valeur fabriquée pour combler l'absence
+  // résiduelle. Voir lib/ingestion/sources/sirene.ts.
+  nom                 String?
+  nomCommercial       String?
+  codeNaf             String?
+  // A/C ("actif"/"cessé") — vocabulaire de l'unité légale (StockUniteLegale
+  // ou l'API de recherche ponctuelle, même niveau), distinct du A/F de
+  // l'établissement (voir Etablissement.actif).
+  statut              String?
+  dateCreation        String?
+  // Champs réellement utiles au SIT depuis StockUniteLegale (D du brief
+  // Phase 3) — pas une reprise aveugle de toutes les colonnes SIRENE.
+  categorieJuridique  String? // code INSEE (ex: "1000" = entrepreneur individuel, "5710" = SAS...)
+  categorieEntreprise String? // PME/ETI/GE — déjà capté par lib/data-sources/entreprises.ts mais jamais persisté jusqu'ici
+  trancheEffectifs    String? // tranche d'effectifs salariés (code INSEE)
+  type                ActeurType?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
 
   etablissements Etablissement[]
   sources        ActeurSource[]
@@ -361,6 +389,81 @@ model IngestionJob {
   // nouvelle ligne.
   @@unique([source, dataset, partition])
   @@index([source, status])
+}
+
+enum ManifestStatus {
+  PENDING
+  STAGING
+  PREPROCESSING
+  READY
+  FAILED
+}
+
+enum ChunkStatus {
+  PENDING
+  INGESTED
+  FAILED
+}
+
+// Remplace la stratégie "redécompresser depuis le début + ignorer N
+// lignes déjà traitées" (Phase 3, voir CLAUDE.md — le test SIRENE a
+// démontré qu'elle ne tient pas à l'échelle nationale, ~30M lignes).
+// Un DatasetManifest = un millésime précis d'un fichier bulk officiel
+// volumineux (ZIP contenant un seul gros CSV) : le fichier original est
+// décompressé UNE SEULE FOIS, découpé en chunks CSV.gz indépendants,
+// rejouables et idempotents — le checkpoint d'ingestion devient alors
+// "quel chunk, quelle ligne dans ce chunk", jamais "combien de lignes
+// ignorer depuis le tout début". Sert aussi de source de vérité pour
+// "quelle version est chargée, quels chunks manquent" (observabilité).
+model DatasetManifest {
+  id                String         @id @default(cuid())
+  source            String
+  dataset           String
+  datasetVersion    String // millésime réel constaté à la source (jamais deviné)
+  sourceUrl         String
+  retrievedAt       DateTime       @default(now())
+  originalChecksum  String?
+  // BigInt : les fichiers stock SIRENE dépassent 2^31 octets (StockEtablissement
+  // ≈ 2,87 Go) — un Int 32 bits déborderait silencieusement.
+  originalSizeBytes BigInt
+  chunkTargetRows   Int // lignes/chunk visé au découpage — configurable, voir lib/ingestion/types.ts
+  totalChunks       Int?
+  totalRows         Int? // connu seulement une fois le découpage terminé
+  status            ManifestStatus @default(PENDING)
+  lastError         String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  chunks DatasetChunk[]
+
+  // Une même version d'un dataset ne doit jamais être découpée deux fois
+  // — un millésime suivant crée un nouveau manifeste, jamais une
+  // réécriture du précédent (traçabilité : on doit pouvoir répondre
+  // "quelle version était chargée avant").
+  @@unique([source, dataset, datasetVersion])
+  @@index([source, dataset])
+}
+
+model DatasetChunk {
+  id             String          @id @default(cuid())
+  manifestId     String
+  manifest       DatasetManifest @relation(fields: [manifestId], references: [id], onDelete: Cascade)
+  chunkIndex     Int
+  s3Key          String
+  checksum       String
+  byteSize       Int
+  rowCount       Int?
+  status         ChunkStatus     @default(PENDING)
+  // Dernière ligne traitée AU SEIN de ce chunk (pas depuis le début du
+  // fichier) — reprise bornée à la taille d'un chunk, jamais à celle du
+  // fichier national entier.
+  rowOffset      Int             @default(0)
+  ingestionJobId String?
+  ingestedAt     DateTime?
+  createdAt      DateTime        @default(now())
+
+  @@unique([manifestId, chunkIndex])
+  @@index([manifestId, status])
 }
 
 // Structure à l'échelle nationale la donnée déjà réelle de

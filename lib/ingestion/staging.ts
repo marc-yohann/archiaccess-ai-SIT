@@ -28,6 +28,13 @@ function stagingKey(source: string, dataset: string, version: string, partIndex:
   return `staging/${source}/${dataset}/${version}/part-${String(partIndex).padStart(6, "0")}.bin`
 }
 
+// Exposée pour que les appelants (ex: lib/ingestion/chunked-zip.ts)
+// stockent la vraie clé produite (DatasetChunk.s3Key) plutôt que de la
+// recalculer indépendamment et risquer une divergence.
+export function stagingKeyFor(source: string, dataset: string, version: string, partIndex: number): string {
+  return stagingKey(source, dataset, version, partIndex)
+}
+
 function localPath(key: string): string {
   const dir = process.env.LOCAL_DIAG_STAGING_DIR as string
   return join(dir, key)
@@ -64,6 +71,29 @@ export async function stagingPartExists(source: string, dataset: string, version
   } catch {
     return false
   }
+}
+
+// Lecture d'UN seul morceau (pas une concaténation) — utilisé pour relire
+// un chunk précis lors de l'ingestion (par opposition à
+// readStagingStream ci-dessous, qui concatène tout pour la décompression
+// initiale du fichier original).
+export async function readStagingPart(source: string, dataset: string, version: string, partIndex: number): Promise<Buffer> {
+  const key = stagingKey(source, dataset, version, partIndex)
+
+  if (process.env.LOCAL_DIAG_STAGING_DIR) {
+    const path = localPath(key)
+    return new Promise((resolve, reject) => {
+      const chunks: Buffer[] = []
+      const rs = createReadStream(path)
+      rs.on("data", (c) => chunks.push(c as Buffer))
+      rs.on("end", () => resolve(Buffer.concat(chunks)))
+      rs.on("error", reject)
+    })
+  }
+
+  const res = await client.send(new GetObjectCommand({ Bucket: BUCKET, Key: key }))
+  const body = await res.Body?.transformToByteArray()
+  return body ? Buffer.from(body) : Buffer.alloc(0)
 }
 
 // Flux continu de lecture des morceaux 0..partCount-1, dans l'ordre —

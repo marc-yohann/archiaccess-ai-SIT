@@ -49,6 +49,10 @@ export async function POST(request: Request) {
     },
   })
 
+  // geom (PostGIS, colonne additive Phase 3) — Unsupported() côté Prisma,
+  // mise à jour par SQL brut juste après l'upsert normal.
+  await prisma.$executeRaw`UPDATE "Site" SET "geom" = ST_SetSRID(ST_MakePoint(${address.coordinates[0]}, ${address.coordinates[1]}), 4326) WHERE "id" = ${site.id}`
+
   const sourcesFetched = new Set<string>(["ban"])
 
   for (const p of parcels ?? []) {
@@ -76,6 +80,10 @@ export async function POST(request: Request) {
         geometry: p.geometry as object,
       },
     })
+    // geom (PostGIS, colonne additive Phase 3) — backfillée depuis la
+    // géométrie GeoJSON réelle déjà stockée dans "geometry", jamais une
+    // valeur indépendante.
+    await prisma.$executeRaw`UPDATE "Parcelle" SET "geom" = ST_Multi(ST_SetSRID(ST_GeomFromGeoJSON(${JSON.stringify(p.geometry)}), 4326)) WHERE "idu" = ${p.idu}`
     sourcesFetched.add("cadastre")
   }
 

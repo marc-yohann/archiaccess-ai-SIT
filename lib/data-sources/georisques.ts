@@ -38,10 +38,22 @@ interface RadonResponse {
   data: Array<{ classe_potentiel: string }>
 }
 
+// Erreur enrichie du statut HTTP réel + Retry-After éventuel — utilisée
+// par le rate limiter de l'ingestion nationale (lib/ingestion/
+// rate-limit.ts) pour distinguer une indisponibilité temporaire (503,
+// retenter avec backoff) d'une erreur permanente (4xx, isoler et
+// continuer) plutôt que de parser un message texte.
+export class GeorisquesHttpError extends Error {
+  constructor(public status: number, public retryAfter: string | null, url: string) {
+    super(`Géorisques a répondu ${status} (${url})`)
+    this.name = "GeorisquesHttpError"
+  }
+}
+
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url, { signal: AbortSignal.timeout(10000) })
   if (!res.ok) {
-    throw new Error(`Géorisques a répondu ${res.status} (${url})`)
+    throw new GeorisquesHttpError(res.status, res.headers.get("retry-after"), url)
   }
   return res.json() as Promise<T>
 }
