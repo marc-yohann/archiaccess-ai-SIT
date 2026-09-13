@@ -43,6 +43,18 @@ interface QualityReport {
   sirene: { totalActeurs: number; totalEtablissements: number; sirenValides: number; siretValides: number; acteursSansUniteLegale: number; siretDoublons: number; sirenDoublons: number }
   ban: { totalSites: number; coordsValides: number; sitesDoublons: number }
   georisques: { totalRisques: number; risquesVides: number; codeInseeDoublons: number }
+  cadastre: {
+    totalParcelles: number
+    geomPresentes: number
+    geomValides: number
+    geomInvalides: number
+    geomVides: number
+    sridCorrect: number
+    idusValides: number
+    iduDoublons: number
+    relationsSpatiales: number
+    sansRelation: number
+  }
 }
 
 export default function IngestionAdminPage() {
@@ -220,6 +232,15 @@ function IngestionPanel() {
                 <p className="text-sm">{quality.georisques.totalRisques.toLocaleString("fr-FR")} communes</p>
                 <p className="text-xs text-muted-foreground">Sans donnée sismique/radon : {quality.georisques.risquesVides.toLocaleString("fr-FR")}</p>
                 <p className="text-xs text-muted-foreground">Doublons : {quality.georisques.codeInseeDoublons}</p>
+              </div>
+              <div>
+                <h3 className="mb-1 text-xs font-medium text-muted-foreground">Cadastre</h3>
+                <p className="text-sm">{quality.cadastre.totalParcelles.toLocaleString("fr-FR")} parcelles</p>
+                <p className="text-xs text-muted-foreground">Géométries valides : {quality.cadastre.geomValides.toLocaleString("fr-FR")} / {quality.cadastre.geomPresentes.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Géométries invalides : {quality.cadastre.geomInvalides} · vides : {quality.cadastre.geomVides}</p>
+                <p className="text-xs text-muted-foreground">SRID 4326 correct : {quality.cadastre.sridCorrect.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">IDU valides : {quality.cadastre.idusValides.toLocaleString("fr-FR")} · doublons : {quality.cadastre.iduDoublons}</p>
+                <p className="text-xs text-muted-foreground">Relations spatiales Site↔Parcelle : {quality.cadastre.relationsSpatiales.toLocaleString("fr-FR")} · sans relation : {quality.cadastre.sansRelation.toLocaleString("fr-FR")}</p>
               </div>
             </div>
           </div>

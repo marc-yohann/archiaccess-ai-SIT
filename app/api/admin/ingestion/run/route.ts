@@ -9,6 +9,7 @@ import {
 } from "@/lib/ingestion/sources/sirene"
 import { GeorisquesIngestionRunner } from "@/lib/ingestion/sources/georisques"
 import { BanIngestionRunner } from "@/lib/ingestion/sources/ban"
+import { CadastreStagingRunner, CadastreIngestionRunner } from "@/lib/ingestion/sources/cadastre"
 import type { IngestionRunner } from "@/lib/ingestion/types"
 
 // Déclenche une invocation bornée du moteur d'ingestion national (voir
@@ -24,13 +25,24 @@ import type { IngestionRunner } from "@/lib/ingestion/types"
 // + découpage) est déclenché séparément via /api/admin/ingestion/preprocess,
 // PAS par cette route (il ne peut pas être borné à 30s pour un gros
 // fichier, voir le rapport).
-const RUNNERS: Record<string, () => IngestionRunner> = {
+// Cadastre a besoin d'un paramètre "department" (une instance = un
+// département — partition technique, section 6/16 du brief Phase 4,
+// jamais une priorité métier) — les autres factories l'ignorent.
+const RUNNERS: Record<string, (department?: string) => IngestionRunner> = {
   "sirene-etablissement-stage": () => new SireneEtablissementStagingRunner(),
   "sirene-etablissement-ingest": () => new SireneEtablissementIngestionRunner(),
   "sirene-unitelegale-stage": () => new SireneUniteLegaleStagingRunner(),
   "sirene-unitelegale-ingest": () => new SireneUniteLegaleIngestionRunner(),
   georisques: () => new GeorisquesIngestionRunner(),
   ban: () => new BanIngestionRunner(),
+  "cadastre-stage": (department) => {
+    if (!department) throw new Error("cadastre-stage requiert un paramètre 'department'.")
+    return new CadastreStagingRunner(department)
+  },
+  "cadastre-ingest": (department) => {
+    if (!department) throw new Error("cadastre-ingest requiert un paramètre 'department'.")
+    return new CadastreIngestionRunner(department)
+  },
 }
 
 export async function POST(request: Request) {
@@ -40,7 +52,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "Non autorisé." }, { status: 401 })
   }
 
-  const { source } = (await request.json().catch(() => ({}))) as { source?: string }
+  const { source, department } = (await request.json().catch(() => ({}))) as { source?: string; department?: string }
   const factory = source ? RUNNERS[source] : undefined
   if (!factory) {
     return NextResponse.json(
@@ -50,7 +62,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await runOneInvocation(factory())
+    const result = await runOneInvocation(factory(department))
     return NextResponse.json({ success: true, ...result })
   } catch (error) {
     return NextResponse.json(

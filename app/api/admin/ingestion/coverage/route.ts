@@ -96,5 +96,33 @@ export async function GET() {
     status: "info",
   })
 
+  // Cadastre : départements dont l'ingestion est COMPLETED / départements
+  // officiels réels (une partition = un département — voir
+  // lib/ingestion/sources/cadastre.ts).
+  const cadastreIngestJobs = await prisma.ingestionJob.findMany({ where: { source: "cadastre", dataset: { startsWith: "parcelles/" } } })
+  const cadastreCompleted = cadastreIngestJobs.filter((j) => j.partition === "ingest" && j.status === "COMPLETED").length
+  const parcelleCount = await prisma.parcelle.count()
+  coverage.push({
+    source: "cadastre",
+    label: "Cadastre",
+    numerator: cadastreCompleted,
+    denominator: totalDepartements,
+    unit: "départements terminés / départements officiels (geo.api.gouv.fr)",
+    status:
+      totalDepartements !== null && cadastreCompleted >= totalDepartements && totalDepartements > 0
+        ? "COMPLETED"
+        : cadastreIngestJobs.length > 0
+          ? "en cours"
+          : "non démarré",
+  })
+  coverage.push({
+    source: "cadastre-parcelles",
+    label: "Cadastre — Parcelles en base (indicatif, pas un ratio de couverture)",
+    numerator: parcelleCount,
+    denominator: null,
+    unit: "nombre réel de Parcelle en base (pas un pourcentage)",
+    status: "info",
+  })
+
   return NextResponse.json({ success: true, coverage })
 }

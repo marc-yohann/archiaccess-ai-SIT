@@ -40,6 +40,20 @@ export async function GET() {
     prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM (SELECT "codeInsee" FROM "Risque" GROUP BY "codeInsee" HAVING count(*) > 1) t`,
   ])
 
+  const [totalParcelles, geomPresentes, geomValides, geomInvalides, geomVides, sridCorrect, idusValides, iduDoublons, relationsSpatiales, sansRelation] =
+    await Promise.all([
+      prisma.parcelle.count(),
+      prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "geom" IS NOT NULL`,
+      prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "geom" IS NOT NULL AND ST_IsValid("geom")`,
+      prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "geom" IS NOT NULL AND NOT ST_IsValid("geom")`,
+      prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "geom" IS NOT NULL AND ST_IsEmpty("geom")`,
+      prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "geom" IS NOT NULL AND ST_SRID("geom") = 4326`,
+      prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "idu" ~ '^[0-9]{5}[0-9A-Z]{4}[A-Z]{1,2}[0-9]{4}$'`,
+      prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM (SELECT "idu" FROM "Parcelle" GROUP BY "idu" HAVING count(*) > 1) t`,
+      prisma.parcelle.count({ where: { relationMethod: "SPATIAL" } }),
+      prisma.parcelle.count({ where: { siteId: null } }),
+    ])
+
   return NextResponse.json({
     success: true,
     quality: {
@@ -61,6 +75,18 @@ export async function GET() {
         totalRisques,
         risquesVides, // commune connue mais sans zone sismique ni potentiel radon renvoyés par l'API
         codeInseeDoublons: Number(codeInseeDoublons[0]?.count ?? 0), // structurellement 0 (contrainte UNIQUE)
+      },
+      cadastre: {
+        totalParcelles,
+        geomPresentes: Number(geomPresentes[0]?.count ?? 0),
+        geomValides: Number(geomValides[0]?.count ?? 0),
+        geomInvalides: Number(geomInvalides[0]?.count ?? 0),
+        geomVides: Number(geomVides[0]?.count ?? 0),
+        sridCorrect: Number(sridCorrect[0]?.count ?? 0),
+        idusValides: Number(idusValides[0]?.count ?? 0),
+        iduDoublons: Number(iduDoublons[0]?.count ?? 0), // structurellement 0 (contrainte UNIQUE)
+        relationsSpatiales, // Parcelle.siteId résolu via ST_Contains (jamais une relation administrative certaine)
+        sansRelation: sansRelation, // aucun Site trouvé contenant la parcelle — laissé null, jamais forcé
       },
     },
   })

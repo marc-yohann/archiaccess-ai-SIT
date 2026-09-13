@@ -19,21 +19,10 @@ import { gunzipSync } from "node:zlib"
 import { getPrisma } from "@/lib/prisma"
 import { writeStagingPart, readStagingStream } from "@/lib/ingestion/staging"
 import { getBatchSize } from "@/lib/ingestion/types"
+import { getDepartementsSorted } from "@/lib/ingestion/departements"
 import type { IngestionRunner, IngestionCheckpoint, BatchResult } from "@/lib/ingestion/types"
 
-const DEPARTEMENTS_API_URL = "https://geo.api.gouv.fr/departements?fields=code&format=json"
 const BAN_BASE_URL = "https://adresse.data.gouv.fr/data/ban/adresses/latest/csv"
-
-let departementsCache: string[] | null = null
-
-async function getDepartementsSorted(): Promise<string[]> {
-  if (departementsCache) return departementsCache
-  const res = await fetch(DEPARTEMENTS_API_URL, { signal: AbortSignal.timeout(15000) })
-  if (!res.ok) throw new Error(`API départements (geo.api.gouv.fr) a répondu ${res.status}`)
-  const data = (await res.json()) as Array<{ code: string }>
-  departementsCache = data.map((d) => d.code).sort()
-  return departementsCache
-}
 
 async function resolveDepartementResource(deptCode: string): Promise<{ url: string; totalBytes: number }> {
   const url = `${BAN_BASE_URL}/adresses-${deptCode}.csv.gz`

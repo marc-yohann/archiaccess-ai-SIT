@@ -158,27 +158,65 @@ model Site {
   @@index([citycode])
 }
 
-// Structure la donnée déjà réelle de lib/data-sources/cadastre.ts (type
-// Parcel) — mêmes champs, rien de plus.
+// Comment une Parcelle est reliée à un Site — jamais présenté comme une
+// relation administrative certaine quand elle ne l'est pas (Phase 4, voir
+// CLAUDE.md et le rapport). Vérifié réellement : aucun identifiant
+// commun BAN/Cadastre n'existe dans les données officielles (le fichier
+// bulk Cadastre ne porte aucune référence BAN) — SPATIAL (ST_Contains,
+// point BAN dans le polygone de la parcelle) est donc la SEULE méthode
+// disponible à ce jour, jamais un identifiant déterministe.
+enum SiteParcelleRelationMethod {
+  SPATIAL
+}
+
+// Structure la donnée réelle du Cadastre — deux sources possibles,
+// distinguées par `source` : l'API à la demande (apicarto, Phase 1,
+// lib/data-sources/cadastre.ts) et l'ingestion bulk (Etalab/DGFiP,
+// Phase 4, lib/ingestion/sources/cadastre.ts). Mêmes champs partagés,
+// enrichis Phase 4 avec la provenance explicite (D du brief) — jamais
+// aveuglément toutes les colonnes du fichier source.
 model Parcelle {
-  id             String                                       @id @default(cuid())
-  siteId         String
-  site           Site                                         @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  idu            String // identifiant nationale de parcelle cadastrale
+  id             String                      @id @default(cuid())
+  // Nullable depuis Phase 4 : une parcelle ingérée en masse n'a pas
+  // toujours un Site BAN déjà connu au moment de l'ingestion (contrairement
+  // à Phase 1, où une Parcelle n'était créée qu'à la suite d'une
+  // recherche d'adresse précise). Toujours renseigné pour une Parcelle
+  // créée via la recherche ponctuelle.
+  siteId         String?
+  site           Site?                       @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  // Comment siteId a été déterminé, si renseigné — jamais implicite.
+  relationMethod SiteParcelleRelationMethod?
+
+  idu            String // identifiant cadastral officiel complet (ex: "514540000T0266") — jamais recomposé nous-mêmes quand fourni tel quel par la source
   section        String
   sectionPrefixe String
   numero         String
   contenanceM2   Float
   codeInsee      String
-  commune        String
-  geometry       Json // GeoJSON.MultiPolygon réel (cadastre.ts), jamais approximé
-  // Même colonne additive que Site.geom — backfillée depuis geometry
-  // (GeoJSON) ci-dessus, jamais une source de vérité indépendante.
+  // Nom de commune : absent du fichier bulk Etalab (seul le code INSEE y
+  // figure, voir le rapport) — résolu via la même liste officielle réelle
+  // que BAN/Géorisques (geo.api.gouv.fr), jamais fabriqué ; peut rester
+  // vide si la résolution échoue.
+  commune        String?
+  geometry       Json // GeoJSON réel (Polygon ou MultiPolygon selon la source — jamais approximé)
+  // Toujours normalisée en MultiPolygon via ST_Multi() à l'écriture (la
+  // source bulk donne des Polygon simples) — colonne additive, voir
+  // Site.geom (Phase 3).
   geom           Unsupported("geometry(MultiPolygon, 4326)")?
-  createdAt      DateTime                                     @default(now())
+
+  // Provenance explicite (Phase 4, section D du brief) — jamais mélangée
+  // entre les deux sources possibles.
+  source         String? // "cadastre-apicarto" (Phase 1, à la demande) | "cadastre-etalab-bulk" (Phase 4)
+  dataset        String? // ex: "parcelles"
+  datasetVersion String? // millésime réel de la source bulk (ex: "2026-06-01")
+  retrievedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([idu])
   @@index([siteId])
+  @@index([codeInsee])
 }
 
 // Structure la donnée déjà réelle de lib/data-sources/dpe.ts (type

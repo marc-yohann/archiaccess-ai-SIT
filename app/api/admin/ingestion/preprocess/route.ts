@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getIngestToken } from "@/lib/secrets"
 import { getPrisma } from "@/lib/prisma"
 import { preprocessManifest } from "@/lib/ingestion/chunked-zip"
+import { preprocessGeoJsonManifest } from "@/lib/ingestion/chunked-geojson"
 
 // Décompresse UNE SEULE FOIS le fichier original déjà stagé (voir
 // lib/ingestion/chunked-zip.ts) et le découpe en chunks — volontairement
@@ -43,7 +44,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await preprocessManifest(manifest.id, source, dataset, checkpoint.datasetVersion, checkpoint.partCount, manifest.chunkTargetRows)
+    // Format ZIP+CSV (SIRENE) vs GeoJSON.gz simple (Cadastre) — deux
+    // moteurs de découpage distincts, voir lib/ingestion/chunked-zip.ts
+    // et lib/ingestion/chunked-geojson.ts.
+    const preprocess = source === "cadastre" ? preprocessGeoJsonManifest : preprocessManifest
+    const result = await preprocess(manifest.id, source, dataset, checkpoint.datasetVersion, checkpoint.partCount, manifest.chunkTargetRows)
     return NextResponse.json({ success: true, ...result })
   } catch (error) {
     return NextResponse.json(

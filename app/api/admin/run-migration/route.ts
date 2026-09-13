@@ -256,6 +256,24 @@ const MIGRATIONS: PendingMigration[] = [
       `CREATE INDEX "Parcelle_geom_idx" ON "Parcelle" USING GIST ("geom")`,
     ],
   },
+  {
+    name: "20260913120000_cadastre_bulk",
+    checksum: "56231d4d2ec96df34bd9184df94a7fa5118d1ba5865c6367e4f84a33358fac39",
+    statements: [
+      `CREATE TYPE "SiteParcelleRelationMethod" AS ENUM ('SPATIAL')`,
+      `ALTER TABLE "Parcelle" ALTER COLUMN "siteId" DROP NOT NULL`,
+      `ALTER TABLE "Parcelle" ALTER COLUMN "commune" DROP NOT NULL`,
+      `ALTER TABLE "Parcelle" ADD COLUMN "relationMethod" "SiteParcelleRelationMethod"`,
+      `ALTER TABLE "Parcelle" ADD COLUMN "source" TEXT`,
+      `ALTER TABLE "Parcelle" ADD COLUMN "dataset" TEXT`,
+      `ALTER TABLE "Parcelle" ADD COLUMN "datasetVersion" TEXT`,
+      `ALTER TABLE "Parcelle" ADD COLUMN "retrievedAt" TIMESTAMP(3)`,
+      `ALTER TABLE "Parcelle" ADD COLUMN "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP`,
+      `ALTER TABLE "Parcelle" DROP CONSTRAINT "Parcelle_siteId_fkey"`,
+      `ALTER TABLE "Parcelle" ADD CONSTRAINT "Parcelle_siteId_fkey" FOREIGN KEY ("siteId") REFERENCES "Site"("id") ON DELETE SET NULL ON UPDATE CASCADE`,
+      `CREATE INDEX "Parcelle_codeInsee_idx" ON "Parcelle"("codeInsee")`,
+    ],
+  },
 ]
 
 export async function POST(request: Request) {
