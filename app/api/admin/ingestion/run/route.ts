@@ -10,6 +10,7 @@ import {
 import { GeorisquesIngestionRunner } from "@/lib/ingestion/sources/georisques"
 import { BanIngestionRunner } from "@/lib/ingestion/sources/ban"
 import { CadastreStagingRunner, CadastreIngestionRunner } from "@/lib/ingestion/sources/cadastre"
+import { SiteParcelleResolutionRunner } from "@/lib/ingestion/sources/site-parcelle"
 import type { IngestionRunner } from "@/lib/ingestion/types"
 
 // Déclenche une invocation bornée du moteur d'ingestion national (voir
@@ -43,6 +44,7 @@ const RUNNERS: Record<string, (department?: string) => IngestionRunner> = {
     if (!department) throw new Error("cadastre-ingest requiert un paramètre 'department'.")
     return new CadastreIngestionRunner(department)
   },
+  "site-parcelle-resolve": () => new SiteParcelleResolutionRunner(),
 }
 
 export async function POST(request: Request) {

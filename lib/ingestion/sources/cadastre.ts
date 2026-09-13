@@ -35,18 +35,18 @@
 // nommé "commune") — résolu via la même liste officielle que BAN/
 // Géorisques (geo.api.gouv.fr/communes), jamais fabriqué.
 //
-// Relation Site<->Parcelle : AUCUN identifiant commun BAN/Cadastre
-// n'existe dans les données officielles (vérifié — aucune référence BAN
-// dans les properties ci-dessus). La seule méthode disponible est donc
-// spatiale (ST_Contains : le point BAN d'un Site tombe dans le polygone
-// de la Parcelle) — jamais présentée comme une relation administrative
-// certaine, toujours marquée relationMethod=SPATIAL. Si aucun Site ne
-// contient la parcelle, siteId reste null — jamais forcé. Cas ambigu
-// constaté réellement (un même point BAN contenu dans deux parcelles
-// distinctes, ex: parcelles adjacentes se chevauchant légèrement dans
-// la source officielle) : la relation reste NON RÉSOLUE des deux côtés
-// plutôt que d'en choisir une arbitrairement (voir persistParcelle et
-// le rapport Phase 4).
+// Relation Site<->Parcelle : ce runner n'écrit plus AUCUNE relation
+// depuis Phase 4.5 (voir CLAUDE.md et le rapport de consolidation) —
+// seule la géométrie de la Parcelle est écrite ici. La relation N:N
+// (voir modèle SiteParcelle, prisma/schema.prisma) est calculée
+// séparément par lib/ingestion/sources/site-parcelle.ts
+// (SiteParcelleResolutionRunner), un passage différé et idempotent sur
+// les géométries déjà en base — jamais entrelacé avec cette ingestion.
+// Ce découplage règle à la racine le problème de concurrence identifié
+// au rapport Phase 4 (une lecture pouvait observer transitoirement une
+// relation avant qu'une parcelle ingérée juste après ne révèle une
+// ambiguïté) : l'ingestion ne dépend plus de l'ordre d'arrivée des
+// parcelles pour décider d'une relation.
 
 import { getPrisma } from "@/lib/prisma"
 import { getBatchSize } from "@/lib/ingestion/types"
@@ -122,7 +122,7 @@ async function persistParcelle(feature: GeoJsonFeature, datasetVersion: string):
   const prisma = await getPrisma()
   try {
     const communeName = await getCommuneName(props.commune).catch(() => null)
-    const before = await prisma.parcelle.findUnique({ where: { idu: props.id }, select: { id: true, siteId: true } })
+    const before = await prisma.parcelle.findUnique({ where: { idu: props.id }, select: { id: true } })
 
     const parcelle = await prisma.parcelle.upsert({
       where: { idu: props.id },
@@ -154,42 +154,10 @@ async function persistParcelle(feature: GeoJsonFeature, datasetVersion: string):
 
     // geom (PostGIS) — normalisée en MultiPolygon (la source donne des
     // Polygon simples, voir l'en-tête de ce fichier) — jamais approximée,
-    // reprojection directe de la géométrie réelle reçue.
+    // reprojection directe de la géométrie réelle reçue. Aucune relation
+    // Site<->Parcelle écrite ici depuis Phase 4.5 — voir SiteParcelleResolutionRunner
+    // (lib/ingestion/sources/site-parcelle.ts).
     await prisma.$executeRaw`UPDATE "Parcelle" SET "geom" = ST_Multi(ST_SetSRID(ST_GeomFromGeoJSON(${JSON.stringify(feature.geometry)}), 4326)) WHERE "id" = ${parcelle.id}`
-
-    // Relation Site<->Parcelle — SPATIALE UNIQUEMENT (voir l'en-tête de
-    // ce fichier), jamais forcée si aucun Site ne contient réellement la
-    // parcelle. Ne réécrit jamais un lien déjà résolu.
-    if (!before?.siteId) {
-      const candidates = await prisma.$queryRaw<{ id: string }[]>`
-        SELECT s.id FROM "Site" s, "Parcelle" p
-        WHERE p.id = ${parcelle.id} AND p.geom IS NOT NULL AND s.geom IS NOT NULL AND ST_Contains(p.geom, s.geom)
-      `
-      // Cas ambigu constaté réellement (deux parcelles distinctes, ex:
-      // sections cadastrales différentes de la même commune, chevauchant
-      // au même point BAN) : NE JAMAIS forcer une relation quand plusieurs
-      // parcelles contiennent réellement le même point (voir CLAUDE.md et
-      // le rapport Phase 4). Pour chaque site candidat, vérifie combien de
-      // parcelles DÉJÀ EN BASE le contiennent réellement ; si plus d'une,
-      // laisse la relation non résolue ici ET délie toute parcelle qui
-      // aurait déjà réclamé ce site avant que l'ambiguïté ne soit connue
-      // (l'ingestion est un flux à un seul passage : l'ambiguïté ne peut
-      // être détectée qu'une fois la seconde parcelle concurrente ingérée).
-      for (const candidate of candidates) {
-        const containingParcels = await prisma.$queryRaw<{ id: string }[]>`
-          SELECT p2.id FROM "Parcelle" p2, "Site" s2
-          WHERE s2.id = ${candidate.id} AND p2.geom IS NOT NULL AND ST_Contains(p2.geom, s2.geom)
-        `
-        if (containingParcels.length > 1) {
-          for (const ambiguous of containingParcels) {
-            await prisma.$executeRaw`UPDATE "Parcelle" SET "siteId" = NULL, "relationMethod" = NULL WHERE "id" = ${ambiguous.id} AND "relationMethod" = 'SPATIAL'`
-          }
-          continue
-        }
-        await prisma.$executeRaw`UPDATE "Parcelle" SET "siteId" = ${candidate.id}, "relationMethod" = 'SPATIAL' WHERE "id" = ${parcelle.id}`
-        break
-      }
-    }
 
     return { inserted: !before, updated: Boolean(before), rejected: false }
   } catch (error) {

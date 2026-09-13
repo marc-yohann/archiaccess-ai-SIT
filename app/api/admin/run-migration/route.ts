@@ -274,6 +274,42 @@ const MIGRATIONS: PendingMigration[] = [
       `CREATE INDEX "Parcelle_codeInsee_idx" ON "Parcelle"("codeInsee")`,
     ],
   },
+  {
+    name: "20260913150000_site_parcelle_join",
+    checksum: "511adf5fb7dfe0abb202882b8af6f24f4885882e5a6a59167a67319a53fbc558",
+    statements: [
+      `ALTER TYPE "SiteParcelleRelationMethod" RENAME TO "SiteParcelleRelationMethod_old"`,
+      `CREATE TYPE "SiteParcelleRelationMethod" AS ENUM ('SPATIAL_CONTAINS', 'SPATIAL_NEARBY', 'DETERMINISTIC')`,
+      `CREATE TABLE "SiteParcelle" (
+    "id" TEXT NOT NULL,
+    "siteId" TEXT NOT NULL,
+    "parcelleId" TEXT NOT NULL,
+    "relationMethod" "SiteParcelleRelationMethod" NOT NULL,
+    "ambiguous" BOOLEAN NOT NULL DEFAULT false,
+    "distanceMeters" DOUBLE PRECISION,
+    "source" TEXT NOT NULL,
+    "retrievedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "SiteParcelle_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE UNIQUE INDEX "SiteParcelle_siteId_parcelleId_key" ON "SiteParcelle"("siteId", "parcelleId")`,
+      `CREATE INDEX "SiteParcelle_siteId_idx" ON "SiteParcelle"("siteId")`,
+      `CREATE INDEX "SiteParcelle_parcelleId_idx" ON "SiteParcelle"("parcelleId")`,
+      `ALTER TABLE "SiteParcelle" ADD CONSTRAINT "SiteParcelle_siteId_fkey" FOREIGN KEY ("siteId") REFERENCES "Site"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `ALTER TABLE "SiteParcelle" ADD CONSTRAINT "SiteParcelle_parcelleId_fkey" FOREIGN KEY ("parcelleId") REFERENCES "Parcelle"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `INSERT INTO "SiteParcelle" ("id", "siteId", "parcelleId", "relationMethod", "ambiguous", "distanceMeters", "source", "retrievedAt", "createdAt", "updatedAt")
+SELECT gen_random_uuid()::text, "siteId", "id", 'SPATIAL_NEARBY', false, NULL, COALESCE("source", 'cadastre-apicarto'), COALESCE("retrievedAt", "createdAt"), "createdAt", "updatedAt"
+FROM "Parcelle"
+WHERE "siteId" IS NOT NULL AND "relationMethod" IS NULL`,
+      `ALTER TABLE "Parcelle" DROP CONSTRAINT "Parcelle_siteId_fkey"`,
+      `ALTER TABLE "Parcelle" DROP COLUMN "relationMethod"`,
+      `ALTER TABLE "Parcelle" DROP COLUMN "siteId"`,
+      `DROP INDEX IF EXISTS "Parcelle_siteId_idx"`,
+      `DROP TYPE "SiteParcelleRelationMethod_old"`,
+    ],
+  },
 ]
 
 export async function POST(request: Request) {

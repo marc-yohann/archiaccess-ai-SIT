@@ -56,10 +56,9 @@ export async function POST(request: Request) {
   const sourcesFetched = new Set<string>(["ban"])
 
   for (const p of parcels ?? []) {
-    await prisma.parcelle.upsert({
+    const parcelle = await prisma.parcelle.upsert({
       where: { idu: p.idu },
       create: {
-        siteId: site.id,
         idu: p.idu,
         section: p.section,
         sectionPrefixe: p.sectionPrefixe,
@@ -68,6 +67,8 @@ export async function POST(request: Request) {
         codeInsee: p.codeInsee,
         commune: p.commune,
         geometry: p.geometry as object,
+        source: "cadastre-apicarto",
+        retrievedAt: new Date(),
       },
       // Une parcelle peut en théorie être recadrée par le cadastre entre
       // deux recherches — on rafraîchit la géométrie/surface plutôt que
@@ -78,12 +79,39 @@ export async function POST(request: Request) {
         numero: p.numero,
         contenanceM2: p.contenanceM2,
         geometry: p.geometry as object,
+        retrievedAt: new Date(),
       },
     })
     // geom (PostGIS, colonne additive Phase 3) — backfillée depuis la
     // géométrie GeoJSON réelle déjà stockée dans "geometry", jamais une
     // valeur indépendante.
     await prisma.$executeRaw`UPDATE "Parcelle" SET "geom" = ST_Multi(ST_SetSRID(ST_GeomFromGeoJSON(${JSON.stringify(p.geometry)}), 4326)) WHERE "idu" = ${p.idu}`
+
+    // Relation Site<->Parcelle (Phase 4.5, voir prisma/schema.prisma) —
+    // SPATIAL_NEARBY : getParcelsNear() interroge une emprise (bbox ~20 m,
+    // voir lib/data-sources/cadastre.ts) autour du point, jamais un
+    // containment garanti (à la différence de SPATIAL_CONTAINS, résolu
+    // séparément pour l'ingestion bulk par SiteParcelleResolutionRunner).
+    // Un même Site peut donc légitimement avoir plusieurs Parcelles
+    // proches ici — jamais artificiellement réduit à une seule. Distance
+    // réelle mesurée via PostGIS (géographie, mètres), jamais approximée
+    // côté client.
+    const distance = await prisma.$queryRaw<{ distance: number }[]>`
+      SELECT ST_Distance(p.geom::geography, s.geom::geography) AS distance
+      FROM "Parcelle" p, "Site" s
+      WHERE p.id = ${parcelle.id} AND s.id = ${site.id}
+    `
+    await prisma.siteParcelle.upsert({
+      where: { siteId_parcelleId: { siteId: site.id, parcelleId: parcelle.id } },
+      create: {
+        siteId: site.id,
+        parcelleId: parcelle.id,
+        relationMethod: "SPATIAL_NEARBY",
+        source: "cadastre-apicarto",
+        distanceMeters: distance[0]?.distance ?? null,
+      },
+      update: { distanceMeters: distance[0]?.distance ?? null, retrievedAt: new Date() },
+    })
     sourcesFetched.add("cadastre")
   }
 

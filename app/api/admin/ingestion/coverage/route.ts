@@ -124,5 +124,27 @@ export async function GET() {
     status: "info",
   })
 
+  // Résolution Site<->Parcelle (Phase 4.5) : parcelles avec géométrie déjà
+  // dépassées par le curseur de résolution / parcelles avec géométrie
+  // réellement présentes — voir lib/ingestion/sources/site-parcelle.ts.
+  // Un job jamais lancé (checkpoint null) donne un curseur à 0, jamais
+  // supposé terminé.
+  const resolveJob = await prisma.ingestionJob.findUnique({ where: { source_dataset_partition: { source: "site-parcelle", dataset: "relations", partition: "resolve" } } })
+  const resolveCheckpoint = resolveJob?.checkpoint as { afterId?: string | null } | null
+  const [parcellesAvecGeom, parcellesResolues] = await Promise.all([
+    prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "geom" IS NOT NULL`,
+    resolveCheckpoint?.afterId
+      ? prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "geom" IS NOT NULL AND "id" <= ${resolveCheckpoint.afterId}`
+      : Promise.resolve([{ count: BigInt(0) }]),
+  ])
+  coverage.push({
+    source: "site-parcelle",
+    label: "Résolution Site↔Parcelle",
+    numerator: Number(parcellesResolues[0]?.count ?? 0),
+    denominator: Number(parcellesAvecGeom[0]?.count ?? 0),
+    unit: "parcelles avec géométrie traitées par le curseur de résolution / parcelles avec géométrie",
+    status: resolveJob?.status ?? "non démarré",
+  })
+
   return NextResponse.json({ success: true, coverage })
 }

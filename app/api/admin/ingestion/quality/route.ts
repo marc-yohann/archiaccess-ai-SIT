@@ -40,19 +40,57 @@ export async function GET() {
     prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM (SELECT "codeInsee" FROM "Risque" GROUP BY "codeInsee" HAVING count(*) > 1) t`,
   ])
 
-  const [totalParcelles, geomPresentes, geomValides, geomInvalides, geomVides, sridCorrect, idusValides, iduDoublons, relationsSpatiales, sansRelation] =
-    await Promise.all([
-      prisma.parcelle.count(),
-      prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "geom" IS NOT NULL`,
-      prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "geom" IS NOT NULL AND ST_IsValid("geom")`,
-      prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "geom" IS NOT NULL AND NOT ST_IsValid("geom")`,
-      prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "geom" IS NOT NULL AND ST_IsEmpty("geom")`,
-      prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "geom" IS NOT NULL AND ST_SRID("geom") = 4326`,
-      prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "idu" ~ '^[0-9]{5}[0-9A-Z]{4}[A-Z]{1,2}[0-9]{4}$'`,
-      prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM (SELECT "idu" FROM "Parcelle" GROUP BY "idu" HAVING count(*) > 1) t`,
-      prisma.parcelle.count({ where: { relationMethod: "SPATIAL" } }),
-      prisma.parcelle.count({ where: { siteId: null } }),
-    ])
+  const [totalParcelles, geomPresentes, geomValides, geomInvalides, geomVides, sridCorrect, idusValides, iduDoublons] = await Promise.all([
+    prisma.parcelle.count(),
+    prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "geom" IS NOT NULL`,
+    prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "geom" IS NOT NULL AND ST_IsValid("geom")`,
+    prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "geom" IS NOT NULL AND NOT ST_IsValid("geom")`,
+    prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "geom" IS NOT NULL AND ST_IsEmpty("geom")`,
+    prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "geom" IS NOT NULL AND ST_SRID("geom") = 4326`,
+    prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "Parcelle" WHERE "idu" ~ '^[0-9]{5}[0-9A-Z]{4}[A-Z]{1,2}[0-9]{4}$'`,
+    prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM (SELECT "idu" FROM "Parcelle" GROUP BY "idu" HAVING count(*) > 1) t`,
+  ])
+
+  // Relations Site<->Parcelle (Phase 4.5 — voir SiteParcelle,
+  // prisma/schema.prisma, et le rapport de consolidation). "avec 1" /
+  // "avec plusieurs" / "sans" sont mesurés sur les relations NON ambiguës
+  // uniquement (une relation ambiguë n'est jamais comptée comme
+  // "confirmée" d'un côté ou de l'autre) — les ambiguïtés sont un compteur
+  // séparé, jamais forcées dans cette répartition. Tout vient de vraies
+  // requêtes SQL sur SiteParcelle, jamais une estimation.
+  const [
+    relationsTotal,
+    relationsSpatialesContains,
+    relationsSpatialesNearby,
+    relationsDeterministic,
+    sitesAmbigus,
+    lignesAmbigues,
+    siteCounts,
+    parcelleCounts,
+  ] = await Promise.all([
+    prisma.siteParcelle.count(),
+    prisma.siteParcelle.count({ where: { relationMethod: "SPATIAL_CONTAINS", ambiguous: false } }),
+    prisma.siteParcelle.count({ where: { relationMethod: "SPATIAL_NEARBY", ambiguous: false } }),
+    prisma.siteParcelle.count({ where: { relationMethod: "DETERMINISTIC", ambiguous: false } }),
+    prisma.$queryRaw<{ count: bigint }[]>`SELECT count(DISTINCT "siteId") FROM "SiteParcelle" WHERE "ambiguous" = true`,
+    prisma.siteParcelle.count({ where: { ambiguous: true } }),
+    prisma.$queryRaw<{ n: bigint; count: bigint }[]>`
+      SELECT n, count(*) FROM (SELECT "siteId", count(*) AS n FROM "SiteParcelle" WHERE "ambiguous" = false GROUP BY "siteId") t GROUP BY n
+    `,
+    prisma.$queryRaw<{ n: bigint; count: bigint }[]>`
+      SELECT n, count(*) FROM (SELECT "parcelleId", count(*) AS n FROM "SiteParcelle" WHERE "ambiguous" = false GROUP BY "parcelleId") t GROUP BY n
+    `,
+  ])
+
+  const sitesAvec1 = Number(siteCounts.find((r) => Number(r.n) === 1)?.count ?? 0)
+  const sitesAvecPlusieurs = siteCounts.filter((r) => Number(r.n) > 1).reduce((acc, r) => acc + Number(r.count), 0)
+  const sitesAvecAuMoins1 = siteCounts.reduce((acc, r) => acc + Number(r.count), 0)
+  const sitesSansParcelle = totalSites - sitesAvecAuMoins1 - Number(sitesAmbigus[0]?.count ?? 0)
+
+  const parcellesAvec1 = Number(parcelleCounts.find((r) => Number(r.n) === 1)?.count ?? 0)
+  const parcellesAvecPlusieurs = parcelleCounts.filter((r) => Number(r.n) > 1).reduce((acc, r) => acc + Number(r.count), 0)
+  const parcellesAvecAuMoins1 = parcelleCounts.reduce((acc, r) => acc + Number(r.count), 0)
+  const parcellesSansSite = totalParcelles - parcellesAvecAuMoins1
 
   return NextResponse.json({
     success: true,
@@ -85,8 +123,23 @@ export async function GET() {
         sridCorrect: Number(sridCorrect[0]?.count ?? 0),
         idusValides: Number(idusValides[0]?.count ?? 0),
         iduDoublons: Number(iduDoublons[0]?.count ?? 0), // structurellement 0 (contrainte UNIQUE)
-        relationsSpatiales, // Parcelle.siteId résolu via ST_Contains (jamais une relation administrative certaine)
-        sansRelation: sansRelation, // aucun Site trouvé contenant la parcelle — laissé null, jamais forcé
+      },
+      siteParcelle: {
+        totalSites,
+        totalParcelles,
+        relationsTotal, // toutes lignes SiteParcelle, ambiguës comprises
+        relationsSpatialesContains: relationsSpatialesContains, // ST_Contains, ingestion bulk (non ambiguës)
+        relationsSpatialesNearby: relationsSpatialesNearby, // bbox à la demande (non ambiguës)
+        relationsDeterministic: relationsDeterministic, // toujours 0 aujourd'hui — aucun identifiant commun BAN/Cadastre n'existe
+        sitesAmbigus: Number(sitesAmbigus[0]?.count ?? 0), // Sites dont le point est réellement contenu par >1 Parcelle — jamais résolus arbitrairement
+        lignesAmbigues, // nombre de candidates ambiguës (>= 2 par Site ambigu)
+        // "sans/avec 1/avec plusieurs" mesurés sur les relations NON ambiguës uniquement
+        sitesSansParcelle,
+        sitesAvec1Parcelle: sitesAvec1,
+        sitesAvecPlusieursParcelles: sitesAvecPlusieurs,
+        parcellesSansSite,
+        parcellesAvec1Site: parcellesAvec1,
+        parcellesAvecPlusieursSites: parcellesAvecPlusieurs,
       },
     },
   })

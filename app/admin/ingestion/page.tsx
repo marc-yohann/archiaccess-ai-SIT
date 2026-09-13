@@ -52,8 +52,22 @@ interface QualityReport {
     sridCorrect: number
     idusValides: number
     iduDoublons: number
-    relationsSpatiales: number
-    sansRelation: number
+  }
+  siteParcelle: {
+    totalSites: number
+    totalParcelles: number
+    relationsTotal: number
+    relationsSpatialesContains: number
+    relationsSpatialesNearby: number
+    relationsDeterministic: number
+    sitesAmbigus: number
+    lignesAmbigues: number
+    sitesSansParcelle: number
+    sitesAvec1Parcelle: number
+    sitesAvecPlusieursParcelles: number
+    parcellesSansSite: number
+    parcellesAvec1Site: number
+    parcellesAvecPlusieursSites: number
   }
 }
 
@@ -240,7 +254,35 @@ function IngestionPanel() {
                 <p className="text-xs text-muted-foreground">Géométries invalides : {quality.cadastre.geomInvalides} · vides : {quality.cadastre.geomVides}</p>
                 <p className="text-xs text-muted-foreground">SRID 4326 correct : {quality.cadastre.sridCorrect.toLocaleString("fr-FR")}</p>
                 <p className="text-xs text-muted-foreground">IDU valides : {quality.cadastre.idusValides.toLocaleString("fr-FR")} · doublons : {quality.cadastre.iduDoublons}</p>
-                <p className="text-xs text-muted-foreground">Relations spatiales Site↔Parcelle : {quality.cadastre.relationsSpatiales.toLocaleString("fr-FR")} · sans relation : {quality.cadastre.sansRelation.toLocaleString("fr-FR")}</p>
+              </div>
+            </div>
+
+            <h2 className="mt-6 mb-3 font-medium">Relations Site↔Parcelle (Phase 4.5, mesurées jamais estimées)</h2>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <h3 className="mb-1 text-xs font-medium text-muted-foreground">Volumes</h3>
+                <p className="text-sm">{quality.siteParcelle.totalSites.toLocaleString("fr-FR")} sites · {quality.siteParcelle.totalParcelles.toLocaleString("fr-FR")} parcelles</p>
+                <p className="text-xs text-muted-foreground">Relations totales (SiteParcelle) : {quality.siteParcelle.relationsTotal.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Spatiales (containment) : {quality.siteParcelle.relationsSpatialesContains.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Spatiales (proximité, à la demande) : {quality.siteParcelle.relationsSpatialesNearby.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Déterministes : {quality.siteParcelle.relationsDeterministic.toLocaleString("fr-FR")}</p>
+              </div>
+              <div>
+                <h3 className="mb-1 text-xs font-medium text-muted-foreground">Côté Site (relations non ambiguës)</h3>
+                <p className="text-xs text-muted-foreground">Sans parcelle : {quality.siteParcelle.sitesSansParcelle.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Avec 1 parcelle : {quality.siteParcelle.sitesAvec1Parcelle.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Avec plusieurs parcelles : {quality.siteParcelle.sitesAvecPlusieursParcelles.toLocaleString("fr-FR")}</p>
+              </div>
+              <div>
+                <h3 className="mb-1 text-xs font-medium text-muted-foreground">Côté Parcelle (relations non ambiguës)</h3>
+                <p className="text-xs text-muted-foreground">Sans site : {quality.siteParcelle.parcellesSansSite.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Avec 1 site : {quality.siteParcelle.parcellesAvec1Site.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Avec plusieurs sites : {quality.siteParcelle.parcellesAvecPlusieursSites.toLocaleString("fr-FR")}</p>
+              </div>
+              <div>
+                <h3 className="mb-1 text-xs font-medium text-muted-foreground">Ambiguïtés (jamais résolues arbitrairement)</h3>
+                <p className="text-sm">{quality.siteParcelle.sitesAmbigus.toLocaleString("fr-FR")} sites ambigus</p>
+                <p className="text-xs text-muted-foreground">Lignes candidates ambiguës : {quality.siteParcelle.lignesAmbigues.toLocaleString("fr-FR")}</p>
               </div>
             </div>
           </div>

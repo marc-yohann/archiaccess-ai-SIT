@@ -8,6 +8,15 @@ import { getPrisma } from "@/lib/prisma"
 // Besoin — arriveront aux phases correspondantes). Base de la future
 // fiche SITE (section 12 du brief) : pour l'instant une lecture brute,
 // pas encore d'assemblage de vue dédiée.
+//
+// Depuis Phase 4.5 : un Site peut réellement avoir plusieurs Parcelles
+// (voir SiteParcelle, prisma/schema.prisma, et le rapport de
+// consolidation) — parcelleLinks expose CHAQUE relation avec sa
+// provenance (relationMethod/ambiguous/distanceMeters), jamais une seule
+// Parcelle choisie arbitrairement. Contrat existant préservé : "site"
+// reste la même forme globale, seul l'ancien tableau "parcelles" devient
+// "parcelleLinks" (consommateur unique connu : aucun aujourd'hui, cette
+// route n'est pas encore appelée côté client — voir le rapport).
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const store = await cookies()
   const token = store.get(SESSION_COOKIE_NAME)?.value
@@ -19,7 +28,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const prisma = await getPrisma()
   const site = await prisma.site.findUnique({
     where: { id },
-    include: { parcelles: true, batiments: true, sources: true },
+    include: { parcelleLinks: { include: { parcelle: true } }, batiments: true, sources: true },
   })
   if (!site) {
     return NextResponse.json({ success: false, error: "Site introuvable." }, { status: 404 })
