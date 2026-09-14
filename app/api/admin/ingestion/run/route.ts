@@ -11,6 +11,7 @@ import { GeorisquesIngestionRunner } from "@/lib/ingestion/sources/georisques"
 import { BanIngestionRunner } from "@/lib/ingestion/sources/ban"
 import { CadastreStagingRunner, CadastreIngestionRunner } from "@/lib/ingestion/sources/cadastre"
 import { SiteParcelleResolutionRunner } from "@/lib/ingestion/sources/site-parcelle"
+import { RnbStagingRunner, RnbIngestionRunner } from "@/lib/ingestion/sources/rnb"
 import type { IngestionRunner } from "@/lib/ingestion/types"
 
 // Déclenche une invocation bornée du moteur d'ingestion national (voir
@@ -45,6 +46,16 @@ const RUNNERS: Record<string, (department?: string) => IngestionRunner> = {
     return new CadastreIngestionRunner(department)
   },
   "site-parcelle-resolve": () => new SiteParcelleResolutionRunner(),
+  // RNB (Phase 5C) — même partition technique par département que
+  // Cadastre, jamais une priorité métier.
+  "rnb-stage": (department) => {
+    if (!department) throw new Error("rnb-stage requiert un paramètre 'department'.")
+    return new RnbStagingRunner(department)
+  },
+  "rnb-ingest": (department) => {
+    if (!department) throw new Error("rnb-ingest requiert un paramètre 'department'.")
+    return new RnbIngestionRunner(department)
+  },
 }
 
 export async function POST(request: Request) {

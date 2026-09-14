@@ -147,15 +147,29 @@ model Site {
   createdAt DateTime                              @default(now())
   updatedAt DateTime                              @updatedAt
 
-  parcelleLinks  SiteParcelle[]
-  batiments      Batiment[]
-  sources        SiteSource[]
-  etablissements Etablissement[] // Phase 2 — voir modèle Etablissement plus bas
+  // Identifiant natif BAN (colonne "id" du fichier bulk officiel,
+  // adresse.data.gouv.fr) — Phase 5C, additif. Nullable : seule
+  // l'ingestion bulk (lib/ingestion/sources/ban.ts) le connaît et le
+  // renseigne ; la recherche ponctuelle en direct (api-adresse.data.gouv.fr,
+  // lib/data-sources/ban.ts) ne renvoie PAS ce champ dans sa réponse
+  // (vérifié réellement, voir l'audit du 2026-09-14) donc les Sites créés
+  // par ce chemin restent banId=null tant qu'un passage bulk ne les a pas
+  // recoupés. Sert de clé de résolution pour BatimentPhysiqueSite (RNB
+  // "addresses[].cle_interop_ban" est le même identifiant). PAS unique :
+  // mesuré réellement sur le fichier BAN dept 51 (Phase 5B) — 163
+  // doublons réels sur 216 756 lignes (0,075 %), jamais supposé unique.
+  banId                 String?
+  parcelleLinks         SiteParcelle[]
+  batiments             Batiment[]
+  batimentPhysiqueLinks BatimentPhysiqueSite[]
+  sources               SiteSource[]
+  etablissements        Etablissement[] // Phase 2 — voir modèle Etablissement plus bas
 
   // Une même adresse recherchée plusieurs fois ne doit pas créer plusieurs
   // sites — un seul enregistrement mis à jour dans le temps.
   @@unique([citycode, label])
   @@index([citycode])
+  @@index([banId])
 }
 
 // Comment une relation Site<->Parcelle a été obtenue — jamais présentée
@@ -261,7 +275,8 @@ model Parcelle {
   datasetVersion String? // millésime réel de la source bulk (ex: "2026-06-01")
   retrievedAt    DateTime?
 
-  siteLinks SiteParcelle[]
+  siteLinks             SiteParcelle[]
+  batimentPhysiqueLinks BatimentPhysiqueParcelle[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -325,6 +340,163 @@ model SiteSource {
   fetchedAt DateTime @default(now())
 
   @@unique([siteId, source])
+  @@index([siteId])
+}
+
+// Domaine BÂTIMENT PHYSIQUE (Phase 5C — voir CLAUDE.md et le rapport).
+// Décision de nommage explicite, documentée ici car elle s'écarte de la
+// terminologie du brief : le modèle existant "Batiment" ci-dessus a été
+// établi réellement comme un LOGEMENT/UNITÉ diagnostiqué (DPE ADEME),
+// jamais un bâtiment physique (Phase 5, confirmé Phase 5B — jusqu'à 101
+// DPE réels pour une même adresse). La consigne explicite de cette phase
+// interdit de renommer "Batiment" en "Unite" MAINTENANT — ce nom reste
+// donc pris. Le nouveau bâtiment physique (source RNB, voir plus bas) ne
+// peut donc pas s'appeler littéralement "Batiment" sans collision ni
+// confusion sémantique grave (une relation "BatimentParcelle" pointant en
+// réalité vers un logement DPE serait un contresens). Choix retenu :
+// "BatimentPhysique" — conserve la racine du brief, lève l'ambiguïté,
+// n'entraîne AUCUNE migration destructive sur l'existant. Renommage
+// complet proposé comme périmètre d'une phase dédiée future (voir le
+// rapport, section "Proposition pour la prochaine phase") : à ce moment,
+// Batiment (DPE) → Unite et BatimentPhysique → Batiment, en une seule
+// opération cohérente plutôt que deux renommages successifs.
+//
+// Source : RNB (Référentiel National des Bâtiments, IGN/beta.gouv.fr,
+// licence ODbL) — vérifié réel Phase 5B puis reconfirmé par téléchargement
+// direct Phase 5C (https://rnb-opendata.s3.fr-par.scw.cloud/files/RNB_<dept>.csv.zip,
+// dept 51 = exactement 95 915 141 octets, identique aux deux vérifications).
+// Fournit un identifiant national stable (rnb_id), une géométrie réelle,
+// et des références déterministes vers Cadastre ("plots") et BAN
+// ("addresses") — jamais recalculées spatialement ici quand la source les
+// fournit déjà (voir BatimentPhysiqueParcelle/BatimentPhysiqueSite).
+
+// Une seule méthode existe aujourd'hui : RNB fournit ses relations
+// directement (SOURCE_PROVIDED) — aucune méthode spatiale (ST_Contains...)
+// n'est utilisée pour ce domaine cette phase, contrairement à
+// SiteParcelleRelationMethod. Enum conservé (plutôt qu'un simple booléen)
+// pour rester extensible si une future source nécessitait une relation
+// recalculée.
+enum BatimentRelationMethod {
+  SOURCE_PROVIDED
+}
+
+// Statut de résolution d'une référence brute fournie par la source vers
+// une ligne réelle déjà en base (Parcelle.idu pour "plots", Site.banId
+// pour "addresses") — jamais un simple booléen "trouvé/pas trouvé" : une
+// référence "non trouvée" reste une référence RÉELLEMENT FOURNIE par RNB,
+// jamais interprétée comme "la relation n'existe pas" (voir le rapport,
+// section observabilité). AMBIGUOUS : mesuré réellement possible pour les
+// adresses (Site.banId n'est pas unique, 0,075 % de doublons réels
+// constatés, voir Site.banId ci-dessus) — jamais observé pour les
+// parcelles (Parcelle.idu est unique) mais l'enum reste commun aux deux
+// pour ne pas dupliquer la sémantique.
+enum ReferenceStatus {
+  VALID
+  NOT_FOUND
+  INVALID_FORMAT
+  AMBIGUOUS
+}
+
+// Le BÂTIMENT PHYSIQUE lui-même — identité RNB + géométrie réelle.
+model BatimentPhysique {
+  id             String                                   @id @default(cuid())
+  // Identifiant national RNB ("rnb_id"), stable, unique — permet un
+  // upsert idempotent plutôt que de dupliquer la ligne à chaque
+  // réingestion (même principe que Batiment.numeroDpe/Parcelle.idu).
+  rnbId          String                                   @unique
+  // Géométrie flexible : RNB fournit RÉELLEMENT trois types différents
+  // (mesuré sur le département 51 entier, Phase 5B et reconfirmé Phase
+  // 5C : 365 271 MultiPolygon, 13 348 Polygon, 2 188 Point) — une colonne
+  // typée "MultiPolygon" comme Parcelle.geom échouerait sur les lignes
+  // Point (constaté réellement, voir le rapport). JAMAIS de polygone
+  // fabriqué pour un bâtiment Point-only : geom reste un Point tel que
+  // fourni par la source, geomType permet de le distinguer sans jamais le
+  // traiter comme une empreinte réelle.
+  geom           Unsupported("geometry(Geometry, 4326)")?
+  // "POINT" | "POLYGON" | "MULTIPOLYGON" — lu directement depuis le
+  // préfixe EWKT de la colonne source "shape" au moment de l'écriture
+  // (jamais recalculé après coup, jamais deviné).
+  geomType       String?
+  // Valeur brute de la colonne RNB "status" — "constructed" est la SEULE
+  // valeur réellement observée sur le département 51 entier (vérifié deux
+  // fois, Phase 5B et Phase 5C) mais jamais supposée unique nationalement :
+  // conservée telle quelle, jamais reformulée.
+  status         String?
+  source         String                                   @default("rnb-opendata-bulk")
+  // Millésime réel : pas de date dans le chemin de l'objet S3 RNB
+  // (contrairement à Cadastre) — dérivé du header HTTP "Last-Modified"
+  // réel de l'objet (ex: "2026-09-12"), jamais deviné.
+  datasetVersion String?
+  retrievedAt    DateTime                                 @default(now())
+  createdAt      DateTime                                 @default(now())
+  updatedAt      DateTime                                 @updatedAt
+
+  parcelleLinks BatimentPhysiqueParcelle[]
+  siteLinks     BatimentPhysiqueSite[]
+
+  @@index([geomType])
+}
+
+// Relation N:N Bâtiment physique <-> Parcelle, fournie NATIVEMENT par RNB
+// (colonne "plots", ex: [{"id":"51609000AK0722","bdg_cover_ratio":0.123...}])
+// — "plots[].id" est directement au format Parcelle.idu (vérifié
+// réellement, Phase 5B). Jamais recalculée par ST_Contains quand RNB la
+// fournit déjà : parcelleRef conserve la référence brute même une fois
+// résolue (traçabilité), parcelleId reste NULL tant que la référence n'a
+// pas été retrouvée dans le référentiel Parcelle déjà en base (jamais
+// silencieusement traitée comme "pas de relation" — voir referenceStatus).
+//
+// Contrainte d'unicité sur (batimentId, parcelleRef) et non
+// (batimentId, parcelleId) comme une lecture littérale du brief le
+// suggérait : parcelleId est nullable (référence NOT_FOUND) et plusieurs
+// lignes NOT_FOUND pour un même bâtiment auraient sinon pu violer une
+// contrainte sur une paire contenant des NULL de façon incohérente selon
+// la référence brute réellement distincte — parcelleRef, toujours
+// renseigné par la source, est la vraie clé naturelle de cette relation.
+model BatimentPhysiqueParcelle {
+  id              String                 @id @default(cuid())
+  batimentId      String
+  batiment        BatimentPhysique       @relation(fields: [batimentId], references: [id], onDelete: Cascade)
+  parcelleId      String?
+  parcelle        Parcelle?              @relation(fields: [parcelleId], references: [id], onDelete: Cascade)
+  parcelleRef     String
+  relationMethod  BatimentRelationMethod @default(SOURCE_PROVIDED)
+  referenceStatus ReferenceStatus
+  // "plots[].bdg_cover_ratio" réel — jamais recalculé.
+  coverageRatio   Float?
+  source          String                 @default("rnb-opendata-bulk")
+  retrievedAt     DateTime               @default(now())
+  createdAt       DateTime               @default(now())
+
+  @@unique([batimentId, parcelleRef])
+  @@index([batimentId])
+  @@index([parcelleId])
+}
+
+// Relation N:N Bâtiment physique <-> Site, fournie NATIVEMENT par RNB
+// (colonne "addresses", ex: [{"cle_interop_ban":"51609_0540_00035",...}]).
+// Résolution PAR EXACTITUDE UNIQUEMENT contre Site.banId (le même
+// référentiel BAN) — AUCUN rapprochement flou cette phase (consigne
+// explicite du brief) : match exact = VALID, aucun match = NOT_FOUND,
+// PLUSIEURS matches = AMBIGUOUS (mesuré réellement possible, voir
+// Site.banId), jamais une sélection arbitraire. Même remarque que
+// BatimentPhysiqueParcelle sur le choix de la contrainte d'unicité
+// (addressRef, toujours fourni, plutôt que siteId, nullable).
+model BatimentPhysiqueSite {
+  id              String                 @id @default(cuid())
+  batimentId      String
+  batiment        BatimentPhysique       @relation(fields: [batimentId], references: [id], onDelete: Cascade)
+  siteId          String?
+  site            Site?                  @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  addressRef      String
+  relationMethod  BatimentRelationMethod @default(SOURCE_PROVIDED)
+  referenceStatus ReferenceStatus
+  source          String                 @default("rnb-opendata-bulk")
+  retrievedAt     DateTime               @default(now())
+  createdAt       DateTime               @default(now())
+
+  @@unique([batimentId, addressRef])
+  @@index([batimentId])
   @@index([siteId])
 }
 

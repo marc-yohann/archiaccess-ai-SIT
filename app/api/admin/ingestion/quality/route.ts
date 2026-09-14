@@ -92,6 +92,81 @@ export async function GET() {
   const parcellesAvecAuMoins1 = parcelleCounts.reduce((acc, r) => acc + Number(r.count), 0)
   const parcellesSansSite = totalParcelles - parcellesAvecAuMoins1
 
+  // BatimentPhysique (Phase 5C, RNB) — même discipline que siteParcelle :
+  // tout vient de vraies requêtes SQL, jamais une estimation. geomType
+  // compté tel quel (POINT/POLYGON/MULTIPOLYGON, lu du préfixe EWKT
+  // source, jamais recalculé) — un bâtiment Point-only n'est JAMAIS
+  // compté comme ayant une empreinte réelle.
+  const [
+    totalBatiments,
+    geomPresentes5c,
+    geomValides5c,
+    geomInvalides5c,
+    geomTypeCounts,
+    rnbIdDoublons,
+    parcelleRelTotal,
+    parcelleRelValid,
+    parcelleRelNotFound,
+    parcelleRelInvalid,
+    parcelleRelAmbiguous,
+    siteRelTotal,
+    siteRelValid,
+    siteRelNotFound,
+    siteRelInvalid,
+    siteRelAmbiguous,
+    batimentsAucuneRefParcelle,
+    batimentsSansParcelleValidee,
+    batimentsAucuneRefSite,
+    batimentsSansSiteValide,
+    parcelleCardCounts,
+    siteCardCounts,
+  ] = await Promise.all([
+    prisma.batimentPhysique.count(),
+    prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "BatimentPhysique" WHERE "geom" IS NOT NULL`,
+    prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "BatimentPhysique" WHERE "geom" IS NOT NULL AND ST_IsValid("geom")`,
+    prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM "BatimentPhysique" WHERE "geom" IS NOT NULL AND NOT ST_IsValid("geom")`,
+    prisma.$queryRaw<{ geomType: string | null; count: bigint }[]>`SELECT "geomType", count(*) FROM "BatimentPhysique" GROUP BY "geomType"`,
+    prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM (SELECT "rnbId" FROM "BatimentPhysique" GROUP BY "rnbId" HAVING count(*) > 1) t`, // structurellement 0 (contrainte UNIQUE)
+    prisma.batimentPhysiqueParcelle.count(),
+    prisma.batimentPhysiqueParcelle.count({ where: { referenceStatus: "VALID" } }),
+    prisma.batimentPhysiqueParcelle.count({ where: { referenceStatus: "NOT_FOUND" } }),
+    prisma.batimentPhysiqueParcelle.count({ where: { referenceStatus: "INVALID_FORMAT" } }),
+    prisma.batimentPhysiqueParcelle.count({ where: { referenceStatus: "AMBIGUOUS" } }),
+    prisma.batimentPhysiqueSite.count(),
+    prisma.batimentPhysiqueSite.count({ where: { referenceStatus: "VALID" } }),
+    prisma.batimentPhysiqueSite.count({ where: { referenceStatus: "NOT_FOUND" } }),
+    prisma.batimentPhysiqueSite.count({ where: { referenceStatus: "INVALID_FORMAT" } }),
+    prisma.batimentPhysiqueSite.count({ where: { referenceStatus: "AMBIGUOUS" } }),
+    // Deux métriques distinctes, jamais confondues (bug réellement constaté
+    // et corrigé pendant la validation Phase 5C — voir le rapport) :
+    // "aucune référence" = le champ source RNB ("plots"/"addresses") était
+    // vide (aucune ligne BatimentPhysiqueParcelle/Site écrite du tout,
+    // JAMAIS une valeur "[]" JSON classique — mesuré réellement : le champ
+    // CSV brut est une chaîne totalement vide sur ces lignes, ce que
+    // JSON.parse("") rejette, correctement traité comme "aucune référence"
+    // par safeJsonArray()) ; "sans X validé(e)" = au moins une référence a
+    // été fournie mais AUCUNE ne s'est résolue (VALID) — inclut donc le
+    // premier ensemble ET les bâtiments dont toutes les références sont
+    // NOT_FOUND.
+    prisma.batimentPhysique.count({ where: { parcelleLinks: { none: {} } } }),
+    prisma.batimentPhysique.count({ where: { parcelleLinks: { none: { referenceStatus: "VALID" } } } }),
+    prisma.batimentPhysique.count({ where: { siteLinks: { none: {} } } }),
+    prisma.batimentPhysique.count({ where: { siteLinks: { none: { referenceStatus: "VALID" } } } }),
+    prisma.$queryRaw<{ n: bigint; count: bigint }[]>`
+      SELECT n, count(*) FROM (SELECT "batimentId", count(*) AS n FROM "BatimentPhysiqueParcelle" WHERE "referenceStatus" = 'VALID' GROUP BY "batimentId") t GROUP BY n
+    `,
+    prisma.$queryRaw<{ n: bigint; count: bigint }[]>`
+      SELECT n, count(*) FROM (SELECT "batimentId", count(*) AS n FROM "BatimentPhysiqueSite" WHERE "referenceStatus" = 'VALID' GROUP BY "batimentId") t GROUP BY n
+    `,
+  ])
+
+  const geomTypeMap: Record<string, number> = {}
+  for (const r of geomTypeCounts) geomTypeMap[r.geomType ?? "NULL"] = Number(r.count)
+  const parcelleAvec1 = Number(parcelleCardCounts.find((r) => Number(r.n) === 1)?.count ?? 0)
+  const parcelleAvecPlusieurs = parcelleCardCounts.filter((r) => Number(r.n) > 1).reduce((acc, r) => acc + Number(r.count), 0)
+  const siteAvec1 = Number(siteCardCounts.find((r) => Number(r.n) === 1)?.count ?? 0)
+  const siteAvecPlusieurs = siteCardCounts.filter((r) => Number(r.n) > 1).reduce((acc, r) => acc + Number(r.count), 0)
+
   return NextResponse.json({
     success: true,
     quality: {
@@ -140,6 +215,41 @@ export async function GET() {
         parcellesSansSite,
         parcellesAvec1Site: parcellesAvec1,
         parcellesAvecPlusieursSites: parcellesAvecPlusieurs,
+      },
+      // BatimentPhysique (Phase 5C, RNB) — voir prisma/schema.prisma. Un
+      // bâtiment "sans parcelle/site" ici compte les references RÉSOLUES
+      // (referenceStatus=VALID) uniquement — NOT_FOUND/AMBIGUOUS restent
+      // des références réellement fournies par RNB, jamais assimilées à
+      // "pas de relation" (voir le rapport, section observabilité).
+      batimentPhysique: {
+        total: totalBatiments,
+        geomPresentes: Number(geomPresentes5c[0]?.count ?? 0),
+        geomValides: Number(geomValides5c[0]?.count ?? 0),
+        geomInvalides: Number(geomInvalides5c[0]?.count ?? 0),
+        geomTypes: geomTypeMap, // { MULTIPOLYGON, POLYGON, POINT, NULL }
+        rnbIdDoublons: Number(rnbIdDoublons[0]?.count ?? 0), // structurellement 0 (contrainte UNIQUE)
+        relationsParcelle: {
+          total: parcelleRelTotal,
+          valid: parcelleRelValid,
+          notFound: parcelleRelNotFound,
+          invalidFormat: parcelleRelInvalid,
+          ambiguous: parcelleRelAmbiguous,
+          batimentsAucuneReference: batimentsAucuneRefParcelle, // champ RNB "plots" vide (chaîne vide, pas de référence fournie)
+          batimentsSansParcelleValidee, // inclut le cas ci-dessus + les références fournies mais toutes NOT_FOUND
+          batimentsAvec1Parcelle: parcelleAvec1,
+          batimentsAvecPlusieursParcelles: parcelleAvecPlusieurs,
+        },
+        relationsSite: {
+          total: siteRelTotal,
+          valid: siteRelValid,
+          notFound: siteRelNotFound,
+          invalidFormat: siteRelInvalid,
+          ambiguous: siteRelAmbiguous,
+          batimentsAucuneReference: batimentsAucuneRefSite, // champ RNB "addresses" vide
+          batimentsSansSiteValide, // inclut le cas ci-dessus + les références fournies mais toutes NOT_FOUND
+          batimentsAvec1Site: siteAvec1,
+          batimentsAvecPlusieursSites: siteAvecPlusieurs,
+        },
       },
     },
   })

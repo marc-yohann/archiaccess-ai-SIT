@@ -256,7 +256,12 @@ interface ChunkIngestCheckpoint extends IngestionCheckpoint {
   rowOffset: number
 }
 
-export type RowPersister = (row: Record<string, string>) => Promise<{ inserted: boolean; updated: boolean; rejected: boolean; error?: string }>
+// datasetVersion (2e paramètre, additif Phase 5C) : millésime réel du
+// manifeste courant, transmis pour que le persister puisse le conserver
+// en provenance (même besoin que FeaturePersister, lib/ingestion/
+// chunked-geojson.ts) — optionnel, ignoré sans casser les persisters
+// existants (SIRENE) qui ne le déclarent pas dans leur signature.
+export type RowPersister = (row: Record<string, string>, datasetVersion?: string) => Promise<{ inserted: boolean; updated: boolean; rejected: boolean; error?: string }>
 
 // Étape 3 — ingère les chunks du manifeste READY, un par un, dans
 // l'ordre. Reprise bornée à un chunk (quelques dizaines de milliers de
@@ -266,7 +271,12 @@ export class ChunkIngestionRunner implements IngestionRunner {
   dataset: string
   partition = "ingest"
 
-  constructor(source: string, dataset: string, private persistRow: RowPersister) {
+  // fieldDelimiter : "," par défaut (SIRENE) — paramètre additif Phase 5C
+  // pour réutiliser ce moteur avec RNB, dont le CSV bulk réel est
+  // délimité par ";" (vérifié par téléchargement direct, voir
+  // lib/ingestion/sources/rnb.ts). Jamais un nouveau moteur parallèle
+  // pour un format qui ne diffère que par ce caractère.
+  constructor(source: string, dataset: string, private persistRow: RowPersister, private fieldDelimiter = ",") {
     this.source = source
     this.dataset = dataset
   }
@@ -305,18 +315,18 @@ export class ChunkIngestionRunner implements IngestionRunner {
       const gz = await readStagingPart(this.source, `${this.dataset}/chunks`, manifest.datasetVersion, chunk.chunkIndex)
       const text = gunzipSync(gz).toString("utf8")
       const lines = text.split("\n").filter((l) => l.length > 0)
-      const header = lines[0]?.split(",") ?? []
+      const header = lines[0]?.split(this.fieldDelimiter) ?? []
       const dataLines = lines.slice(1)
 
       let processedInChunk = 0
       for (let i = rowOffset; i < dataLines.length; i += 1) {
         if (read >= batchSize || Date.now() >= deadlineMs) break
-        const values = parseCsvLine(dataLines[i])
+        const values = parseCsvLine(dataLines[i], this.fieldDelimiter)
         const row: Record<string, string> = {}
         header.forEach((key, idx) => (row[key] = values[idx] ?? ""))
 
         try {
-          const result = await this.persistRow(row)
+          const result = await this.persistRow(row, manifest.datasetVersion)
           if (result.inserted) inserted += 1
           if (result.updated) updated += 1
           if (result.rejected) {
@@ -350,10 +360,14 @@ export class ChunkIngestionRunner implements IngestionRunner {
   }
 }
 
-// Parseur CSV minimal (gère les champs entre guillemets avec virgules
-// internes, comme produit par SIRENE) — volontairement simple plutôt que
-// d'ajouter une dépendance pour un format déjà connu et stable.
-function parseCsvLine(line: string): string[] {
+// Parseur CSV minimal (gère les champs entre guillemets avec le
+// délimiteur choisi à l'intérieur, comme produit par SIRENE — virgule —
+// ou RNB — point-virgule, ses colonnes JSON (ext_ids/addresses/plots)
+// contenant des virgules internes mais jamais de ";") — volontairement
+// simple plutôt que d'ajouter une dépendance pour un format déjà connu
+// et stable. delimiter paramétrable (Phase 5C, additif) : défaut ","
+// pour ne rien changer au comportement SIRENE existant.
+function parseCsvLine(line: string, delimiter = ","): string[] {
   const values: string[] = []
   let current = ""
   let inQuotes = false
@@ -370,7 +384,7 @@ function parseCsvLine(line: string): string[] {
       }
     } else if (c === '"') {
       inQuotes = true
-    } else if (c === ",") {
+    } else if (c === delimiter) {
       values.push(current)
       current = ""
     } else {

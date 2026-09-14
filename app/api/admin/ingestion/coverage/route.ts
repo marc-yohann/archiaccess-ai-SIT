@@ -146,5 +146,32 @@ export async function GET() {
     status: resolveJob?.status ?? "non démarré",
   })
 
+  // RNB (Phase 5C) : même principe que Cadastre — une partition = un
+  // département (jamais une priorité métier).
+  const rnbIngestJobs = await prisma.ingestionJob.findMany({ where: { source: "rnb", dataset: { startsWith: "batiments/" } } })
+  const rnbCompleted = rnbIngestJobs.filter((j) => j.partition === "ingest" && j.status === "COMPLETED").length
+  const batimentCount = await prisma.batimentPhysique.count()
+  coverage.push({
+    source: "rnb",
+    label: "RNB (Bâtiment physique)",
+    numerator: rnbCompleted,
+    denominator: totalDepartements,
+    unit: "départements terminés / départements officiels (geo.api.gouv.fr)",
+    status:
+      totalDepartements !== null && rnbCompleted >= totalDepartements && totalDepartements > 0
+        ? "COMPLETED"
+        : rnbIngestJobs.length > 0
+          ? "en cours"
+          : "non démarré",
+  })
+  coverage.push({
+    source: "rnb-batiments",
+    label: "RNB — Bâtiments en base (indicatif, pas un ratio de couverture)",
+    numerator: batimentCount,
+    denominator: null,
+    unit: "nombre réel de BatimentPhysique en base (pas un pourcentage)",
+    status: "info",
+  })
+
   return NextResponse.json({ success: true, coverage })
 }

@@ -66,6 +66,14 @@ async function persistBanBatch(rows: Record<string, string>[]): Promise<{ insert
     const label = composeLabel(row)
     const lon = Number(row.lon)
     const lat = Number(row.lat)
+    // "id" — identifiant natif BAN (Phase 5C, voir Site.banId dans
+    // prisma/schema.prisma) — capturé ici seulement (la recherche
+    // ponctuelle en direct, lib/data-sources/ban.ts, ne le fournit pas
+    // dans sa réponse, vérifié réellement). PAS unique (163 doublons
+    // réels mesurés sur ce même fichier dept 51, Phase 5B) — jamais
+    // traité comme une clé fiable à 100 %, seulement une référence utile
+    // à la résolution BatimentPhysiqueSite (RNB).
+    const banId = isEmpty(row.id) ? null : row.id
 
     if (isEmpty(citycode) || !label || !Number.isFinite(lon) || !Number.isFinite(lat)) {
       rejected += 1
@@ -84,12 +92,14 @@ async function persistBanBatch(rows: Record<string, string>[]): Promise<{ insert
           city: row.nom_commune || "",
           longitude: lon,
           latitude: lat,
+          banId,
         },
         update: {
           postcode: row.code_postal || undefined,
           city: row.nom_commune || undefined,
           longitude: lon,
           latitude: lat,
+          banId: banId ?? undefined,
         },
       })
       if (before) updated += 1

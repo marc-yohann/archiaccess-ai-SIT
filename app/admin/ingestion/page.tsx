@@ -69,6 +69,36 @@ interface QualityReport {
     parcellesAvec1Site: number
     parcellesAvecPlusieursSites: number
   }
+  batimentPhysique: {
+    total: number
+    geomPresentes: number
+    geomValides: number
+    geomInvalides: number
+    geomTypes: Record<string, number>
+    rnbIdDoublons: number
+    relationsParcelle: {
+      total: number
+      valid: number
+      notFound: number
+      invalidFormat: number
+      ambiguous: number
+      batimentsAucuneReference: number
+      batimentsSansParcelleValidee: number
+      batimentsAvec1Parcelle: number
+      batimentsAvecPlusieursParcelles: number
+    }
+    relationsSite: {
+      total: number
+      valid: number
+      notFound: number
+      invalidFormat: number
+      ambiguous: number
+      batimentsAucuneReference: number
+      batimentsSansSiteValide: number
+      batimentsAvec1Site: number
+      batimentsAvecPlusieursSites: number
+    }
+  }
 }
 
 export default function IngestionAdminPage() {
@@ -283,6 +313,37 @@ function IngestionPanel() {
                 <h3 className="mb-1 text-xs font-medium text-muted-foreground">Ambiguïtés (jamais résolues arbitrairement)</h3>
                 <p className="text-sm">{quality.siteParcelle.sitesAmbigus.toLocaleString("fr-FR")} sites ambigus</p>
                 <p className="text-xs text-muted-foreground">Lignes candidates ambiguës : {quality.siteParcelle.lignesAmbigues.toLocaleString("fr-FR")}</p>
+              </div>
+            </div>
+
+            <h2 className="mt-6 mb-3 font-medium">Bâtiment physique — RNB (Phase 5C, mesuré jamais estimé)</h2>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <h3 className="mb-1 text-xs font-medium text-muted-foreground">Géométrie</h3>
+                <p className="text-sm">{quality.batimentPhysique.total.toLocaleString("fr-FR")} bâtiments</p>
+                <p className="text-xs text-muted-foreground">Géométries présentes/valides : {quality.batimentPhysique.geomPresentes.toLocaleString("fr-FR")} / {quality.batimentPhysique.geomValides.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Invalides : {quality.batimentPhysique.geomInvalides} · doublons rnbId : {quality.batimentPhysique.rnbIdDoublons}</p>
+                <p className="text-xs text-muted-foreground">
+                  Types : {Object.entries(quality.batimentPhysique.geomTypes).map(([t, c]) => `${t} ${c.toLocaleString("fr-FR")}`).join(" · ")}
+                </p>
+              </div>
+              <div>
+                <h3 className="mb-1 text-xs font-medium text-muted-foreground">Références Parcelle (RNB "plots", SOURCE_PROVIDED)</h3>
+                <p className="text-xs text-muted-foreground">Total : {quality.batimentPhysique.relationsParcelle.total.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Valides : {quality.batimentPhysique.relationsParcelle.valid.toLocaleString("fr-FR")} · non trouvées : {quality.batimentPhysique.relationsParcelle.notFound.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Format invalide : {quality.batimentPhysique.relationsParcelle.invalidFormat} · ambiguës : {quality.batimentPhysique.relationsParcelle.ambiguous}</p>
+                <p className="text-xs text-muted-foreground">Bâtiments avec 1 / plusieurs parcelles validées : {quality.batimentPhysique.relationsParcelle.batimentsAvec1Parcelle.toLocaleString("fr-FR")} / {quality.batimentPhysique.relationsParcelle.batimentsAvecPlusieursParcelles.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Aucune référence (champ "plots" vide) : {quality.batimentPhysique.relationsParcelle.batimentsAucuneReference.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Sans parcelle validée (référence(s) fournies mais non résolues comprises) : {quality.batimentPhysique.relationsParcelle.batimentsSansParcelleValidee.toLocaleString("fr-FR")}</p>
+              </div>
+              <div>
+                <h3 className="mb-1 text-xs font-medium text-muted-foreground">Références Site (RNB "addresses", SOURCE_PROVIDED)</h3>
+                <p className="text-xs text-muted-foreground">Total : {quality.batimentPhysique.relationsSite.total.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Valides : {quality.batimentPhysique.relationsSite.valid.toLocaleString("fr-FR")} · non trouvées : {quality.batimentPhysique.relationsSite.notFound.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Format invalide : {quality.batimentPhysique.relationsSite.invalidFormat} · ambiguës : {quality.batimentPhysique.relationsSite.ambiguous}</p>
+                <p className="text-xs text-muted-foreground">Bâtiments avec 1 / plusieurs sites validés : {quality.batimentPhysique.relationsSite.batimentsAvec1Site.toLocaleString("fr-FR")} / {quality.batimentPhysique.relationsSite.batimentsAvecPlusieursSites.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Aucune référence (champ "addresses" vide) : {quality.batimentPhysique.relationsSite.batimentsAucuneReference.toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Sans site validé (référence(s) fournies mais non résolues comprises) : {quality.batimentPhysique.relationsSite.batimentsSansSiteValide.toLocaleString("fr-FR")}</p>
               </div>
             </div>
           </div>
