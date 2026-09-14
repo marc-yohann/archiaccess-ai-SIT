@@ -272,9 +272,27 @@ model Parcelle {
 
 // Structure la donnée déjà réelle de lib/data-sources/dpe.ts (type
 // DpeRecord) — seule source réelle disponible pour "bâtiment" à ce jour.
-// anneeConstruction n'existe dans aucun connecteur actuel : le champ est
-// prévu (section "Bâtiment" du brief) mais restera toujours null tant
-// qu'aucune source réelle ne le fournit — jamais déduit ni inventé.
+//
+// ATTENTION SÉMANTIQUE (Phase 5, voir le rapport) : ce modèle représente
+// en réalité une UNITÉ/LOGEMENT diagnostiquée par un DPE, PAS un bâtiment
+// physique — vérifié réellement sur des données ADEME (un même bâtiment
+// physique peut porter des dizaines de DPE réels distincts, un cas réel
+// observé en comptant 101). Le nom "Batiment" est conservé pour l'instant
+// (aucune migration de renommage exécutée) le temps de valider une
+// source de bâtiment physique fiable (RNB — Référentiel National des
+// Bâtiments, api.gouv.fr — vérifiée réellement Phase 5B, voir le
+// rapport : fournit un identifiant natif stable "rnb_id", une géométrie
+// réelle, et des références déterministes vers Cadastre "plots" et BAN
+// "addresses" ; cardinalité Bâtiment↔Parcelle et Bâtiment↔Site mesurées
+// réellement N:N sur un département entier). Aucune entité Bâtiment
+// physique n'est encore modélisée — ne pas fabriquer ce niveau par
+// regroupement d'adresses.
+//
+// anneeConstruction EXISTE réellement dans la source ADEME (vérifié
+// Phase 5B — présent et rempli dans ~81 % des DPE réels inspectés) et
+// est désormais réellement renseigné par lib/data-sources/dpe.ts et
+// app/api/sit/sites/route.ts — un commentaire précédent ici affirmant le
+// contraire était obsolète.
 model Batiment {
   id                String   @id @default(cuid())
   siteId            String

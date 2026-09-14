@@ -125,11 +125,16 @@ export async function POST(request: Request) {
         surfaceHabitable: d.surfaceHabitable,
         etiquetteEnergie: d.etiquetteEnergie,
         etiquetteGes: d.etiquetteGes,
+        // anneeConstruction existe réellement dans la source ADEME (voir
+        // lib/data-sources/dpe.ts et le rapport Phase 5B) — jamais
+        // renseigné jusqu'ici faute d'être sélectionné par le connecteur.
+        anneeConstruction: d.anneeConstruction,
       },
       update: {
         typeBatiment: d.typeBatiment,
         surfaceHabitable: d.surfaceHabitable,
         etiquetteEnergie: d.etiquetteEnergie,
+        anneeConstruction: d.anneeConstruction,
         etiquetteGes: d.etiquetteGes,
       },
     })
