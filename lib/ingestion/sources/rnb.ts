@@ -155,34 +155,42 @@ async function upsertSiteLinks(batimentId: string, addresses: RnbAddress[]): Pro
   }
 }
 
-const persistBatimentRow: RowPersister = async (row, datasetVersion) => {
-  const rnbId = row.rnb_id
-  if (!rnbId) {
-    return { inserted: false, updated: false, rejected: true, error: `Ligne rejetée (rnb_id absent) : ${JSON.stringify(row).slice(0, 150)}` }
-  }
+// Factory plutôt que persister module-level unique (Phase 5E) : chaque
+// instance de RnbIngestionRunner connaît SON département (deptCode,
+// passé au constructeur) — c'est la partition réelle de l'export source
+// RNB, jamais recalculée ni approximée (priorité 1, voir
+// prisma/schema.prisma, BatimentPhysique.sourcePartition).
+function makePersistBatimentRow(deptCode: string): RowPersister {
+  return async (row, datasetVersion) => {
+    const rnbId = row.rnb_id
+    if (!rnbId) {
+      return { inserted: false, updated: false, rejected: true, error: `Ligne rejetée (rnb_id absent) : ${JSON.stringify(row).slice(0, 150)}` }
+    }
 
-  const prisma = await getPrisma()
-  try {
-    const before = await prisma.batimentPhysique.findUnique({ where: { rnbId }, select: { id: true } })
-    const shape = row.shape || ""
-    const geomType = shape ? geomTypeFromEwkt(shape) : null
+    const prisma = await getPrisma()
+    try {
+      const before = await prisma.batimentPhysique.findUnique({ where: { rnbId }, select: { id: true } })
+      const shape = row.shape || ""
+      const geomType = shape ? geomTypeFromEwkt(shape) : null
 
-    const batiment = await prisma.batimentPhysique.upsert({
-      where: { rnbId },
-      create: {
-        rnbId,
-        geomType,
-        status: row.status || null,
-        datasetVersion: datasetVersion ?? null,
-        retrievedAt: new Date(),
-      },
-      update: {
-        geomType,
-        status: row.status || null,
-        datasetVersion: datasetVersion ?? null,
-        retrievedAt: new Date(),
-      },
-    })
+      const batiment = await prisma.batimentPhysique.upsert({
+        where: { rnbId },
+        create: {
+          rnbId,
+          geomType,
+          status: row.status || null,
+          datasetVersion: datasetVersion ?? null,
+          sourcePartition: deptCode,
+          retrievedAt: new Date(),
+        },
+        update: {
+          geomType,
+          status: row.status || null,
+          datasetVersion: datasetVersion ?? null,
+          sourcePartition: deptCode,
+          retrievedAt: new Date(),
+        },
+      })
 
     // Géométrie via ST_GeomFromEWKT — le SRID est déjà porté par le texte
     // source ("SRID=4326;..."), jamais fabriqué. Rien n'est écrit si
@@ -192,14 +200,15 @@ const persistBatimentRow: RowPersister = async (row, datasetVersion) => {
       await prisma.$executeRaw`UPDATE "BatimentPhysique" SET "geom" = ST_GeomFromEWKT(${shape}) WHERE "id" = ${batiment.id}`
     }
 
-    const plots = safeJsonArray<RnbPlot>(row.plots)
-    const addresses = safeJsonArray<RnbAddress>(row.addresses)
-    await upsertParcelleLinks(batiment.id, plots)
-    await upsertSiteLinks(batiment.id, addresses)
+      const plots = safeJsonArray<RnbPlot>(row.plots)
+      const addresses = safeJsonArray<RnbAddress>(row.addresses)
+      await upsertParcelleLinks(batiment.id, plots)
+      await upsertSiteLinks(batiment.id, addresses)
 
-    return { inserted: !before, updated: Boolean(before), rejected: false }
-  } catch (error) {
-    return { inserted: false, updated: false, rejected: true, error: `${rnbId} : ${error instanceof Error ? error.message : "erreur inconnue"}` }
+      return { inserted: !before, updated: Boolean(before), rejected: false }
+    } catch (error) {
+      return { inserted: false, updated: false, rejected: true, error: `${rnbId} : ${error instanceof Error ? error.message : "erreur inconnue"}` }
+    }
   }
 }
 
@@ -207,6 +216,6 @@ export class RnbIngestionRunner extends ChunkIngestionRunner {
   constructor(deptCode: string) {
     // ";" — délimiteur réel du CSV RNB (jamais ",", voir l'en-tête de ce
     // fichier) — paramètre additif de chunked-zip.ts (Phase 5C).
-    super("rnb", `batiments/${deptCode}`, persistBatimentRow, ";")
+    super("rnb", `batiments/${deptCode}`, makePersistBatimentRow(deptCode), ";")
   }
 }

@@ -374,6 +374,50 @@ WHERE "siteId" IS NOT NULL AND "relationMethod" IS NULL`,
       `ALTER TABLE "BatimentPhysiqueSite" ADD CONSTRAINT "BatimentPhysiqueSite_siteId_fkey" FOREIGN KEY ("siteId") REFERENCES "Site"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
     ],
   },
+  {
+    name: "20260915100000_batiment_physique_partition",
+    checksum: "5a0502423ec1677df2bfaab397e8889238a95cb03c811680c1fbc0a8757060a0",
+    statements: [
+      `ALTER TABLE "BatimentPhysique" ADD COLUMN "sourcePartition" TEXT`,
+      `CREATE INDEX "BatimentPhysique_sourcePartition_idx" ON "BatimentPhysique"("sourcePartition")`,
+      `WITH parcelle_dept AS (
+  SELECT
+    bp."batimentId",
+    (CASE WHEN LEFT(p."codeInsee", 2) = '97' THEN LEFT(p."codeInsee", 3) ELSE LEFT(p."codeInsee", 2) END) AS dept
+  FROM "BatimentPhysiqueParcelle" bp
+  JOIN "Parcelle" p ON p.id = bp."parcelleId"
+  WHERE bp."referenceStatus" = 'VALID'
+),
+parcelle_dept_unique AS (
+  SELECT "batimentId", min(dept) AS dept
+  FROM parcelle_dept
+  GROUP BY "batimentId"
+  HAVING count(DISTINCT dept) = 1
+)
+UPDATE "BatimentPhysique" b
+SET "sourcePartition" = pdu.dept
+FROM parcelle_dept_unique pdu
+WHERE b.id = pdu."batimentId" AND b."sourcePartition" IS NULL`,
+      `WITH site_dept AS (
+  SELECT
+    bs."batimentId",
+    (CASE WHEN LEFT(s.citycode, 2) = '97' THEN LEFT(s.citycode, 3) ELSE LEFT(s.citycode, 2) END) AS dept
+  FROM "BatimentPhysiqueSite" bs
+  JOIN "Site" s ON s.id = bs."siteId"
+  WHERE bs."referenceStatus" = 'VALID'
+),
+site_dept_unique AS (
+  SELECT "batimentId", min(dept) AS dept
+  FROM site_dept
+  GROUP BY "batimentId"
+  HAVING count(DISTINCT dept) = 1
+)
+UPDATE "BatimentPhysique" b
+SET "sourcePartition" = sdu.dept
+FROM site_dept_unique sdu
+WHERE b.id = sdu."batimentId" AND b."sourcePartition" IS NULL`,
+    ],
+  },
 ]
 
 export async function POST(request: Request) {

@@ -431,10 +431,30 @@ model BatimentPhysique {
   createdAt      DateTime                                 @default(now())
   updatedAt      DateTime                                 @updatedAt
 
+  // Partition territoriale technique (Phase 5E — lacune identifiée Phase
+  // 5D : rien ne permettait jusqu'ici de savoir "quel département" pour un
+  // BatimentPhysique donné sans recouper via une jointure Parcelle/Site).
+  // Valeur = le paramètre "deptCode" déjà utilisé par RnbStagingRunner/
+  // RnbIngestionRunner pour construire dataset ("batiments/<deptCode>") —
+  // c'est la partition RÉELLE de l'export source RNB (un fichier =
+  // RNB_<deptCode>.csv.zip), jamais une géométrie approximative ni une
+  // règle métier : aujourd'hui un code département INSEE parce que RNB
+  // partitionne ainsi son export, mais rien ne force cette colonne à
+  // rester un "département" si une source future partitionnait autrement.
+  // Renseignée directement par l'application à l'écriture pour toute
+  // nouvelle ingestion (priorité 1, voir lib/ingestion/sources/rnb.ts) —
+  // nullable uniquement pour d'éventuelles lignes plus anciennes qui n'en
+  // disposeraient pas encore (voir la migration de backfill, qui dérive
+  // alors la valeur par jointure Parcelle/Site validée, JAMAIS de façon
+  // arbitraire en cas de désaccord entre les deux — laissée NULL dans ce
+  // cas, voir le rapport Phase 5E).
+  sourcePartition String?
+
   parcelleLinks BatimentPhysiqueParcelle[]
   siteLinks     BatimentPhysiqueSite[]
 
   @@index([geomType])
+  @@index([sourcePartition])
 }
 
 // Relation N:N Bâtiment physique <-> Parcelle, fournie NATIVEMENT par RNB

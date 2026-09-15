@@ -101,6 +101,37 @@ interface QualityReport {
   }
 }
 
+interface RnbPartition {
+  departement: string
+  status: string
+  originalSizeBytes: string | null
+  datasetVersion: string | null
+  totalChunks: number | null
+  totalRows: number | null
+  batiments: number
+  recordsRead: number
+  errorCount: number
+  lastError: string | null
+  nextRunAt: string | null
+  lastUpdatedAt: string | null
+}
+
+interface RnbPartitionsResponse {
+  summary: {
+    total: number
+    pending: number
+    downloading: number
+    staged: number
+    chunked: number
+    running: number
+    done: number
+    failed: number
+    paused: number
+    batimentsTotal: number
+  }
+  partitions: RnbPartition[]
+}
+
 export default function IngestionAdminPage() {
   return (
     <AuthGate logoSrc="/logo-ai.png" appName="Archiaccess">
@@ -137,6 +168,8 @@ function IngestionPanel() {
   const [jobs, setJobs] = useState<IngestionJob[]>([])
   const [coverage, setCoverage] = useState<SourceCoverage[]>([])
   const [quality, setQuality] = useState<QualityReport | null>(null)
+  const [rnbPartitions, setRnbPartitions] = useState<RnbPartitionsResponse | null>(null)
+  const [showAllPartitions, setShowAllPartitions] = useState(false)
   const [loading, setLoading] = useState(true)
 
   function load() {
@@ -145,11 +178,13 @@ function IngestionPanel() {
       fetch("/api/admin/ingestion/jobs").then((r) => r.json()),
       fetch("/api/admin/ingestion/coverage").then((r) => r.json()),
       fetch("/api/admin/ingestion/quality").then((r) => r.json()),
+      fetch("/api/admin/ingestion/rnb-partitions").then((r) => r.json()),
     ])
-      .then(([jobsData, coverageData, qualityData]) => {
+      .then(([jobsData, coverageData, qualityData, rnbPartitionsData]) => {
         if (jobsData.success) setJobs(jobsData.jobs)
         if (coverageData.success) setCoverage(coverageData.coverage)
         if (qualityData.success) setQuality(qualityData.quality)
+        if (rnbPartitionsData.success) setRnbPartitions({ summary: rnbPartitionsData.summary, partitions: rnbPartitionsData.partitions })
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -346,6 +381,58 @@ function IngestionPanel() {
                 <p className="text-xs text-muted-foreground">Sans site validé (référence(s) fournies mais non résolues comprises) : {quality.batimentPhysique.relationsSite.batimentsSansSiteValide.toLocaleString("fr-FR")}</p>
               </div>
             </div>
+          </div>
+        )}
+
+        {rnbPartitions && (
+          <div className="liquid-glass rounded-3xl p-6">
+            <h2 className="mb-3 font-medium">RNB — Registre national des 101 partitions (Phase 5E, préparation — aucune ingestion nationale déclenchée)</h2>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-8">
+              <div><p className="text-xs text-muted-foreground">Total</p><p className="text-sm">{rnbPartitions.summary.total}</p></div>
+              <div><p className="text-xs text-muted-foreground">Pending</p><p className="text-sm">{rnbPartitions.summary.pending}</p></div>
+              <div><p className="text-xs text-muted-foreground">Downloading</p><p className="text-sm">{rnbPartitions.summary.downloading}</p></div>
+              <div><p className="text-xs text-muted-foreground">Staged</p><p className="text-sm">{rnbPartitions.summary.staged}</p></div>
+              <div><p className="text-xs text-muted-foreground">Chunked</p><p className="text-sm">{rnbPartitions.summary.chunked}</p></div>
+              <div><p className="text-xs text-muted-foreground">Running</p><p className="text-sm">{rnbPartitions.summary.running}</p></div>
+              <div><p className="text-xs text-muted-foreground">Done</p><p className="text-sm">{rnbPartitions.summary.done}</p></div>
+              <div><p className="text-xs text-muted-foreground">Failed / Paused</p><p className="text-sm">{rnbPartitions.summary.failed} / {rnbPartitions.summary.paused}</p></div>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">Bâtiments réels en base (tous départements confondus) : {rnbPartitions.summary.batimentsTotal.toLocaleString("fr-FR")}</p>
+
+            <button onClick={() => setShowAllPartitions((v) => !v)} className="liquid-glass-pill mt-3 px-3 py-1.5 text-xs">
+              {showAllPartitions ? "Masquer le détail des 101 partitions" : "Afficher le détail des 101 partitions"}
+            </button>
+
+            {showAllPartitions && (
+              <div className="mt-3 max-h-96 overflow-y-auto overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs text-muted-foreground">
+                      <th className="pb-2">Dépt</th>
+                      <th className="pb-2">Statut</th>
+                      <th className="pb-2">Version</th>
+                      <th className="pb-2">Chunks</th>
+                      <th className="pb-2">Bâtiments</th>
+                      <th className="pb-2">Erreurs</th>
+                      <th className="pb-2">Dernière erreur</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rnbPartitions.partitions.map((p) => (
+                      <tr key={p.departement} className="border-t border-white/10">
+                        <td className="py-1 pr-3 font-medium">{p.departement}</td>
+                        <td className="py-1 pr-3">{p.status}</td>
+                        <td className="py-1 pr-3 text-xs text-muted-foreground">{p.datasetVersion ?? "—"}</td>
+                        <td className="py-1 pr-3 text-xs text-muted-foreground">{p.totalChunks ?? "—"}</td>
+                        <td className="py-1 pr-3 text-xs text-muted-foreground">{p.batiments.toLocaleString("fr-FR")}</td>
+                        <td className="py-1 pr-3 text-xs text-muted-foreground">{p.errorCount}</td>
+                        <td className="py-1 max-w-xs truncate text-xs text-muted-foreground" title={p.lastError ?? ""}>{p.lastError ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>
