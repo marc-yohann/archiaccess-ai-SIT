@@ -78,7 +78,10 @@ async function resolveDepartementResource(deptCode: string): Promise<ResolvedRes
   if (!contentLength) throw new Error(`Fichier Cadastre département ${deptCode} : Content-Length absent.`)
   const versionMatch = res.url.match(/etalab-cadastre\/(\d{4}-\d{2}-\d{2})\//)
   const version = versionMatch?.[1] ?? "inconnu"
-  return { url: res.url, totalBytes: Number(contentLength), version }
+  // ETag S3 de l'objet réel (après redirection, "redirect: follow" ci-dessus)
+  // — Phase 5G, voir lib/ingestion/manifest.ts pour sa portée réelle.
+  const checksum = res.headers.get("etag") ?? undefined
+  return { url: res.url, totalBytes: Number(contentLength), version, checksum }
 }
 
 // Une instance = un département — partition technique explicite (section

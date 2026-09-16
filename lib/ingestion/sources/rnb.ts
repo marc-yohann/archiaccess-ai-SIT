@@ -61,7 +61,11 @@ async function resolveDepartementResource(deptCode: string): Promise<ResolvedRes
   if (!contentLength) throw new Error(`Fichier RNB département ${deptCode} : Content-Length absent.`)
   const lastModified = res.headers.get("last-modified")
   const version = lastModified ? new Date(lastModified).toISOString().slice(0, 10) : "inconnu"
-  return { url, totalBytes: Number(contentLength), version }
+  // ETag S3 déjà présent sur ce HEAD (Phase 5G) — voir lib/ingestion/manifest.ts
+  // pour ce qu'il représente réellement (jeton de changement, format
+  // multipart réel constaté ici, ex: "...-3", pas un MD5 simple).
+  const checksum = res.headers.get("etag") ?? undefined
+  return { url, totalBytes: Number(contentLength), version, checksum }
 }
 
 // Une instance = un département — partition technique explicite (même

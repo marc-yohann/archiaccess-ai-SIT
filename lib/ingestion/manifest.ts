@@ -6,6 +6,17 @@
 import { getPrisma } from "@/lib/prisma"
 import type { DatasetManifest } from "@/lib/generated/prisma/client"
 
+// originalChecksum (Phase 5G, additif) : ETag HTTP tel que fourni par la
+// source au moment du HEAD déjà effectué pour résoudre l'URL/la taille
+// (aucun coût réseau supplémentaire) — un simple jeton de détection de
+// changement entre deux runs, jamais présenté comme une empreinte
+// cryptographique vérifiée du contenu (un ETag S3 multipart, ex:
+// "f7ed4ca8c73b3ccb4b19f8beda4eafd4-3", est un MD5-de-MD5-des-parts, pas
+// le MD5 du fichier entier — constaté réellement sur RNB/Cadastre,
+// contrairement à BAN dont l'ETag est un MD5 simple 32 caractères sans
+// suffixe). Paramètre optionnel : un appelant qui ne le fournit pas (tout
+// runner existant, ex: SIRENE) conserve exactement le comportement actuel
+// (originalChecksum reste NULL) — aucun runner validé n'est modifié.
 export async function getOrCreateManifest(
   source: string,
   dataset: string,
@@ -13,11 +24,12 @@ export async function getOrCreateManifest(
   sourceUrl: string,
   originalSizeBytes: bigint,
   chunkTargetRows: number,
+  originalChecksum?: string,
 ): Promise<DatasetManifest> {
   const prisma = await getPrisma()
   return prisma.datasetManifest.upsert({
     where: { source_dataset_datasetVersion: { source, dataset, datasetVersion } },
-    create: { source, dataset, datasetVersion, sourceUrl, originalSizeBytes, chunkTargetRows },
+    create: { source, dataset, datasetVersion, sourceUrl, originalSizeBytes, chunkTargetRows, originalChecksum: originalChecksum ?? null },
     update: {},
   })
 }

@@ -41,6 +41,10 @@ export interface ResolvedResource {
   url: string
   totalBytes: number
   version: string
+  // ETag HTTP (Phase 5G, additif, optionnel) — voir lib/ingestion/manifest.ts
+  // pour ce qu'il représente réellement (jeton de changement, pas un SHA256
+  // vérifié). Absent = comportement inchangé (originalChecksum reste NULL).
+  checksum?: string
 }
 
 interface StagingCheckpoint extends IngestionCheckpoint {
@@ -72,8 +76,8 @@ export class StagingRunner implements IngestionRunner {
 
   async runBatch(checkpoint: IngestionCheckpoint | null): Promise<BatchResult> {
     if (!checkpoint) {
-      const { url, totalBytes, version } = await this.resolveResource()
-      const manifest = await getOrCreateManifest(this.source, this.dataset, version, url, BigInt(totalBytes), this.chunkTargetRows)
+      const { url, totalBytes, version, checksum } = await this.resolveResource()
+      const manifest = await getOrCreateManifest(this.source, this.dataset, version, url, BigInt(totalBytes), this.chunkTargetRows, checksum)
       await setManifestStatus(manifest.id, "STAGING")
       const initial: StagingCheckpoint = {
         manifestId: manifest.id,
