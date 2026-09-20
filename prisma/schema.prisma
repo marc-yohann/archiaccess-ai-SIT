@@ -40,6 +40,12 @@ model User {
 
   sessions      Session[]
   conversations Conversation[]
+  // Phase 10 — traçabilité de création uniquement (voir Projet plus bas),
+  // jamais une notion de propriété exclusive : un Projet reste visible et
+  // modifiable par tout employé authentifié, même principe que Site/
+  // Acteur (aucune donnée du SIT n'est aujourd'hui cloisonnée par
+  // utilisateur, à l'exception de Conversation).
+  projetsCrees  Projet[]
 }
 
 model Session {
@@ -164,6 +170,7 @@ model Site {
   batimentPhysiqueLinks BatimentPhysiqueSite[]
   sources               SiteSource[]
   etablissements        Etablissement[] // Phase 2 — voir modèle Etablissement plus bas
+  projetLinks           ProjetSite[] // Phase 10 — voir modèle Projet plus bas
 
   // Une même adresse recherchée plusieurs fois ne doit pas créer plusieurs
   // sites — un seul enregistrement mis à jour dans le temps.
@@ -649,6 +656,9 @@ model Acteur {
   avisMarcheCommeAcheteur  AvisMarche[] @relation("AvisMarcheAcheteur")
   avisMarcheCommeTitulaire AvisMarche[] @relation("AvisMarcheTitulaire")
   lotsCommeTitulaire       Lot[]        @relation("LotTitulaire")
+
+  // Phase 10 — voir modèle Projet plus bas.
+  projetLinks ProjetActeur[]
 }
 
 // Phase 8 — statut de résolution Etablissement→Site, même principe que
@@ -782,8 +792,10 @@ model AvisMarche {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  cpvs AvisMarcheCpv[]
-  lots Lot[]
+  cpvs        AvisMarcheCpv[]
+  lots        Lot[]
+  // Phase 10 — voir modèle Projet plus bas.
+  projetLinks ProjetAvisMarche[]
 
   @@unique([source, sourceId])
   @@index([acheteurId])
@@ -833,7 +845,9 @@ model Lot {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  cpvs LotCpv[]
+  cpvs        LotCpv[]
+  // Phase 10 — voir modèle Projet plus bas.
+  projetLinks ProjetLot[]
 
   @@unique([avisMarcheId, numero])
   @@index([avisMarcheId])
@@ -849,6 +863,119 @@ model LotCpv {
   code  String
 
   @@unique([lotId, code])
+  @@index([lotId])
+}
+
+// Phase 10 — Objet de travail interne permettant à Archiaccess de
+// regrouper manuellement plusieurs éléments réels du SIT autour d'une
+// opération, étude ou dossier. JAMAIS une donnée externe canonique :
+// contrairement à AvisMarche/Site/Acteur (chacun réellement extrait
+// d'une source publique), Projet n'a ni source ni sourceId — il est créé
+// explicitement par un employé (createdBy), jamais déduit automatiquement
+// d'un AvisMarche, d'un Site ou d'un Acteur (aucun des connecteurs
+// actuels ne fournit d'identifiant de projet/opération exploitable, voir
+// le rapport d'audit Phase 10 — validé par l'utilisateur). Les relations
+// vers les objets réels (ProjetSite/ProjetActeur/ProjetAvisMarche/
+// ProjetLot ci-dessous) résultent TOUJOURS d'une action explicite de
+// l'utilisateur, jamais d'une résolution automatique par similarité de
+// texte, adresse, montant ou acheteur — deux Projets proches peuvent
+// parfaitement coexister sans être fusionnés.
+model Projet {
+  id          String    @id @default(cuid())
+  nom         String
+  // Texte libre volontairement — aucune taxonomie de types d'opération
+  // fiable trouvée dans les sources actuelles (voir le rapport d'audit
+  // Phase 10), jamais un enum inventé sans besoin réel démontré.
+  type        String?
+  statut      String?
+  description String?
+  dateDebut   DateTime?
+  dateFin     DateTime?
+  montant     Float?
+
+  // Traçabilité de création (qui, quand) — pas une notion de propriété
+  // exclusive, voir User.projetsCrees. Nullable + SetNull : un Projet
+  // (dossier d'équipe partagé) ne doit jamais disparaître si son créateur
+  // était un jour retiré, même si en pratique les comptes ne sont
+  // aujourd'hui que désactivés, jamais supprimés (voir CLAUDE.md).
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sites       ProjetSite[]
+  acteurs     ProjetActeur[]
+  avisMarches ProjetAvisMarche[]
+  lots        ProjetLot[]
+}
+
+// Rattachement Projet<->Site, action explicite uniquement (voir Projet
+// ci-dessus). Pas de champ "rôle" : aucun besoin réel identifié pour un
+// Site (contrairement à ProjetActeur ci-dessous) — jamais ajouté par
+// anticipation.
+model ProjetSite {
+  id        String   @id @default(cuid())
+  projetId  String
+  projet    Projet   @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  siteId    String
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([projetId, siteId])
+  @@index([projetId])
+  @@index([siteId])
+}
+
+// Rattachement Projet<->Acteur. role réutilise ActeurType (déjà en place,
+// Phase 2 — MOA/MOE/bureau d'études/entreprise...) plutôt qu'une nouvelle
+// taxonomie : c'est un rôle "réellement gérable proprement" au sens de la
+// consigne Phase 10. Distinct de Acteur.type (classification globale de
+// l'acteur, assignée une fois) : un même Acteur peut jouer des rôles
+// différents selon le projet — role reste donc propre à CETTE relation,
+// jamais copié depuis Acteur.type.
+model ProjetActeur {
+  id        String      @id @default(cuid())
+  projetId  String
+  projet    Projet      @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  acteurId  String
+  acteur    Acteur      @relation(fields: [acteurId], references: [id], onDelete: Cascade)
+  role      ActeurType?
+  createdAt DateTime    @default(now())
+
+  @@unique([projetId, acteurId])
+  @@index([projetId])
+  @@index([acteurId])
+}
+
+// Rattachement Projet<->AvisMarche (Phase 9). Aucune résolution
+// automatique (référence antérieure, objet, acheteur, localisation —
+// tous étudiés et écartés comme signaux fiables, voir le rapport d'audit
+// Phase 10) : uniquement une action explicite de l'utilisateur pendant sa
+// recherche.
+model ProjetAvisMarche {
+  id           String     @id @default(cuid())
+  projetId     String
+  projet       Projet     @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  avisMarcheId String
+  avisMarche   AvisMarche @relation(fields: [avisMarcheId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([projetId, avisMarcheId])
+  @@index([projetId])
+  @@index([avisMarcheId])
+}
+
+// Rattachement Projet<->Lot (Phase 9), même principe que ProjetAvisMarche.
+model ProjetLot {
+  id        String   @id @default(cuid())
+  projetId  String
+  projet    Projet   @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  lotId     String
+  lot       Lot      @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([projetId, lotId])
+  @@index([projetId])
   @@index([lotId])
 }
 
