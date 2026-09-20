@@ -1,12 +1,31 @@
-// Client pour l'API Adresse (Base Adresse Nationale, data.gouv.fr) —
-// premier connecteur du hub SIT. Pas de clé requise, endpoint public.
-// Sert de point d'entrée aux futurs connecteurs (cadastre, Géorisques,
-// DVF...) qui ont tous besoin d'une adresse géocodée ou d'un code commune
-// en entrée.
-
+// Client pour la Base Adresse Nationale (BAN), via le service de
+// géocodage IGN Géoplateforme — premier connecteur du hub SIT. Pas de clé
+// requise, endpoint public. Sert de point d'entrée aux futurs connecteurs
+// (cadastre, Géorisques, DVF...) qui ont tous besoin d'une adresse
+// géocodée ou d'un code commune en entrée.
+//
+// Phase 8.5 — migration depuis l'ancien endpoint api-adresse.data.gouv.fr
+// (voir CLAUDE.md, "dette technique transversale") : celui-ci était déjà
+// passé sa date de sunset documentée (31 janvier 2026, headers
+// deprecation/sunset/x-api-migration:permanent observés réellement) et
+// redirigeait déjà en coulisses vers data.geopf.fr/geocodage — ce n'est
+// pas un nouveau service, juste son nom d'hôte officiel actuel. Vérifié
+// avant migration par 6 appels réels comparatifs (adresse précise +
+// citycode, numéro inexistant, requête absurde, rue homonyme sans/avec
+// citycode, recherche commune type=municipality) : réponses JSON
+// strictement identiques champ à champ entre les deux hôtes (mêmes id,
+// banId, score, type, coordonnées, citycode) — aucune adaptation du
+// contrat interne (AddressResult, CommuneResult, resolvePreciseAddress)
+// n'a donc été nécessaire, voir le rapport Phase 8.5.
+//
+// URL en constante plutôt qu'en variable d'environnement — cohérent avec
+// les 14 autres connecteurs publics du SIT (lib/data-sources/*.ts),
+// aucun besoin réel de faire varier cette URL par environnement (le
+// projet n'a pas de mécanisme de variables d'environnement en production,
+// voir CLAUDE.md "Secrets et configuration").
 import { withVault } from "@/lib/data-vault"
 
-const BAN_SEARCH_URL = "https://api-adresse.data.gouv.fr/search/"
+const BAN_SEARCH_URL = "https://data.geopf.fr/geocodage/search"
 
 export interface AddressResult {
   // Identifiant d'adresse BAN natif (ex: "51454_1685") — un point réel et
