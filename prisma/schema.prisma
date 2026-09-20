@@ -642,6 +642,13 @@ model Acteur {
 
   etablissements Etablissement[]
   sources        ActeurSource[]
+
+  // Phase 9 — capacité future uniquement : jamais rempli par une
+  // résolution automatique (aucun SIREN/SIRET fiable dans BOAMP, voir
+  // lib/data-sources/boamp.ts et le rapport Phase 9). Nullable partout.
+  avisMarcheCommeAcheteur  AvisMarche[] @relation("AvisMarcheAcheteur")
+  avisMarcheCommeTitulaire AvisMarche[] @relation("AvisMarcheTitulaire")
+  lotsCommeTitulaire       Lot[]        @relation("LotTitulaire")
 }
 
 // Phase 8 — statut de résolution Etablissement→Site, même principe que
@@ -666,30 +673,30 @@ enum EtablissementSiteResolutionStatus {
 // pas la liste complète des établissements sans un appel dédié non
 // encore vérifié.
 model Etablissement {
-  id         String   @id @default(cuid())
-  acteurId   String
-  acteur     Acteur   @relation(fields: [acteurId], references: [id], onDelete: Cascade)
-  siret      String   @unique
-  adresse    String?
-  codePostal String?
-  codeInsee  String?
-  commune    String?
-  latitude   Float?
-  longitude  Float?
-  estSiege   Boolean  @default(false)
-  actif      Boolean?
+  id                   String                            @id @default(cuid())
+  acteurId             String
+  acteur               Acteur                            @relation(fields: [acteurId], references: [id], onDelete: Cascade)
+  siret                String                            @unique
+  adresse              String?
+  codePostal           String?
+  codeInsee            String?
+  commune              String?
+  latitude             Float?
+  longitude            Float?
+  estSiege             Boolean                           @default(false)
+  actif                Boolean?
   // Résolu via lib/data-sources/ban.ts::searchAddress() sur l'adresse
   // SIRENE (même mécanisme que la persistance Site de la Phase 1) — pas
   // une correspondance de texte brute. Nullable tant que la résolution
   // n'a pas réussi ou n'a pas encore été tentée.
-  siteId     String?
-  site       Site?    @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  siteId               String?
+  site                 Site?                             @relation(fields: [siteId], references: [id], onDelete: SetNull)
   // Phase 8 — voir EtablissementSiteResolutionStatus. siteResolvedAt reste
   // nul pour les lignes historiques backfillées (date réelle de résolution
   // inconnue) — jamais une valeur approximée.
   siteResolutionStatus EtablissementSiteResolutionStatus @default(PENDING)
   siteResolvedAt       DateTime?
-  createdAt  DateTime @default(now())
+  createdAt            DateTime                          @default(now())
 
   @@index([acteurId])
   @@index([siteId])
@@ -705,6 +712,144 @@ model ActeurSource {
 
   @@unique([acteurId, source])
   @@index([acteurId])
+}
+
+// Phase 9 — Marchés/Lots. 1 ligne = 1 AVIS/publication BOAMP, jamais un
+// "marché" unique reconstitué sur tout son cycle de vie : un même marché
+// réel publie en général plusieurs avis distincts dans le temps (avis
+// initial, rectificatif(s), résultat), chacun avec son propre idweb —
+// voir le rapport d'audit Phase 9. Un futur modèle `Marche` pourra un
+// jour agréger plusieurs AvisMarche ; ce n'est pas fait ici, sur décision
+// utilisateur explicite.
+//
+// Identité : source + sourceId (sourceId = idweb BOAMP, ex "15-31232"),
+// PAS recordId (identifiant interne opendatasoft, conservé uniquement
+// pour la traçabilité technique, jamais utilisé comme clé métier — voir
+// lib/data-sources/boamp.ts).
+model AvisMarche {
+  id       String  @id @default(cuid())
+  source   String  @default("boamp")
+  sourceId String // idweb BOAMP — identifiant d'AVIS, pas de marché (voir ci-dessus)
+  // recordId opendatasoft — traçabilité technique seulement (voir
+  // ci-dessus), délibérément SANS contrainte unique pour ne jamais en
+  // faire une clé implicite.
+  recordId String?
+
+  objet             String?
+  // nature_libelle réel : "Avis de marché", "Résultat de marché",
+  // "Avis rectificatif"... texte source, jamais normalisé arbitrairement.
+  natureAvis        String?
+  typeProcedure     String? // procedure_libelle / type_procedure
+  typeMarche        String? // type_marche_facette : "Travaux"/"Fournitures"/"Services"...
+  datePublication   String? // format source conservé tel quel (même principe qu'Acteur.dateCreation)
+  dateLimiteReponse String?
+
+  // Montant/titulaire au niveau de l'AVIS ENTIER — pertinent uniquement
+  // quand l'attribution n'est pas répartie par lot (donnees.ATTRIBUTION.
+  // DECISION sans NUM_LOT, vérifié réellement sur des données BOAMP
+  // réelles, voir le rapport Phase 9). Quand l'avis a des lots, montant/
+  // titulaire vivent sur chaque Lot à la place (voir plus bas). Ajoutés
+  // en plus de la liste minimale demandée : sans titulaireNom ici, le
+  // titulaire d'un marché non découpé en lots n'aurait nulle part où
+  // être persisté alors que la donnée existe réellement dans la source
+  // (violerait la règle "aucune perte silencieuse").
+  montant       Float?
+  montantDevise String?
+  acheteurNom   String?
+  // Capacité future uniquement (voir Acteur ci-dessus) — jamais résolu
+  // automatiquement : aucun SIREN/SIRET fiable trouvé dans BOAMP sur les
+  // données réelles auditées.
+  acheteurId    String?
+  acheteur      Acteur? @relation("AvisMarcheAcheteur", fields: [acheteurId], references: [id], onDelete: SetNull)
+  titulaireNom  String?
+  titulaireId   String?
+  titulaire     Acteur? @relation("AvisMarcheTitulaire", fields: [titulaireId], references: [id], onDelete: SetNull)
+
+  codeDepartement                String?
+  urlAvis                        String?
+  // gestion.MARCHE.ANNONCE_ANTERIEUR.REFERENCE.IDWEB réel — lien de
+  // provenance INFORMATIF seulement (pas garanti présent, pas transitif
+  // de façon fiable). Ne déclenche JAMAIS de fusion automatique de deux
+  // AvisMarche — voir le rapport Phase 9, section "cycle de vie".
+  referenceAvisAnterieurSourceId String?
+  // OBJET.LIEU_EXEC_LIVR.ADRESSE — capturé seulement quand réellement
+  // exploitable (pas une valeur générique type "France entière"/code
+  // NUTS seul, filtré côté connecteur) ; jamais utilisé pour créer une
+  // relation Site (pas fiable/systématique, voir le rapport Phase 9).
+  lieuExecution                  String?
+
+  retrievedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  cpvs AvisMarcheCpv[]
+  lots Lot[]
+
+  @@unique([source, sourceId])
+  @@index([acheteurId])
+  @@index([titulaireId])
+  @@index([codeDepartement])
+}
+
+// CPV de l'AVIS (utilisé quand l'avis n'est pas découpé en lots — sinon
+// le CPV vit sur chaque Lot, voir LotCpv). Table de jointure plutôt que
+// colonne tableau Postgres : la source BOAMP peut fournir un CPV unique
+// (objet JSON) ou plusieurs (tableau JSON) selon l'avis — un artefact de
+// la conversion XML->JSON de l'API opendatasoft, vérifié réellement (voir
+// lib/data-sources/boamp.ts, normalizeToArray()). Une table dédiée
+// conserve TOUS les codes réels sans jamais en écraser un silencieusement,
+// et reste cohérente avec le style du reste du schéma (ActeurSource,
+// SiteSource...) plutôt que d'introduire un type de colonne inédit ici.
+model AvisMarcheCpv {
+  id           String     @id @default(cuid())
+  avisMarcheId String
+  avisMarche   AvisMarche @relation(fields: [avisMarcheId], references: [id], onDelete: Cascade)
+  code         String
+
+  @@unique([avisMarcheId, code])
+  @@index([avisMarcheId])
+}
+
+// Un lot tel que publié DANS CET AVIS (donnees.OBJET.LOTS.LOT à l'avis
+// initial, ou donnees.ATTRIBUTION.DECISION avec NUM_LOT à un résultat) —
+// pas une entité indépendante du cycle de vie du marché, cohérent avec
+// AvisMarche lui-même (voir plus haut). numero conservé en texte : vu
+// réellement sous les deux formes "1"/"2" et "01"/"02" selon l'avis,
+// jamais casté en entier (perdrait le zéro de tête).
+model Lot {
+  id           String     @id @default(cuid())
+  avisMarcheId String
+  avisMarche   AvisMarche @relation(fields: [avisMarcheId], references: [id], onDelete: Cascade)
+  numero       String
+
+  description   String?
+  montant       Float?
+  montantDevise String?
+  titulaireNom  String?
+  // Capacité future uniquement — même règle que AvisMarche.acheteurId.
+  titulaireId   String?
+  titulaire     Acteur? @relation("LotTitulaire", fields: [titulaireId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cpvs LotCpv[]
+
+  @@unique([avisMarcheId, numero])
+  @@index([avisMarcheId])
+  @@index([titulaireId])
+}
+
+// CPV du LOT — même raison d'être que AvisMarcheCpv (un lot peut avoir
+// plusieurs codes CPV réels).
+model LotCpv {
+  id    String @id @default(cuid())
+  lotId String
+  lot   Lot    @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  code  String
+
+  @@unique([lotId, code])
+  @@index([lotId])
 }
 
 // Moteur d'ingestion national (voir CLAUDE.md et l'audit du 2026-09-12,

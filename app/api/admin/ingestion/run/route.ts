@@ -13,6 +13,7 @@ import { CadastreStagingRunner, CadastreIngestionRunner } from "@/lib/ingestion/
 import { SiteParcelleResolutionRunner } from "@/lib/ingestion/sources/site-parcelle"
 import { RnbStagingRunner, RnbIngestionRunner } from "@/lib/ingestion/sources/rnb"
 import { UniteBatimentPhysiqueResolutionRunner } from "@/lib/ingestion/sources/unite-batiment"
+import { BoampIngestionRunner } from "@/lib/ingestion/sources/boamp"
 import type { IngestionRunner } from "@/lib/ingestion/types"
 
 // Déclenche une invocation bornée du moteur d'ingestion national (voir
@@ -61,6 +62,14 @@ const RUNNERS: Record<string, (department?: string) => IngestionRunner> = {
   // site-parcelle-resolve (aucun paramètre department : parcourt toutes
   // les Unite en attente, indépendamment de leur département).
   "unite-batiment-resolve": () => new UniteBatimentPhysiqueResolutionRunner(),
+  // Phase 9 — Marchés/Lots (BOAMP). Même partition technique par
+  // département que Cadastre/RNB : pas de fichier bulk disponible, mais
+  // pagination par offset réelle sur l'API opendatasoft (voir
+  // lib/ingestion/sources/boamp.ts).
+  boamp: (department) => {
+    if (!department) throw new Error("boamp requiert un paramètre 'department'.")
+    return new BoampIngestionRunner(department)
+  },
 }
 
 export async function POST(request: Request) {
