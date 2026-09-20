@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { SESSION_COOKIE_NAME, isValidSession } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
-import { searchAddress } from "@/lib/data-sources/ban"
+import { resolvePreciseAddress } from "@/lib/data-sources/ban"
 import type { Company } from "@/lib/data-sources/entreprises"
 
 // Persiste dans le référentiel des acteurs (Acteur/Etablissement, Phase 2 —
@@ -60,16 +60,20 @@ export async function POST(request: Request) {
     const siege = company.siege
     if (!siege?.siret) continue
 
-    // Résout un SITE réel pour l'adresse du siège via BAN — même mécanisme
-    // que selectAddress() en Phase 1 (lib/data-sources/ban.ts), jamais une
-    // correspondance de texte brute sur l'adresse SIRENE. Nullable : garde
-    // l'établissement si la résolution échoue ou n'aboutit à rien.
+    // Résout un SITE réel pour l'adresse du siège via BAN — règle
+    // déterministe documentée dans lib/data-sources/ban.ts::resolvePreciseAddress
+    // (Phase 8, audit réel : jamais un score-seuil, jamais un top-1 par
+    // défaut). citycode transmis dès qu'on le connaît déjà (Etablissement
+    // codeInsee, fourni par SIRENE) — corroboration par une donnée déjà en
+    // notre possession, pas une hypothèse.
     let siteId: string | null = null
+    let resolutionOutcome: "VALID" | "NOT_FOUND" | "AMBIGUOUS" | "SKIPPED" = "SKIPPED"
     if (siege.adresse) {
       try {
-        const matches = await searchAddress(siege.adresse, 1)
-        const best = matches[0]
-        if (best?.label && best.citycode) {
+        const resolution = await resolvePreciseAddress(siege.adresse, siege.codeInsee ?? undefined)
+        resolutionOutcome = resolution.status
+        if (resolution.status === "VALID") {
+          const best = resolution.candidate
           const site = await prisma.site.upsert({
             where: { citycode_label: { citycode: best.citycode, label: best.label } },
             create: {
@@ -92,9 +96,21 @@ export async function POST(request: Request) {
       } catch {
         // La résolution BAN peut échouer (timeout, adresse mal formée) —
         // l'établissement reste persisté sans site lié plutôt que de faire
-        // échouer toute la requête.
+        // échouer toute la requête. Un échec technique n'est pas un
+        // NOT_FOUND (on ne sait rien, on n'a pas pu vérifier) : reste SKIPPED.
+        resolutionOutcome = "SKIPPED"
       }
     }
+
+    // Ne jamais rétrograder une résolution déjà VALID d'un appel précédent
+    // si cette tentative n'en trouve pas une nouvelle (même principe que
+    // pour siteId ci-dessous, appliqué explicitement au statut cette fois
+    // car siteId seul ne suffit plus à représenter NOT_FOUND/AMBIGUOUS).
+    const existing =
+      resolutionOutcome !== "VALID"
+        ? await prisma.etablissement.findUnique({ where: { siret: siege.siret }, select: { siteResolutionStatus: true } })
+        : null
+    const shouldWriteStatus = resolutionOutcome === "VALID" || existing === null || existing.siteResolutionStatus !== "VALID"
 
     await prisma.etablissement.upsert({
       where: { siret: siege.siret },
@@ -110,6 +126,7 @@ export async function POST(request: Request) {
         estSiege: true,
         actif: siege.actif,
         siteId,
+        ...(resolutionOutcome !== "SKIPPED" ? { siteResolutionStatus: resolutionOutcome, siteResolvedAt: new Date() } : {}),
       },
       update: {
         adresse: siege.adresse,
@@ -122,6 +139,7 @@ export async function POST(request: Request) {
         // Ne réinitialise jamais un lien déjà résolu si cet appel n'a pas
         // réussi à en retrouver un (voir try/catch ci-dessus).
         ...(siteId ? { siteId } : {}),
+        ...(resolutionOutcome !== "SKIPPED" && shouldWriteStatus ? { siteResolutionStatus: resolutionOutcome, siteResolvedAt: new Date() } : {}),
       },
     })
   }

@@ -644,6 +644,21 @@ model Acteur {
   sources        ActeurSource[]
 }
 
+// Phase 8 — statut de résolution Etablissement→Site, même principe que
+// UniteResolutionStatus (Phase 7) : PENDING distingue explicitement "jamais
+// tenté" de NOT_FOUND ("tenté, aucun candidat suffisamment identifié"),
+// pour ne jamais perdre cette information au fil des reprises. Backfill
+// historique (migration 20260920150000) : les lignes déjà résolues
+// (siteId non nul, résolution top-1 pré-Phase-8) sont marquées VALID ;
+// toutes les autres PENDING — jamais NOT_FOUND, l'historique ne permet pas
+// de savoir si une résolution a même été tentée.
+enum EtablissementSiteResolutionStatus {
+  PENDING
+  VALID
+  NOT_FOUND
+  AMBIGUOUS
+}
+
 // Structure lib/data-sources/entreprises.ts::Company.siege une fois
 // étendu (code postal, commune, coordonnées — présents dans l'API mais
 // ignorés jusqu'ici, voir l'audit Phase 2). Un seul établissement par
@@ -669,6 +684,11 @@ model Etablissement {
   // n'a pas réussi ou n'a pas encore été tentée.
   siteId     String?
   site       Site?    @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  // Phase 8 — voir EtablissementSiteResolutionStatus. siteResolvedAt reste
+  // nul pour les lignes historiques backfillées (date réelle de résolution
+  // inconnue) — jamais une valeur approximée.
+  siteResolutionStatus EtablissementSiteResolutionStatus @default(PENDING)
+  siteResolvedAt       DateTime?
   createdAt  DateTime @default(now())
 
   @@index([acteurId])

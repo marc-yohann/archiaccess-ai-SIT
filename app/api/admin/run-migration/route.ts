@@ -461,6 +461,22 @@ WHERE b.id = sdu."batimentId" AND b."sourcePartition" IS NULL`,
       `CREATE INDEX "UniteBatimentPhysique_batimentId_idx" ON "UniteBatimentPhysique"("batimentId")`,
     ],
   },
+  {
+    // Phase 8 — voir prisma/migrations/20260920150000_etablissement_site_resolution/
+    // migration.sql pour le contexte complet. Même principe de sécurité que
+    // l'entrée précédente : cette route revérifie _prisma_migrations en
+    // direct à chaque appel, ajouter cette entrée en 14e position est sûr
+    // indépendamment de toute supposition sur le nombre exact de migrations
+    // déjà appliquées.
+    name: "20260920150000_etablissement_site_resolution",
+    checksum: "4bace9f86f4dfc5d910d9a3a2f489c8e3d942fd7bbbfea33e0725052a6a56283",
+    statements: [
+      `CREATE TYPE "EtablissementSiteResolutionStatus" AS ENUM ('PENDING', 'VALID', 'NOT_FOUND', 'AMBIGUOUS')`,
+      `ALTER TABLE "Etablissement" ADD COLUMN "siteResolutionStatus" "EtablissementSiteResolutionStatus" NOT NULL DEFAULT 'PENDING'`,
+      `ALTER TABLE "Etablissement" ADD COLUMN "siteResolvedAt" TIMESTAMP(3)`,
+      `UPDATE "Etablissement" SET "siteResolutionStatus" = 'VALID' WHERE "siteId" IS NOT NULL`,
+    ],
+  },
 ]
 
 export async function POST(request: Request) {
