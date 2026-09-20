@@ -12,6 +12,7 @@ import { BanIngestionRunner } from "@/lib/ingestion/sources/ban"
 import { CadastreStagingRunner, CadastreIngestionRunner } from "@/lib/ingestion/sources/cadastre"
 import { SiteParcelleResolutionRunner } from "@/lib/ingestion/sources/site-parcelle"
 import { RnbStagingRunner, RnbIngestionRunner } from "@/lib/ingestion/sources/rnb"
+import { UniteBatimentPhysiqueResolutionRunner } from "@/lib/ingestion/sources/unite-batiment"
 import type { IngestionRunner } from "@/lib/ingestion/types"
 
 // Déclenche une invocation bornée du moteur d'ingestion national (voir
@@ -56,6 +57,10 @@ const RUNNERS: Record<string, (department?: string) => IngestionRunner> = {
     if (!department) throw new Error("rnb-ingest requiert un paramètre 'department'.")
     return new RnbIngestionRunner(department)
   },
+  // Phase 7 — résolution Unite<->BatimentPhysique, même patron que
+  // site-parcelle-resolve (aucun paramètre department : parcourt toutes
+  // les Unite en attente, indépendamment de leur département).
+  "unite-batiment-resolve": () => new UniteBatimentPhysiqueResolutionRunner(),
 }
 
 export async function POST(request: Request) {

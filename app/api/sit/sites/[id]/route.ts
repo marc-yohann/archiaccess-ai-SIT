@@ -28,7 +28,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const prisma = await getPrisma()
   const site = await prisma.site.findUnique({
     where: { id },
-    include: { parcelleLinks: { include: { parcelle: true } }, batiments: true, sources: true },
+    include: { parcelleLinks: { include: { parcelle: true } }, unites: true, sources: true },
   })
   if (!site) {
     return NextResponse.json({ success: false, error: "Site introuvable." }, { status: 404 })

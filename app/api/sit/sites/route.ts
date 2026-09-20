@@ -116,7 +116,7 @@ export async function POST(request: Request) {
   }
 
   for (const d of dpeRecords ?? []) {
-    await prisma.batiment.upsert({
+    await prisma.unite.upsert({
       where: { numeroDpe: d.numeroDpe },
       create: {
         siteId: site.id,
@@ -129,6 +129,15 @@ export async function POST(request: Request) {
         // lib/data-sources/dpe.ts et le rapport Phase 5B) — jamais
         // renseigné jusqu'ici faute d'être sélectionné par le connecteur.
         anneeConstruction: d.anneeConstruction,
+        // Champs Phase 7 — voir lib/data-sources/dpe.ts (DpeRecord) pour
+        // les limites de fiabilité réellement constatées de chacun.
+        identifiantBan: d.identifiantBan,
+        codeInseeBan: d.codeInseeBan,
+        numeroEtageAppartement: d.numeroEtageAppartement,
+        dateEtablissement: d.dateEtablissement,
+        statutGeocodage: d.statutGeocodage,
+        longitude: d.longitude,
+        latitude: d.latitude,
       },
       update: {
         typeBatiment: d.typeBatiment,
@@ -136,6 +145,13 @@ export async function POST(request: Request) {
         etiquetteEnergie: d.etiquetteEnergie,
         anneeConstruction: d.anneeConstruction,
         etiquetteGes: d.etiquetteGes,
+        identifiantBan: d.identifiantBan,
+        codeInseeBan: d.codeInseeBan,
+        numeroEtageAppartement: d.numeroEtageAppartement,
+        dateEtablissement: d.dateEtablissement,
+        statutGeocodage: d.statutGeocodage,
+        longitude: d.longitude,
+        latitude: d.latitude,
       },
     })
     sourcesFetched.add("dpe")

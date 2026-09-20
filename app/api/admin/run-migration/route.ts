@@ -418,6 +418,49 @@ FROM site_dept_unique sdu
 WHERE b.id = sdu."batimentId" AND b."sourcePartition" IS NULL`,
     ],
   },
+  {
+    // Phase 7 — voir prisma/migrations/20260920140000_unite_dpe_rename/
+    // migration.sql pour le contexte complet. Cette route re-vérifie
+    // _prisma_migrations en direct à chaque appel (voir POST ci-dessous) :
+    // ajouter cette entrée en 10e position est sûr indépendamment de toute
+    // supposition sur le nombre exact de migrations déjà appliquées.
+    name: "20260920140000_unite_dpe_rename",
+    checksum: "f972e704faa74a3b10b5db9c4ba94c8e798e7999fea0ab29756a52c2ab595d8c",
+    statements: [
+      `ALTER TABLE "Batiment" RENAME TO "Unite"`,
+      `ALTER TABLE "Unite" RENAME CONSTRAINT "Batiment_siteId_fkey" TO "Unite_siteId_fkey"`,
+      `ALTER INDEX "Batiment_numeroDpe_key" RENAME TO "Unite_numeroDpe_key"`,
+      `ALTER INDEX "Batiment_siteId_idx" RENAME TO "Unite_siteId_idx"`,
+      `ALTER INDEX "Batiment_pkey" RENAME TO "Unite_pkey"`,
+      `ALTER TABLE "Unite" ADD COLUMN "identifiantBan" TEXT`,
+      `ALTER TABLE "Unite" ADD COLUMN "codeInseeBan" TEXT`,
+      `ALTER TABLE "Unite" ADD COLUMN "numeroEtageAppartement" INTEGER`,
+      `ALTER TABLE "Unite" ADD COLUMN "dateEtablissement" TEXT`,
+      `ALTER TABLE "Unite" ADD COLUMN "statutGeocodage" TEXT`,
+      `ALTER TABLE "Unite" ADD COLUMN "longitude" DOUBLE PRECISION`,
+      `ALTER TABLE "Unite" ADD COLUMN "latitude" DOUBLE PRECISION`,
+      `CREATE TYPE "UniteResolutionStatus" AS ENUM ('PENDING', 'VALID', 'NOT_FOUND', 'AMBIGUOUS')`,
+      `ALTER TABLE "Unite" ADD COLUMN "batimentPhysiqueResolutionStatus" "UniteResolutionStatus" NOT NULL DEFAULT 'PENDING'`,
+      `ALTER TABLE "Unite" ADD COLUMN "batimentPhysiqueResolvedAt" TIMESTAMP(3)`,
+      `CREATE TABLE "UniteBatimentPhysique" (
+    "id" TEXT NOT NULL,
+    "uniteId" TEXT NOT NULL,
+    "batimentId" TEXT NOT NULL,
+    "referenceStatus" "ReferenceStatus" NOT NULL,
+    "relationMethod" TEXT NOT NULL DEFAULT 'SPATIAL_COVERS',
+    "source" TEXT NOT NULL DEFAULT 'dpe-ademe-spatial',
+    "retrievedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "UniteBatimentPhysique_pkey" PRIMARY KEY ("id")
+)`,
+      `ALTER TABLE "UniteBatimentPhysique" ADD CONSTRAINT "UniteBatimentPhysique_uniteId_fkey" FOREIGN KEY ("uniteId") REFERENCES "Unite"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `ALTER TABLE "UniteBatimentPhysique" ADD CONSTRAINT "UniteBatimentPhysique_batimentId_fkey" FOREIGN KEY ("batimentId") REFERENCES "BatimentPhysique"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `CREATE UNIQUE INDEX "UniteBatimentPhysique_uniteId_batimentId_key" ON "UniteBatimentPhysique"("uniteId", "batimentId")`,
+      `CREATE INDEX "UniteBatimentPhysique_uniteId_idx" ON "UniteBatimentPhysique"("uniteId")`,
+      `CREATE INDEX "UniteBatimentPhysique_batimentId_idx" ON "UniteBatimentPhysique"("batimentId")`,
+    ],
+  },
 ]
 
 export async function POST(request: Request) {

@@ -160,7 +160,7 @@ model Site {
   // doublons réels sur 216 756 lignes (0,075 %), jamais supposé unique.
   banId                 String?
   parcelleLinks         SiteParcelle[]
-  batiments             Batiment[]
+  unites                Unite[]
   batimentPhysiqueLinks BatimentPhysiqueSite[]
   sources               SiteSource[]
   etablissements        Etablissement[] // Phase 2 — voir modèle Etablissement plus bas
@@ -286,47 +286,100 @@ model Parcelle {
 }
 
 // Structure la donnée déjà réelle de lib/data-sources/dpe.ts (type
-// DpeRecord) — seule source réelle disponible pour "bâtiment" à ce jour.
-//
-// ATTENTION SÉMANTIQUE (Phase 5, voir le rapport) : ce modèle représente
-// en réalité une UNITÉ/LOGEMENT diagnostiquée par un DPE, PAS un bâtiment
-// physique — vérifié réellement sur des données ADEME (un même bâtiment
-// physique peut porter des dizaines de DPE réels distincts, un cas réel
-// observé en comptant 101). Le nom "Batiment" est conservé pour l'instant
-// (aucune migration de renommage exécutée) le temps de valider une
-// source de bâtiment physique fiable (RNB — Référentiel National des
-// Bâtiments, api.gouv.fr — vérifiée réellement Phase 5B, voir le
-// rapport : fournit un identifiant natif stable "rnb_id", une géométrie
-// réelle, et des références déterministes vers Cadastre "plots" et BAN
-// "addresses" ; cardinalité Bâtiment↔Parcelle et Bâtiment↔Site mesurées
-// réellement N:N sur un département entier). Aucune entité Bâtiment
-// physique n'est encore modélisée — ne pas fabriquer ce niveau par
-// regroupement d'adresses.
+// DpeRecord). Renommé Batiment -> Unite en Phase 7 (migration
+// 20260920140000_unite_dpe_rename, RENAME non destructif) : ce modèle
+// représente en réalité une UNITÉ/LOGEMENT diagnostiquée par un DPE, PAS
+// un bâtiment physique — vérifié réellement sur des données ADEME (un
+// même bâtiment physique peut porter des dizaines de DPE réels distincts,
+// un cas réel observé en comptant 101). "BatimentPhysique" (RNB) reste
+// délibérément inchangé — déjà déployé/testé en production, renommer les
+// deux modèles en une seule opération aurait été un remaniement sans
+// bénéfice fonctionnel supplémentaire (décision Phase 7).
 //
 // anneeConstruction EXISTE réellement dans la source ADEME (vérifié
-// Phase 5B — présent et rempli dans ~81 % des DPE réels inspectés) et
-// est désormais réellement renseigné par lib/data-sources/dpe.ts et
-// app/api/sit/sites/route.ts — un commentaire précédent ici affirmant le
-// contraire était obsolète.
-model Batiment {
-  id                String   @id @default(cuid())
-  siteId            String
-  site              Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+// Phase 5B — présent et rempli dans ~81 % des DPE réels inspectés).
+// identifiantBan/codeInseeBan/numeroEtageAppartement/dateEtablissement/
+// statutGeocodage/longitude/latitude : champs Phase 7, tous déjà extraits
+// par lib/data-sources/dpe.ts (voir l'en-tête de ce fichier pour les
+// limites de fiabilité réellement constatées de chacun — notamment
+// identifiantBan ~95% fiable seulement, numeroEtageAppartement souvent 0
+// par défaut) mais jamais persistés avant cette phase.
+model Unite {
+  id                     String   @id @default(cuid())
+  siteId                 String
+  site                   Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
   // Nullable en théorie (une future source non-DPE pourrait ne pas en
   // avoir), mais toujours renseigné en pratique aujourd'hui — seule
   // source réelle actuelle (lib/data-sources/dpe.ts) le fournit toujours.
   // @unique : identifiant national ADEME, permet un upsert idempotent
   // plutôt que de dupliquer la ligne à chaque nouvelle recherche de la
   // même adresse.
-  numeroDpe         String?  @unique
-  typeBatiment      String?
-  surfaceHabitable  Float?
-  etiquetteEnergie  String?
-  etiquetteGes      String?
-  anneeConstruction Int?
-  createdAt         DateTime @default(now())
+  numeroDpe              String?  @unique
+  typeBatiment           String?
+  surfaceHabitable       Float?
+  etiquetteEnergie       String?
+  etiquetteGes           String?
+  anneeConstruction      Int?
+  identifiantBan         String?
+  codeInseeBan           String?
+  numeroEtageAppartement Int?
+  dateEtablissement      String?
+  statutGeocodage        String?
+  longitude              Float?
+  latitude               Float?
+  createdAt              DateTime @default(now())
+
+  // État de résolution vers BatimentPhysique (voir UniteBatimentPhysique
+  // ci-dessous) — persisté séparément des lignes de relation elles-mêmes
+  // car NOT_FOUND n'y est jamais matérialisé : sans ce champ, "jamais
+  // traité" et "traité, aucun bâtiment trouvé" seraient indiscernables.
+  batimentPhysiqueResolutionStatus UniteResolutionStatus   @default(PENDING)
+  batimentPhysiqueResolvedAt       DateTime?
+  batimentPhysiqueLinks            UniteBatimentPhysique[]
 
   @@index([siteId])
+}
+
+enum UniteResolutionStatus {
+  PENDING
+  VALID
+  NOT_FOUND
+  AMBIGUOUS
+}
+
+// Relation Unite <-> BatimentPhysique (Phase 7) — résolution SPATIALE
+// uniquement (ST_Covers empreinte RNB / point DPE) : contrairement à
+// RNB.plots/addresses, la source DPE ne fournit aucune référence directe
+// vers un bâtiment physique, seulement des coordonnées (voir
+// lib/data-sources/dpe.ts, champ _geopoint réel). ST_Covers plutôt que
+// ST_Contains (choix explicite Phase 7) : un point DPE exactement sur la
+// frontière d'une empreinte RNB doit rester résolu, pas silencieusement
+// rejeté. Jamais de LIMIT 1 pour trancher une ambiguïté — voir
+// lib/ingestion/sources/unite-batiment.ts.
+//
+// NOT_FOUND n'est jamais matérialisé en ligne ici (voir
+// Unite.batimentPhysiqueResolutionStatus) : contrairement à
+// BatimentPhysiqueParcelle/Site où une référence source (parcelleRef/
+// addressRef) existe toujours et sert de clé naturelle non-nulle même en
+// échec, aucune référence de ce type n'existe pour une résolution
+// purement spatiale — une ligne batimentId=NULL casserait la contrainte
+// d'unicité sur ré-exécution (NULL jamais égal à NULL en SQL).
+model UniteBatimentPhysique {
+  id              String           @id @default(cuid())
+  uniteId         String
+  unite           Unite            @relation(fields: [uniteId], references: [id], onDelete: Cascade)
+  batimentId      String
+  batiment        BatimentPhysique @relation(fields: [batimentId], references: [id], onDelete: Cascade)
+  // VALID | AMBIGUOUS uniquement (voir commentaire ci-dessus pour NOT_FOUND).
+  referenceStatus ReferenceStatus
+  relationMethod  String           @default("SPATIAL_COVERS")
+  source          String           @default("dpe-ademe-spatial")
+  retrievedAt     DateTime         @default(now())
+  createdAt       DateTime         @default(now())
+
+  @@unique([uniteId, batimentId])
+  @@index([uniteId])
+  @@index([batimentId])
 }
 
 // Traçabilité (brief, section "Sources") : une ligne par connecteur déjà
@@ -452,6 +505,11 @@ model BatimentPhysique {
 
   parcelleLinks BatimentPhysiqueParcelle[]
   siteLinks     BatimentPhysiqueSite[]
+  // Relation inverse Unite<->BatimentPhysique (Phase 7) — voir
+  // UniteBatimentPhysique. Seul ajout touchant ce modèle en Phase 7,
+  // strictement nécessaire côté Prisma pour la relation bidirectionnelle,
+  // aucun autre champ/index de BatimentPhysique modifié.
+  uniteLinks    UniteBatimentPhysique[]
 
   @@index([geomType])
   @@index([sourcePartition])
