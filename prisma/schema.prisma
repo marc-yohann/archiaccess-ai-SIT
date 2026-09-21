@@ -171,6 +171,7 @@ model Site {
   sources               SiteSource[]
   etablissements        Etablissement[] // Phase 2 — voir modèle Etablissement plus bas
   projetLinks           ProjetSite[] // Phase 10 — voir modèle Projet plus bas
+  documentSitLinks      DocumentSitSite[] // Phase 11 — voir modèle DocumentSit plus bas
 
   // Une même adresse recherchée plusieurs fois ne doit pas créer plusieurs
   // sites — un seul enregistrement mis à jour dans le temps.
@@ -658,7 +659,9 @@ model Acteur {
   lotsCommeTitulaire       Lot[]        @relation("LotTitulaire")
 
   // Phase 10 — voir modèle Projet plus bas.
-  projetLinks ProjetActeur[]
+  projetLinks      ProjetActeur[]
+  // Phase 11 — voir modèle DocumentSit plus bas.
+  documentSitLinks DocumentSitActeur[]
 }
 
 // Phase 8 — statut de résolution Etablissement→Site, même principe que
@@ -792,10 +795,12 @@ model AvisMarche {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  cpvs        AvisMarcheCpv[]
-  lots        Lot[]
+  cpvs             AvisMarcheCpv[]
+  lots             Lot[]
   // Phase 10 — voir modèle Projet plus bas.
-  projetLinks ProjetAvisMarche[]
+  projetLinks      ProjetAvisMarche[]
+  // Phase 11 — voir modèle DocumentSit plus bas.
+  documentSitLinks DocumentSitAvisMarche[]
 
   @@unique([source, sourceId])
   @@index([acheteurId])
@@ -845,9 +850,11 @@ model Lot {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  cpvs        LotCpv[]
+  cpvs             LotCpv[]
   // Phase 10 — voir modèle Projet plus bas.
-  projetLinks ProjetLot[]
+  projetLinks      ProjetLot[]
+  // Phase 11 — voir modèle DocumentSit plus bas.
+  documentSitLinks DocumentSitLot[]
 
   @@unique([avisMarcheId, numero])
   @@index([avisMarcheId])
@@ -903,10 +910,12 @@ model Projet {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  sites       ProjetSite[]
-  acteurs     ProjetActeur[]
-  avisMarches ProjetAvisMarche[]
-  lots        ProjetLot[]
+  sites            ProjetSite[]
+  acteurs          ProjetActeur[]
+  avisMarches      ProjetAvisMarche[]
+  lots             ProjetLot[]
+  // Phase 11 — voir modèle DocumentSit plus bas.
+  documentSitLinks DocumentSitProjet[]
 }
 
 // Rattachement Projet<->Site, action explicite uniquement (voir Projet
@@ -977,6 +986,168 @@ model ProjetLot {
   @@unique([projetId, lotId])
   @@index([projetId])
   @@index([lotId])
+}
+
+// Phase 11 — référentiel des types documentaires SIT (DCE/CCTP/...).
+// Distinct de Document.sourceType (texte libre, corpus réglementaire du
+// copilote) : celui-ci sert exclusivement DocumentSit ci-dessous.
+enum DocumentSitType {
+  DCE
+  RC
+  CCAP
+  CCTP
+  AE
+  BPU
+  DPGF
+  ETUDE
+  DIAGNOSTIC
+  RAPPORT
+  PLAN
+  DOE
+  PV
+  OPR
+  RESERVE
+  COMPTE_RENDU
+  PLANNING
+}
+
+// Phase 11 — domaine documentaire du SIT (DCE, CCTP, rapports, plans,
+// PV... rattachés à un Site/Projet/Acteur/AvisMarche/Lot réel). SANS
+// AUCUN RAPPORT avec le modèle `Document` ci-dessus (corpus réglementaire
+// indexé pour le copilote, pgvector) — nom volontairement distinct pour
+// éviter toute collision Prisma ou sémantique, voir le rapport d'audit
+// Phase 11 (validé par l'utilisateur). `Document`/`DocumentChunk`
+// restent strictement inchangés par cette phase.
+//
+// Provenance jamais inventée (voir lib/data-sources/boamp.ts et le
+// rapport d'audit Phase 11) : aucune source actuelle ne fournit de
+// fichier réellement téléchargeable — BOAMP/BODACC ne donnent que des
+// URL de portail ou de page de détail, jamais un lien direct vers un
+// fichier. source="manuel" est donc le cas normal ; source="boamp" ne
+// doit être utilisé que si une référence BOAMP réelle existe (ex.
+// sourceUrl = url_avis réel), jamais une URL de fichier fabriquée.
+//
+// storageKey prépare une future évolution de stockage binaire
+// (lib/storage.ts reste markdown-only dans cette phase, voir CLAUDE.md)
+// — sa présence ne doit jamais être interprétée comme "le fichier existe
+// réellement", seulement comme une référence prête pour cette évolution.
+//
+// Pas de DocumentVersion : aucun besoin réel démontré à ce stade (voir
+// le rapport d'audit) — une évolution du contenu se traduit par
+// updatedAt, jamais par un historique de versions tant que ce besoin
+// n'est pas prouvé. Pas de contenuExtrait rempli automatiquement : aucun
+// OCR/parsing/chunking/embedding n'est implémenté dans cette phase.
+model DocumentSit {
+  id          String           @id @default(cuid())
+  titre       String
+  type        DocumentSitType?
+  description String?
+
+  // Provenance — voir le commentaire du modèle ci-dessus. Tous nullables :
+  // un document créé manuellement par un employé (cas normal) n'a ni
+  // source ni sourceId ni sourceUrl.
+  source      String?
+  sourceId    String?
+  sourceUrl   String?
+  retrievedAt DateTime?
+
+  checksum     String?
+  mimeType     String?
+  // BigInt — même convention que DatasetManifest.originalSizeBytes
+  // (taille de fichier, jamais bornée à Int32).
+  tailleOctets BigInt?
+  dateDocument DateTime?
+
+  // Référence vers un futur objet de stockage binaire — voir le
+  // commentaire du modèle ci-dessus. Jamais interprété comme "le fichier
+  // est réellement stocké" ailleurs dans le code applicatif.
+  storageKey String?
+
+  // Texte déjà extrait par une source (jamais produit par ce système —
+  // aucun OCR/parsing implémenté ici, voir le rapport d'audit Phase 11).
+  contenuExtrait   String?
+  contenuExtraitAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sites       DocumentSitSite[]
+  projets     DocumentSitProjet[]
+  avisMarches DocumentSitAvisMarche[]
+  lots        DocumentSitLot[]
+  acteurs     DocumentSitActeur[]
+}
+
+// Rattachement DocumentSit<->Site — action explicite uniquement, même
+// principe que ProjetSite (Phase 10). Pas de relation directe vers
+// Parcelle/BatimentPhysique/Unite/DPE : déjà accessibles via Site.
+model DocumentSitSite {
+  id            String      @id @default(cuid())
+  documentSitId String
+  documentSit   DocumentSit @relation(fields: [documentSitId], references: [id], onDelete: Cascade)
+  siteId        String
+  site          Site        @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@unique([documentSitId, siteId])
+  @@index([documentSitId])
+  @@index([siteId])
+}
+
+// Rattachement DocumentSit<->Projet (Phase 10).
+model DocumentSitProjet {
+  id            String      @id @default(cuid())
+  documentSitId String
+  documentSit   DocumentSit @relation(fields: [documentSitId], references: [id], onDelete: Cascade)
+  projetId      String
+  projet        Projet      @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@unique([documentSitId, projetId])
+  @@index([documentSitId])
+  @@index([projetId])
+}
+
+// Rattachement DocumentSit<->AvisMarche (Phase 9).
+model DocumentSitAvisMarche {
+  id            String      @id @default(cuid())
+  documentSitId String
+  documentSit   DocumentSit @relation(fields: [documentSitId], references: [id], onDelete: Cascade)
+  avisMarcheId  String
+  avisMarche    AvisMarche  @relation(fields: [avisMarcheId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@unique([documentSitId, avisMarcheId])
+  @@index([documentSitId])
+  @@index([avisMarcheId])
+}
+
+// Rattachement DocumentSit<->Lot (Phase 9).
+model DocumentSitLot {
+  id            String      @id @default(cuid())
+  documentSitId String
+  documentSit   DocumentSit @relation(fields: [documentSitId], references: [id], onDelete: Cascade)
+  lotId         String
+  lot           Lot         @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@unique([documentSitId, lotId])
+  @@index([documentSitId])
+  @@index([lotId])
+}
+
+// Rattachement DocumentSit<->Acteur (Phase 2/8).
+model DocumentSitActeur {
+  id            String      @id @default(cuid())
+  documentSitId String
+  documentSit   DocumentSit @relation(fields: [documentSitId], references: [id], onDelete: Cascade)
+  acteurId      String
+  acteur        Acteur      @relation(fields: [acteurId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@unique([documentSitId, acteurId])
+  @@index([documentSitId])
+  @@index([acteurId])
 }
 
 // Moteur d'ingestion national (voir CLAUDE.md et l'audit du 2026-09-12,

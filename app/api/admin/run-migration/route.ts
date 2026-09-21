@@ -642,6 +642,106 @@ WHERE b.id = sdu."batimentId" AND b."sourcePartition" IS NULL`,
       `ALTER TABLE "ProjetLot" ADD CONSTRAINT "ProjetLot_lotId_fkey" FOREIGN KEY ("lotId") REFERENCES "Lot"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
     ],
   },
+  {
+    // Phase 11 — voir prisma/migrations/20260921100000_document_sit_domaine/
+    // migration.sql pour le contexte complet. Même principe de sécurité que
+    // l'entrée précédente : cette route revérifie _prisma_migrations en
+    // direct à chaque appel, ajouter cette entrée en 18e position est sûr
+    // indépendamment de toute supposition sur le nombre exact de migrations
+    // déjà appliquées. AUCUNE table du corpus RAG ("Document"/"DocumentChunk")
+    // n'est touchée par cette entrée.
+    name: "20260921100000_document_sit_domaine",
+    checksum: "e6a4083bc27093dfb3136d4b353a2429fc714d359a85bc223eac9f734a288d3b",
+    statements: [
+      `CREATE TYPE "DocumentSitType" AS ENUM ('DCE', 'RC', 'CCAP', 'CCTP', 'AE', 'BPU', 'DPGF', 'ETUDE', 'DIAGNOSTIC', 'RAPPORT', 'PLAN', 'DOE', 'PV', 'OPR', 'RESERVE', 'COMPTE_RENDU', 'PLANNING')`,
+      `CREATE TABLE "DocumentSit" (
+    "id" TEXT NOT NULL,
+    "titre" TEXT NOT NULL,
+    "type" "DocumentSitType",
+    "description" TEXT,
+    "source" TEXT,
+    "sourceId" TEXT,
+    "sourceUrl" TEXT,
+    "retrievedAt" TIMESTAMP(3),
+    "checksum" TEXT,
+    "mimeType" TEXT,
+    "tailleOctets" BIGINT,
+    "dateDocument" TIMESTAMP(3),
+    "storageKey" TEXT,
+    "contenuExtrait" TEXT,
+    "contenuExtraitAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "DocumentSit_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE TABLE "DocumentSitSite" (
+    "id" TEXT NOT NULL,
+    "documentSitId" TEXT NOT NULL,
+    "siteId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "DocumentSitSite_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE UNIQUE INDEX "DocumentSitSite_documentSitId_siteId_key" ON "DocumentSitSite"("documentSitId", "siteId")`,
+      `CREATE INDEX "DocumentSitSite_documentSitId_idx" ON "DocumentSitSite"("documentSitId")`,
+      `CREATE INDEX "DocumentSitSite_siteId_idx" ON "DocumentSitSite"("siteId")`,
+      `ALTER TABLE "DocumentSitSite" ADD CONSTRAINT "DocumentSitSite_documentSitId_fkey" FOREIGN KEY ("documentSitId") REFERENCES "DocumentSit"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `ALTER TABLE "DocumentSitSite" ADD CONSTRAINT "DocumentSitSite_siteId_fkey" FOREIGN KEY ("siteId") REFERENCES "Site"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `CREATE TABLE "DocumentSitProjet" (
+    "id" TEXT NOT NULL,
+    "documentSitId" TEXT NOT NULL,
+    "projetId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "DocumentSitProjet_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE UNIQUE INDEX "DocumentSitProjet_documentSitId_projetId_key" ON "DocumentSitProjet"("documentSitId", "projetId")`,
+      `CREATE INDEX "DocumentSitProjet_documentSitId_idx" ON "DocumentSitProjet"("documentSitId")`,
+      `CREATE INDEX "DocumentSitProjet_projetId_idx" ON "DocumentSitProjet"("projetId")`,
+      `ALTER TABLE "DocumentSitProjet" ADD CONSTRAINT "DocumentSitProjet_documentSitId_fkey" FOREIGN KEY ("documentSitId") REFERENCES "DocumentSit"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `ALTER TABLE "DocumentSitProjet" ADD CONSTRAINT "DocumentSitProjet_projetId_fkey" FOREIGN KEY ("projetId") REFERENCES "Projet"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `CREATE TABLE "DocumentSitAvisMarche" (
+    "id" TEXT NOT NULL,
+    "documentSitId" TEXT NOT NULL,
+    "avisMarcheId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "DocumentSitAvisMarche_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE UNIQUE INDEX "DocumentSitAvisMarche_documentSitId_avisMarcheId_key" ON "DocumentSitAvisMarche"("documentSitId", "avisMarcheId")`,
+      `CREATE INDEX "DocumentSitAvisMarche_documentSitId_idx" ON "DocumentSitAvisMarche"("documentSitId")`,
+      `CREATE INDEX "DocumentSitAvisMarche_avisMarcheId_idx" ON "DocumentSitAvisMarche"("avisMarcheId")`,
+      `ALTER TABLE "DocumentSitAvisMarche" ADD CONSTRAINT "DocumentSitAvisMarche_documentSitId_fkey" FOREIGN KEY ("documentSitId") REFERENCES "DocumentSit"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `ALTER TABLE "DocumentSitAvisMarche" ADD CONSTRAINT "DocumentSitAvisMarche_avisMarcheId_fkey" FOREIGN KEY ("avisMarcheId") REFERENCES "AvisMarche"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `CREATE TABLE "DocumentSitLot" (
+    "id" TEXT NOT NULL,
+    "documentSitId" TEXT NOT NULL,
+    "lotId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "DocumentSitLot_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE UNIQUE INDEX "DocumentSitLot_documentSitId_lotId_key" ON "DocumentSitLot"("documentSitId", "lotId")`,
+      `CREATE INDEX "DocumentSitLot_documentSitId_idx" ON "DocumentSitLot"("documentSitId")`,
+      `CREATE INDEX "DocumentSitLot_lotId_idx" ON "DocumentSitLot"("lotId")`,
+      `ALTER TABLE "DocumentSitLot" ADD CONSTRAINT "DocumentSitLot_documentSitId_fkey" FOREIGN KEY ("documentSitId") REFERENCES "DocumentSit"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `ALTER TABLE "DocumentSitLot" ADD CONSTRAINT "DocumentSitLot_lotId_fkey" FOREIGN KEY ("lotId") REFERENCES "Lot"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `CREATE TABLE "DocumentSitActeur" (
+    "id" TEXT NOT NULL,
+    "documentSitId" TEXT NOT NULL,
+    "acteurId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "DocumentSitActeur_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE UNIQUE INDEX "DocumentSitActeur_documentSitId_acteurId_key" ON "DocumentSitActeur"("documentSitId", "acteurId")`,
+      `CREATE INDEX "DocumentSitActeur_documentSitId_idx" ON "DocumentSitActeur"("documentSitId")`,
+      `CREATE INDEX "DocumentSitActeur_acteurId_idx" ON "DocumentSitActeur"("acteurId")`,
+      `ALTER TABLE "DocumentSitActeur" ADD CONSTRAINT "DocumentSitActeur_documentSitId_fkey" FOREIGN KEY ("documentSitId") REFERENCES "DocumentSit"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `ALTER TABLE "DocumentSitActeur" ADD CONSTRAINT "DocumentSitActeur_acteurId_fkey" FOREIGN KEY ("acteurId") REFERENCES "Acteur"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+    ],
+  },
 ]
 
 export async function POST(request: Request) {
