@@ -172,6 +172,7 @@ model Site {
   etablissements        Etablissement[] // Phase 2 — voir modèle Etablissement plus bas
   projetLinks           ProjetSite[] // Phase 10 — voir modèle Projet plus bas
   documentSitLinks      DocumentSitSite[] // Phase 11 — voir modèle DocumentSit plus bas
+  besoinLinks           BesoinSite[] // Phase 12 — voir modèle Besoin plus bas
 
   // Une même adresse recherchée plusieurs fois ne doit pas créer plusieurs
   // sites — un seul enregistrement mis à jour dans le temps.
@@ -662,6 +663,8 @@ model Acteur {
   projetLinks      ProjetActeur[]
   // Phase 11 — voir modèle DocumentSit plus bas.
   documentSitLinks DocumentSitActeur[]
+  // Phase 12 — voir modèle Besoin plus bas.
+  besoinLinks      BesoinActeur[]
 }
 
 // Phase 8 — statut de résolution Etablissement→Site, même principe que
@@ -801,6 +804,8 @@ model AvisMarche {
   projetLinks      ProjetAvisMarche[]
   // Phase 11 — voir modèle DocumentSit plus bas.
   documentSitLinks DocumentSitAvisMarche[]
+  // Phase 12 — voir modèle Besoin plus bas.
+  besoinLinks      BesoinAvisMarche[]
 
   @@unique([source, sourceId])
   @@index([acheteurId])
@@ -855,6 +860,8 @@ model Lot {
   projetLinks      ProjetLot[]
   // Phase 11 — voir modèle DocumentSit plus bas.
   documentSitLinks DocumentSitLot[]
+  // Phase 12 — voir modèle Besoin plus bas.
+  besoinLinks      BesoinLot[]
 
   @@unique([avisMarcheId, numero])
   @@index([avisMarcheId])
@@ -916,6 +923,8 @@ model Projet {
   lots             ProjetLot[]
   // Phase 11 — voir modèle DocumentSit plus bas.
   documentSitLinks DocumentSitProjet[]
+  // Phase 12 — voir modèle Besoin plus bas.
+  besoinLinks      BesoinProjet[]
 }
 
 // Rattachement Projet<->Site, action explicite uniquement (voir Projet
@@ -1076,6 +1085,8 @@ model DocumentSit {
   avisMarches DocumentSitAvisMarche[]
   lots        DocumentSitLot[]
   acteurs     DocumentSitActeur[]
+  // Phase 12 — voir modèle Besoin plus bas.
+  besoinLinks BesoinDocumentSit[]
 }
 
 // Rattachement DocumentSit<->Site — action explicite uniquement, même
@@ -1148,6 +1159,154 @@ model DocumentSitActeur {
   @@unique([documentSitId, acteurId])
   @@index([documentSitId])
   @@index([acteurId])
+}
+
+// Phase 12 — Besoin : une nécessité métier/technique explicitement
+// identifiée (étude structure, mission OPC, diagnostic, travaux de
+// façade, maintenance...), TOUJOURS créée par un employé — voir l'audit
+// Phase 12 (validé par l'utilisateur) : aucune source externe du dépôt
+// (BOAMP/BODACC/aucun connecteur) ne fournit d'objet "besoin" identifiable,
+// même constat que Projet en Phase 10. Un Besoin n'est ni un document, ni
+// un lot, ni un projet, ni une discipline, ni une entreprise : ce sont
+// des objets distincts reliés au besoin par les tables de jointure
+// ci-dessous, toujours par une action explicite de l'utilisateur.
+//
+// type/discipline/problematique/typeOuvrage/statut : texte libre
+// volontairement (String?), jamais un enum — vérifié à l'audit : aucune
+// taxonomie stable réutilisable n'existe dans ce dépôt (la "taxonomie des
+// ~40 disciplines techniques Archiaccess", app/sit/page.tsx::TAXONOMY,
+// est un contenu d'affichage UI en phrases longues avec parenthèses,
+// jamais des identifiants d'enum valides, et volontairement qualifiée de
+// "savoir-faire d'ingénierie, pas une donnée interrogeable" dans son
+// propre commentaire — la forcer en enum aurait fabriqué une taxonomie
+// qui n'existe nulle part ailleurs dans le code). ActeurType (Phase 2)
+// n'est pas réutilisé pour `type` : il décrit un RÔLE D'ACTEUR (qui fait
+// quoi), pas une CATÉGORIE DE BESOIN (quoi faire) — les réutiliser
+// ensemble aurait été l'ambiguïté sémantique explicitement proscrite par
+// la consigne Phase 12.
+//
+// Pas de createdBy/createdById ici (à la différence de Projet, Phase 10)
+// : absent de la liste de champs minimale demandée pour cette phase,
+// jamais ajouté sans nécessité démontrée.
+model Besoin {
+  id            String  @id @default(cuid())
+  titre         String
+  description   String?
+  statut        String?
+  type          String?
+  discipline    String?
+  problematique String?
+  typeOuvrage   String?
+
+  // Provenance — même discipline que DocumentSit (Phase 11) : tous
+  // nullables, jamais inventée. source="manuel" est le cas normal (aucune
+  // source externe ne fournit de Besoin, voir ci-dessus).
+  source      String?
+  sourceId    String?
+  sourceUrl   String?
+  retrievedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sites        BesoinSite[]
+  projets      BesoinProjet[]
+  acteurs      BesoinActeur[]
+  avisMarches  BesoinAvisMarche[]
+  lots         BesoinLot[]
+  documentsSit BesoinDocumentSit[]
+}
+
+// Rattachement Besoin<->Site — action explicite uniquement, même pattern
+// que ProjetSite/DocumentSitSite (Phase 10/11). Pas de relation directe
+// vers Parcelle/BatimentPhysique/Unite/DPE : déjà accessibles via Site.
+model BesoinSite {
+  id        String   @id @default(cuid())
+  besoinId  String
+  besoin    Besoin   @relation(fields: [besoinId], references: [id], onDelete: Cascade)
+  siteId    String
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([besoinId, siteId])
+  @@index([besoinId])
+  @@index([siteId])
+}
+
+// Rattachement Besoin<->Projet (Phase 10).
+model BesoinProjet {
+  id        String   @id @default(cuid())
+  besoinId  String
+  besoin    Besoin   @relation(fields: [besoinId], references: [id], onDelete: Cascade)
+  projetId  String
+  projet    Projet   @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([besoinId, projetId])
+  @@index([besoinId])
+  @@index([projetId])
+}
+
+// Rattachement Besoin<->Acteur (Phase 2/8).
+model BesoinActeur {
+  id        String   @id @default(cuid())
+  besoinId  String
+  besoin    Besoin   @relation(fields: [besoinId], references: [id], onDelete: Cascade)
+  acteurId  String
+  acteur    Acteur   @relation(fields: [acteurId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([besoinId, acteurId])
+  @@index([besoinId])
+  @@index([acteurId])
+}
+
+// Rattachement Besoin<->AvisMarche (Phase 9).
+model BesoinAvisMarche {
+  id           String     @id @default(cuid())
+  besoinId     String
+  besoin       Besoin     @relation(fields: [besoinId], references: [id], onDelete: Cascade)
+  avisMarcheId String
+  avisMarche   AvisMarche @relation(fields: [avisMarcheId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([besoinId, avisMarcheId])
+  @@index([besoinId])
+  @@index([avisMarcheId])
+}
+
+// Rattachement Besoin<->Lot (Phase 9) — cardinalité N:N confirmée par la
+// consigne Phase 12 elle-même : un lot peut contenir plusieurs besoins,
+// un besoin peut concerner plusieurs lots. Lot et Besoin restent deux
+// objets distincts, jamais confondus.
+model BesoinLot {
+  id        String   @id @default(cuid())
+  besoinId  String
+  besoin    Besoin   @relation(fields: [besoinId], references: [id], onDelete: Cascade)
+  lotId     String
+  lot       Lot      @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([besoinId, lotId])
+  @@index([besoinId])
+  @@index([lotId])
+}
+
+// Rattachement Besoin<->DocumentSit (Phase 11B) — jamais Document/
+// DocumentChunk (corpus réglementaire/RAG, hors périmètre). Un besoin
+// n'est jamais déduit automatiquement d'un DocumentSit : uniquement une
+// action explicite de l'utilisateur.
+model BesoinDocumentSit {
+  id            String      @id @default(cuid())
+  besoinId      String
+  besoin        Besoin      @relation(fields: [besoinId], references: [id], onDelete: Cascade)
+  documentSitId String
+  documentSit   DocumentSit @relation(fields: [documentSitId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@unique([besoinId, documentSitId])
+  @@index([besoinId])
+  @@index([documentSitId])
 }
 
 // Moteur d'ingestion national (voir CLAUDE.md et l'audit du 2026-09-12,

@@ -742,6 +742,114 @@ WHERE b.id = sdu."batimentId" AND b."sourcePartition" IS NULL`,
       `ALTER TABLE "DocumentSitActeur" ADD CONSTRAINT "DocumentSitActeur_acteurId_fkey" FOREIGN KEY ("acteurId") REFERENCES "Acteur"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
     ],
   },
+  {
+    // Phase 12 — voir prisma/migrations/20260921110000_besoin_domaine/
+    // migration.sql pour le contexte complet. Même principe de sécurité que
+    // l'entrée précédente : cette route revérifie _prisma_migrations en
+    // direct à chaque appel, ajouter cette entrée en 19e position est sûr
+    // indépendamment de toute supposition sur le nombre exact de migrations
+    // déjà appliquées.
+    name: "20260921110000_besoin_domaine",
+    checksum: "8f2a3de70b19aaaf9e3c24de3ac2b9b531e99a0d5868886d5698170860192f42",
+    statements: [
+      `CREATE TABLE "Besoin" (
+    "id" TEXT NOT NULL,
+    "titre" TEXT NOT NULL,
+    "description" TEXT,
+    "statut" TEXT,
+    "type" TEXT,
+    "discipline" TEXT,
+    "problematique" TEXT,
+    "typeOuvrage" TEXT,
+    "source" TEXT,
+    "sourceId" TEXT,
+    "sourceUrl" TEXT,
+    "retrievedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Besoin_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE TABLE "BesoinSite" (
+    "id" TEXT NOT NULL,
+    "besoinId" TEXT NOT NULL,
+    "siteId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "BesoinSite_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE UNIQUE INDEX "BesoinSite_besoinId_siteId_key" ON "BesoinSite"("besoinId", "siteId")`,
+      `CREATE INDEX "BesoinSite_besoinId_idx" ON "BesoinSite"("besoinId")`,
+      `CREATE INDEX "BesoinSite_siteId_idx" ON "BesoinSite"("siteId")`,
+      `ALTER TABLE "BesoinSite" ADD CONSTRAINT "BesoinSite_besoinId_fkey" FOREIGN KEY ("besoinId") REFERENCES "Besoin"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `ALTER TABLE "BesoinSite" ADD CONSTRAINT "BesoinSite_siteId_fkey" FOREIGN KEY ("siteId") REFERENCES "Site"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `CREATE TABLE "BesoinProjet" (
+    "id" TEXT NOT NULL,
+    "besoinId" TEXT NOT NULL,
+    "projetId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "BesoinProjet_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE UNIQUE INDEX "BesoinProjet_besoinId_projetId_key" ON "BesoinProjet"("besoinId", "projetId")`,
+      `CREATE INDEX "BesoinProjet_besoinId_idx" ON "BesoinProjet"("besoinId")`,
+      `CREATE INDEX "BesoinProjet_projetId_idx" ON "BesoinProjet"("projetId")`,
+      `ALTER TABLE "BesoinProjet" ADD CONSTRAINT "BesoinProjet_besoinId_fkey" FOREIGN KEY ("besoinId") REFERENCES "Besoin"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `ALTER TABLE "BesoinProjet" ADD CONSTRAINT "BesoinProjet_projetId_fkey" FOREIGN KEY ("projetId") REFERENCES "Projet"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `CREATE TABLE "BesoinActeur" (
+    "id" TEXT NOT NULL,
+    "besoinId" TEXT NOT NULL,
+    "acteurId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "BesoinActeur_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE UNIQUE INDEX "BesoinActeur_besoinId_acteurId_key" ON "BesoinActeur"("besoinId", "acteurId")`,
+      `CREATE INDEX "BesoinActeur_besoinId_idx" ON "BesoinActeur"("besoinId")`,
+      `CREATE INDEX "BesoinActeur_acteurId_idx" ON "BesoinActeur"("acteurId")`,
+      `ALTER TABLE "BesoinActeur" ADD CONSTRAINT "BesoinActeur_besoinId_fkey" FOREIGN KEY ("besoinId") REFERENCES "Besoin"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `ALTER TABLE "BesoinActeur" ADD CONSTRAINT "BesoinActeur_acteurId_fkey" FOREIGN KEY ("acteurId") REFERENCES "Acteur"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `CREATE TABLE "BesoinAvisMarche" (
+    "id" TEXT NOT NULL,
+    "besoinId" TEXT NOT NULL,
+    "avisMarcheId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "BesoinAvisMarche_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE UNIQUE INDEX "BesoinAvisMarche_besoinId_avisMarcheId_key" ON "BesoinAvisMarche"("besoinId", "avisMarcheId")`,
+      `CREATE INDEX "BesoinAvisMarche_besoinId_idx" ON "BesoinAvisMarche"("besoinId")`,
+      `CREATE INDEX "BesoinAvisMarche_avisMarcheId_idx" ON "BesoinAvisMarche"("avisMarcheId")`,
+      `ALTER TABLE "BesoinAvisMarche" ADD CONSTRAINT "BesoinAvisMarche_besoinId_fkey" FOREIGN KEY ("besoinId") REFERENCES "Besoin"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `ALTER TABLE "BesoinAvisMarche" ADD CONSTRAINT "BesoinAvisMarche_avisMarcheId_fkey" FOREIGN KEY ("avisMarcheId") REFERENCES "AvisMarche"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `CREATE TABLE "BesoinLot" (
+    "id" TEXT NOT NULL,
+    "besoinId" TEXT NOT NULL,
+    "lotId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "BesoinLot_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE UNIQUE INDEX "BesoinLot_besoinId_lotId_key" ON "BesoinLot"("besoinId", "lotId")`,
+      `CREATE INDEX "BesoinLot_besoinId_idx" ON "BesoinLot"("besoinId")`,
+      `CREATE INDEX "BesoinLot_lotId_idx" ON "BesoinLot"("lotId")`,
+      `ALTER TABLE "BesoinLot" ADD CONSTRAINT "BesoinLot_besoinId_fkey" FOREIGN KEY ("besoinId") REFERENCES "Besoin"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `ALTER TABLE "BesoinLot" ADD CONSTRAINT "BesoinLot_lotId_fkey" FOREIGN KEY ("lotId") REFERENCES "Lot"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `CREATE TABLE "BesoinDocumentSit" (
+    "id" TEXT NOT NULL,
+    "besoinId" TEXT NOT NULL,
+    "documentSitId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "BesoinDocumentSit_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE UNIQUE INDEX "BesoinDocumentSit_besoinId_documentSitId_key" ON "BesoinDocumentSit"("besoinId", "documentSitId")`,
+      `CREATE INDEX "BesoinDocumentSit_besoinId_idx" ON "BesoinDocumentSit"("besoinId")`,
+      `CREATE INDEX "BesoinDocumentSit_documentSitId_idx" ON "BesoinDocumentSit"("documentSitId")`,
+      `ALTER TABLE "BesoinDocumentSit" ADD CONSTRAINT "BesoinDocumentSit_besoinId_fkey" FOREIGN KEY ("besoinId") REFERENCES "Besoin"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `ALTER TABLE "BesoinDocumentSit" ADD CONSTRAINT "BesoinDocumentSit_documentSitId_fkey" FOREIGN KEY ("documentSitId") REFERENCES "DocumentSit"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+    ],
+  },
 ]
 
 export async function POST(request: Request) {
