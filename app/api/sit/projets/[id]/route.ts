@@ -2,10 +2,18 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
+import { serializeDocumentSit } from "@/lib/documents-sit"
 
 // Lecture/modification d'un Projet (Phase 10) et de ses rattachements
 // réels — jamais une résolution automatique, voir POST des sous-routes
 // (sites/acteurs/avis-marches/lots) pour les rattachements explicites.
+//
+// documentSitLinks/besoinLinks ajoutés lors de la mission de finalisation
+// (audit Phase I — graphe et navigation) : ces relations existent dans
+// prisma/schema.prisma depuis les Phases 11B/12 (postérieures à cette
+// route) mais n'y avaient jamais été branchées — un vrai manque
+// fonctionnel démontré, pas une préférence. Correction additive
+// uniquement, aucune migration.
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const store = await cookies()
   const token = store.get(SESSION_COOKIE_NAME)?.value
@@ -23,13 +31,21 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       acteurs: { include: { acteur: true } },
       avisMarches: { include: { avisMarche: true } },
       lots: { include: { lot: { include: { avisMarche: true } } } },
+      documentSitLinks: { include: { documentSit: true } },
+      besoinLinks: { include: { besoin: true } },
     },
   })
   if (!projet) {
     return NextResponse.json({ success: false, error: "Projet introuvable." }, { status: 404 })
   }
 
-  return NextResponse.json({ success: true, projet })
+  // documentSit.tailleOctets est un BigInt — non sérialisable tel quel.
+  const serialized = {
+    ...projet,
+    documentSitLinks: projet.documentSitLinks.map((link) => ({ ...link, documentSit: serializeDocumentSit(link.documentSit) })),
+  }
+
+  return NextResponse.json({ success: true, projet: serialized })
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
