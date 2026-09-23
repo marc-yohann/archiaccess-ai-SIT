@@ -6,13 +6,10 @@
 
 import { NextResponse } from "next/server"
 import { searchSimilarChunks } from "@/lib/rag"
-import { getIngestToken } from "@/lib/secrets"
+import { isValidIngestBearer } from "@/lib/ingest-auth"
 
 export async function POST(request: Request) {
-  const authHeader = request.headers.get("authorization")
-  const providedToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null
-  const expectedToken = await getIngestToken()
-  if (!providedToken || providedToken !== expectedToken) {
+  if (!(await isValidIngestBearer(request))) {
     return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
   }
 

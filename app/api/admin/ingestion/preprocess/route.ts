@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getIngestToken } from "@/lib/secrets"
+import { isValidIngestBearer } from "@/lib/ingest-auth"
 import { getPrisma } from "@/lib/prisma"
 import { preprocessManifest } from "@/lib/ingestion/chunked-zip"
 import { preprocessGeoJsonManifest } from "@/lib/ingestion/chunked-geojson"
@@ -14,9 +14,7 @@ import { preprocessGeoJsonManifest } from "@/lib/ingestion/chunked-geojson"
 // manuel ou un job à timeout long (Fargate/Batch) est requis en
 // production pour les fichiers de plusieurs Go.
 export async function POST(request: Request) {
-  const auth = request.headers.get("authorization")
-  const expected = await getIngestToken()
-  if (auth !== `Bearer ${expected}`) {
+  if (!(await isValidIngestBearer(request))) {
     return NextResponse.json({ success: false, error: "Non autorisé." }, { status: 401 })
   }
 

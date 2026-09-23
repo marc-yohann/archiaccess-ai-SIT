@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { randomUUID } from "node:crypto"
-import { getIngestToken } from "@/lib/secrets"
+import { isValidIngestBearer } from "@/lib/ingest-auth"
 import { getPrisma } from "@/lib/prisma"
 
 // Route temporaire — exécute les migrations Prisma en attente contre RDS
@@ -853,9 +853,7 @@ WHERE b.id = sdu."batimentId" AND b."sourcePartition" IS NULL`,
 ]
 
 export async function POST(request: Request) {
-  const auth = request.headers.get("authorization")
-  const expected = await getIngestToken()
-  if (auth !== `Bearer ${expected}`) {
+  if (!(await isValidIngestBearer(request))) {
     return NextResponse.json({ success: false, error: "Non autorisé." }, { status: 401 })
   }
 

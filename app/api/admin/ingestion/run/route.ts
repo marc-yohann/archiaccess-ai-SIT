@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getIngestToken } from "@/lib/secrets"
+import { isValidIngestBearer } from "@/lib/ingest-auth"
 import { runOneInvocation } from "@/lib/ingestion/runner"
 import {
   SireneEtablissementStagingRunner,
@@ -73,9 +73,7 @@ const RUNNERS: Record<string, (department?: string) => IngestionRunner> = {
 }
 
 export async function POST(request: Request) {
-  const auth = request.headers.get("authorization")
-  const expected = await getIngestToken()
-  if (auth !== `Bearer ${expected}`) {
+  if (!(await isValidIngestBearer(request))) {
     return NextResponse.json({ success: false, error: "Non autorisé." }, { status: 401 })
   }
 
