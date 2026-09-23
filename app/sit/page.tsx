@@ -39,6 +39,63 @@ const MAPBOX_PREVIEW_URL = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 import type { GroundwaterStation } from "@/lib/data-sources/nappes"
 import type { HeatNetworkEligibility } from "@/lib/data-sources/chaleur-urbaine"
 
+// Formes des résultats des 4 axes de recherche branchés sur leurs
+// modèles Prisma réels (voir app/api/sit/search/route.ts) — reflètent
+// exactement le JSON renvoyé par la route, pas des types de connecteur
+// (celle-ci n'expose pas de lib partagée, c'est une route.ts).
+interface ProjetSearchResult {
+  id: string
+  nom: string
+  type: string | null
+  statut: string | null
+  description: string | null
+  dateDebut: string | null
+  dateFin: string | null
+  montant: number | null
+  createdAt: string
+}
+interface DocumentSearchResult {
+  id: string
+  titre: string
+  type: string | null
+  description: string | null
+  source: string | null
+  sourceId: string | null
+  sourceUrl: string | null
+  retrievedAt: string | null
+  dateDocument: string | null
+  tailleOctets: string | null
+  createdAt: string
+}
+interface ReferenceItem {
+  categorie: "reference"
+  type: "avis-marche" | "dpe" | "cadastre"
+  id: string
+  identifiant: string | null
+  titre: string
+  details: Record<string, unknown>
+  source: string
+  sourceUrl?: string | null
+}
+interface ReferenceSearchResults {
+  avisMarches: ReferenceItem[]
+  unites: ReferenceItem[]
+  parcelles: ReferenceItem[]
+}
+interface BesoinSearchResult {
+  id: string
+  titre: string
+  description: string | null
+  statut: string | null
+  type: string | null
+  discipline: string | null
+  problematique: string | null
+  typeOuvrage: string | null
+  source: string | null
+  sourceId: string | null
+  createdAt: string
+}
+
 interface ChatMessage {
   role: "user" | "assistant"
   content: string
@@ -779,6 +836,15 @@ function Dashboard() {
   const [addresses, setAddresses] = useState<AddressResult[]>([])
   const [companies, setCompanies] = useState<Company[]>([])
   const [bodaccBySiren, setBodaccBySiren] = useState<Record<string, BodaccAnnouncement[]>>({})
+  // Résultats des 4 axes de recherche branchés sur leurs modèles Prisma
+  // réels (Projet/DocumentSit/AvisMarche+Unite+Parcelle/Besoin) — voir
+  // app/api/sit/search/route.ts. Un seul axe actif à la fois
+  // (searchCategory pilote la requête backend), donc un seul de ces
+  // tableaux est non vide après une recherche.
+  const [projetResults, setProjetResults] = useState<ProjetSearchResult[]>([])
+  const [documentResults, setDocumentResults] = useState<DocumentSearchResult[]>([])
+  const [referenceResults, setReferenceResults] = useState<ReferenceSearchResults>({ avisMarches: [], unites: [], parcelles: [] })
+  const [besoinResults, setBesoinResults] = useState<BesoinSearchResult[]>([])
 
   const [selectedAddress, setSelectedAddress] = useState<AddressResult | null>(null)
   const [parcels, setParcels] = useState<Parcel[] | null>(null)
@@ -1053,8 +1119,12 @@ function Dashboard() {
     setResultsLoading(false)
     setAiConversationId(undefined)
     setAiMessages([])
+    setProjetResults([])
+    setDocumentResults([])
+    setReferenceResults({ avisMarches: [], unites: [], parcelles: [] })
+    setBesoinResults([])
     try {
-      const res = await fetch(`/api/sit/search?q=${encodeURIComponent(q)}`)
+      const res = await fetch(`/api/sit/search?q=${encodeURIComponent(q)}&category=${searchCategory}`)
       const data = await res.json()
       if (!data.success) {
         setError(data.error ?? "Recherche impossible.")
@@ -1062,6 +1132,28 @@ function Dashboard() {
         setCompanies([])
         return
       }
+
+      // Projet/Document/Référence/Besoin : recherche backend réelle mais
+      // distincte du flux Localiser/Acteur ci-dessous (pas de sélection
+      // d'adresse, pas de persistance Acteur, pas de résumé IA
+      // automatique — juste l'affichage des résultats trouvés).
+      if (searchCategory === "projet" || searchCategory === "document" || searchCategory === "reference" || searchCategory === "besoin") {
+        const projets: ProjetSearchResult[] = data.projets ?? []
+        const documentsSit: DocumentSearchResult[] = data.documentsSit ?? []
+        const references: ReferenceSearchResults = data.references ?? { avisMarches: [], unites: [], parcelles: [] }
+        const besoins: BesoinSearchResult[] = data.besoins ?? []
+        setProjetResults(projets)
+        setDocumentResults(documentsSit)
+        setReferenceResults(references)
+        setBesoinResults(besoins)
+        const totalReferences = references.avisMarches.length + references.unites.length + references.parcelles.length
+        const totalResults = projets.length + documentsSit.length + totalReferences + besoins.length
+        if (totalResults === 0) {
+          setError("Information non disponible — aucun résultat pour cette recherche.")
+        }
+        return
+      }
+
       const foundAddresses: AddressResult[] = data.addresses
       const foundCompanies: Company[] = data.companies
       setAddresses(foundAddresses)
@@ -1839,6 +1931,86 @@ function Dashboard() {
                 >
                   <p className="font-medium">{a.label}</p>
                   <p className="text-xs text-muted-foreground">{a.context}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {projetResults.length > 0 && (
+          <div className="liquid-glass-panel rounded-2xl p-4">
+            <h2 className="mb-2 text-xs font-medium text-muted-foreground">Projets trouvés</h2>
+            <div className="space-y-2">
+              {projetResults.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => void sendAiMessage(`Peux-tu m'en dire plus sur ce projet : "${p.nom}"${p.description ? ` — ${p.description}` : ""} ?`, {})}
+                  className="liquid-glass-soft block w-full rounded-xl p-3 text-left text-sm transition-shadow hover:shadow-md"
+                >
+                  <p className="font-medium">{p.nom}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {[p.type, p.statut].filter(Boolean).join(" · ") || "Information non disponible"}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {documentResults.length > 0 && (
+          <div className="liquid-glass-panel rounded-2xl p-4">
+            <h2 className="mb-2 text-xs font-medium text-muted-foreground">Documents trouvés</h2>
+            <div className="space-y-2">
+              {documentResults.map((d) => (
+                <button
+                  key={d.id}
+                  onClick={() => void sendAiMessage(`Peux-tu m'en dire plus sur ce document : "${d.titre}"${d.description ? ` — ${d.description}` : ""} ?`, {})}
+                  className="liquid-glass-soft block w-full rounded-xl p-3 text-left text-sm transition-shadow hover:shadow-md"
+                >
+                  <p className="font-medium">{d.titre}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {[d.type, d.source ? `Source : ${d.source}` : null].filter(Boolean).join(" · ") || "Information non disponible"}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(referenceResults.avisMarches.length > 0 || referenceResults.unites.length > 0 || referenceResults.parcelles.length > 0) && (
+          <div className="liquid-glass-panel rounded-2xl p-4">
+            <h2 className="mb-2 text-xs font-medium text-muted-foreground">Références trouvées</h2>
+            <div className="space-y-2">
+              {[...referenceResults.avisMarches, ...referenceResults.unites, ...referenceResults.parcelles].map((r) => (
+                <button
+                  key={`${r.type}-${r.id}`}
+                  onClick={() => void sendAiMessage(`Peux-tu m'en dire plus sur cette référence (${r.type}) : "${r.titre}" (${r.identifiant ?? "identifiant non disponible"}) ?`, {})}
+                  className="liquid-glass-soft block w-full rounded-xl p-3 text-left text-sm transition-shadow hover:shadow-md"
+                >
+                  <p className="font-medium">{r.titre}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {r.identifiant ?? "Information non disponible"} · Source : {r.source}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {besoinResults.length > 0 && (
+          <div className="liquid-glass-panel rounded-2xl p-4">
+            <h2 className="mb-2 text-xs font-medium text-muted-foreground">Besoins trouvés</h2>
+            <div className="space-y-2">
+              {besoinResults.map((b) => (
+                <button
+                  key={b.id}
+                  onClick={() => void sendAiMessage(`Peux-tu m'en dire plus sur ce besoin : "${b.titre}"${b.description ? ` — ${b.description}` : ""} ?`, {})}
+                  className="liquid-glass-soft block w-full rounded-xl p-3 text-left text-sm transition-shadow hover:shadow-md"
+                >
+                  <p className="font-medium">{b.titre}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {[b.discipline, b.problematique, b.typeOuvrage].filter(Boolean).join(" · ") || "Information non disponible"}
+                  </p>
                 </button>
               ))}
             </div>
