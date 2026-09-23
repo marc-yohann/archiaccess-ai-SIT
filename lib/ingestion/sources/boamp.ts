@@ -18,14 +18,32 @@
 // Aucune résolution Acteur ici (ni acheteur ni titulaire) — conforme à
 // la règle Phase 9 : aucun SIREN/SIRET fiable dans BOAMP, acheteurId/
 // titulaireId restent null (capacité future uniquement).
+//
+// Phase 13 (mission "SUPPRIMER LE BLOCAGE DES 10 000") — sous-découpage
+// par plage de dates : l'API impose start+rows <= 10000 par requête
+// (vérifié réellement par appel direct, message d'erreur explicite —
+// voir lib/data-sources/boamp.ts pour le détail et la comparaison avec
+// le "Download service"). Un département volumineux (ex: 38, 34 730
+// avis toutes années confondues, vérifié réellement) dépasse cette
+// limite en pagination pure. Solution retenue : parcourir le
+// département par fenêtres de dates dont la taille est vérifiée AVANT
+// pagination (countAvisMarcheForDepartment, rows=0) et subdivisée par
+// dichotomie tant qu'elle dépasse MAX_PER_WINDOW — jamais une taille de
+// fenêtre supposée (ex: "un mois suffit toujours"), toujours mesurée.
+// Chaque fenêtre est ensuite paginée exactement comme avant (offset
+// start, page 100). Aucun nouveau composant d'infrastructure (pas de
+// S3, pas de nouveau format de données) : la même API, le même parseur,
+// le même schéma de persistance qu'avant cette mission.
 
-import { fetchAvisMarcheRawForDepartment, parseAvisMarche } from "@/lib/data-sources/boamp"
+import { fetchAvisMarcheRawForDepartment, countAvisMarcheForDepartment, parseAvisMarche, type DateWindow } from "@/lib/data-sources/boamp"
 import { getPrisma } from "@/lib/prisma"
 import { getBatchSize } from "@/lib/ingestion/types"
 import type { IngestionRunner, IngestionCheckpoint, BatchResult } from "@/lib/ingestion/types"
 
 interface BoampCheckpoint extends IngestionCheckpoint {
-  offset: number
+  windowStart: string // "YYYY-MM-DD", inclusive
+  windowEnd: string // "YYYY-MM-DD", inclusive
+  offset: number // offset de pagination DANS la fenêtre courante
 }
 
 // Page opendatasoft — 100 vérifié réellement comme une taille de page
@@ -33,6 +51,59 @@ interface BoampCheckpoint extends IngestionCheckpoint {
 // lot globale (batchSize, configurable), qui peut nécessiter plusieurs
 // pages.
 const PAGE_SIZE = 100
+
+// Première date avec des avis réels observés sur ce dataset (vérifié
+// réellement par appel — voir le rapport de mission Phase 13). Point de
+// départ du balayage, jamais une hypothèse non vérifiée.
+const EARLIEST_DATE = "2015-01-01"
+
+// Marge de sécurité sous la limite dure de 10 000 (vérifiée réellement :
+// start+rows <= 10000). Volontairement en dessous de 10000 pour laisser
+// de la marge à la pagination elle-même (start avance par pas de 100
+// jusqu'à nhits, jamais au-delà).
+const MAX_PER_WINDOW = 9000
+
+// Taille de fenêtre initiale proposée avant vérification/subdivision —
+// point de départ raisonnable (vu la densité réelle observée : ~2975
+// avis/an pour le département le plus chargé mesuré), jamais utilisée
+// sans compter réellement (countAvisMarcheForDepartment) et subdiviser
+// si nécessaire.
+const INITIAL_WINDOW_SPAN_DAYS = 365
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr + "T00:00:00Z")
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+function daysBetween(startStr: string, endStr: string): number {
+  const start = new Date(startStr + "T00:00:00Z").getTime()
+  const end = new Date(endStr + "T00:00:00Z").getTime()
+  return Math.floor((end - start) / 86_400_000)
+}
+
+// Détermine, par mesure réelle (jamais par hypothèse), une fenêtre de
+// dates démarrant à `windowStart` et ne dépassant pas `hardEnd`, dont le
+// nombre réel d'avis reste sous MAX_PER_WINDOW — par dichotomie sur la
+// durée si nécessaire.
+async function findSafeWindow(codeDepartement: string, windowStart: string, hardEnd: string): Promise<DateWindow> {
+  let spanDays = Math.min(INITIAL_WINDOW_SPAN_DAYS, Math.max(1, daysBetween(windowStart, hardEnd) + 1))
+
+  while (spanDays > 1) {
+    const windowEnd = daysBetween(windowStart, hardEnd) + 1 <= spanDays ? hardEnd : addDays(windowStart, spanDays - 1)
+    const count = await countAvisMarcheForDepartment(codeDepartement, { start: windowStart, end: windowEnd })
+    if (count <= MAX_PER_WINDOW) {
+      return { start: windowStart, end: windowEnd }
+    }
+    spanDays = Math.floor(spanDays / 2)
+  }
+
+  // Dernier recours : fenêtre d'un seul jour, acceptée telle quelle même
+  // si elle dépasse MAX_PER_WINDOW (cas non rencontré sur les données
+  // réelles auditées — voir rapport de mission — mais jamais de boucle
+  // infinie : un jour est la plus petite unité de subdivision utile ici).
+  return { start: windowStart, end: windowStart }
+}
 
 export class BoampIngestionRunner implements IngestionRunner {
   source = "boamp"
@@ -44,7 +115,15 @@ export class BoampIngestionRunner implements IngestionRunner {
   }
 
   async runBatch(checkpoint: IngestionCheckpoint | null, deadlineMs: number): Promise<BatchResult> {
-    const cp: BoampCheckpoint = (checkpoint as BoampCheckpoint) ?? { offset: 0 }
+    const today = new Date().toISOString().slice(0, 10)
+    let cp: BoampCheckpoint
+    if (checkpoint && "windowStart" in checkpoint) {
+      cp = checkpoint as BoampCheckpoint
+    } else {
+      const window = await findSafeWindow(this.codeDepartement, EARLIEST_DATE, today)
+      cp = { windowStart: window.start, windowEnd: window.end, offset: 0 }
+    }
+
     const batchSize = getBatchSize(100, "INGESTION_BOAMP_BATCH_SIZE")
     const prisma = await getPrisma()
 
@@ -53,24 +132,36 @@ export class BoampIngestionRunner implements IngestionRunner {
     let updated = 0
     let rejected = 0
     const errors: string[] = []
-    let offset = cp.offset
     let done = false
 
     while (read < batchSize && Date.now() < deadlineMs) {
       const pageSize = Math.min(PAGE_SIZE, batchSize - read)
       let records
       try {
-        records = await fetchAvisMarcheRawForDepartment(this.codeDepartement, pageSize, offset)
+        records = await fetchAvisMarcheRawForDepartment(this.codeDepartement, pageSize, cp.offset, {
+          start: cp.windowStart,
+          end: cp.windowEnd,
+        })
       } catch (error) {
         // Indisponibilité de l'API BOAMP — panne systémique, on remonte
         // l'erreur (le harnais met le job en FAILED avec backoff), même
         // principe que GeorisquesIngestionRunner.
-        throw new Error(`API BOAMP indisponible (département ${this.codeDepartement}, offset ${offset}) : ${error instanceof Error ? error.message : "erreur inconnue"}`)
+        throw new Error(
+          `API BOAMP indisponible (département ${this.codeDepartement}, fenêtre ${cp.windowStart}..${cp.windowEnd}, offset ${cp.offset}) : ${error instanceof Error ? error.message : "erreur inconnue"}`,
+        )
       }
 
       if (records.length === 0) {
-        done = true
-        break
+        // Fenêtre épuisée — passe à la suivante (ou termine si on a
+        // atteint aujourd'hui).
+        if (cp.windowEnd >= today) {
+          done = true
+          break
+        }
+        const nextStart = addDays(cp.windowEnd, 1)
+        const nextWindow = await findSafeWindow(this.codeDepartement, nextStart, today)
+        cp = { windowStart: nextWindow.start, windowEnd: nextWindow.end, offset: 0 }
+        continue
       }
 
       for (const rec of records) {
@@ -157,14 +248,22 @@ export class BoampIngestionRunner implements IngestionRunner {
       }
 
       read += records.length
-      offset += records.length
+      cp = { ...cp, offset: cp.offset + records.length }
 
       if (records.length < pageSize) {
-        done = true
-        break
+        // Fenêtre courante épuisée (moins de résultats que demandé) —
+        // même logique que le cas records.length === 0 ci-dessus, mais
+        // après avoir traité le dernier lot partiel.
+        if (cp.windowEnd >= today) {
+          done = true
+          break
+        }
+        const nextStart = addDays(cp.windowEnd, 1)
+        const nextWindow = await findSafeWindow(this.codeDepartement, nextStart, today)
+        cp = { windowStart: nextWindow.start, windowEnd: nextWindow.end, offset: 0 }
       }
     }
 
-    return { read, inserted, updated, rejected, errors, checkpoint: { offset }, done }
+    return { read, inserted, updated, rejected, errors, checkpoint: cp, done }
   }
 }

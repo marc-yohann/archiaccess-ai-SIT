@@ -306,6 +306,19 @@ export interface RawBoampRecord {
   fields: RawBoampRecordFields
 }
 
+// Fenêtre de dates [début, fin] inclusive, format "YYYY-MM-DD" — voir
+// buildDepartmentQuery() ci-dessous. Optionnelle : omise, la requête ne
+// filtre que par département (comportement historique).
+export interface DateWindow {
+  start: string
+  end: string
+}
+
+function buildDepartmentQuery(codeDepartement: string, window?: DateWindow): string {
+  const base = `code_departement:${codeDepartement}`
+  return window ? `${base} AND dateparution:[${window.start} TO ${window.end}]` : base
+}
+
 // Fetch brut (pas via withVault, voir plus haut) pour le pilote/runner
 // d'ingestion — renvoie les champs BOAMP complets tels que l'API les
 // fournit, sans filtrage de colonnes. recordId conservé séparément de
@@ -314,10 +327,30 @@ export interface RawBoampRecord {
 // de pagination opendatasoft (vérifié réellement, voir le rapport
 // d'audit Phase 9) — nécessaire à lib/ingestion/sources/boamp.ts pour
 // parcourir un département au-delà des `rows` premiers résultats.
-export async function fetchAvisMarcheRawForDepartment(codeDepartement: string, rows: number, start = 0): Promise<RawBoampRecord[]> {
+//
+// `window` (Phase 13, mission "SUPPRIMER LE BLOCAGE DES 10 000") :
+// l'API impose start+rows <= 10000 (vérifié réellement par appel direct,
+// message d'erreur : "Please refine your query or use the Download
+// service"). Le "Download service" (export CSV/JSON en masse,
+// api/explore/v2.1/.../exports/) a été testé réellement : il contourne
+// bien la limite, mais un seul département peut peser 350-400 Mo
+// (vérifié sur le département 38, 34 730 avis), imposant un staging S3
+// et une réécriture du parseur (schéma plat différent de fields.*) —
+// disproportionné alors qu'un sous-découpage par plage de dates sur
+// CETTE MÊME API suffit : vérifié réellement que start=9999 fonctionne
+// tant que la requête (département + fenêtre de dates) reste sous
+// 10 000 résultats, quel que soit le nombre total d'avis du département
+// tous millésimes confondus. Voir countAvisMarcheForDepartment() et
+// lib/ingestion/sources/boamp.ts pour le découpage dynamique.
+export async function fetchAvisMarcheRawForDepartment(
+  codeDepartement: string,
+  rows: number,
+  start = 0,
+  window?: DateWindow,
+): Promise<RawBoampRecord[]> {
   const url = new URL(BASE_URL)
   url.searchParams.set("dataset", "boamp")
-  url.searchParams.set("q", `code_departement:${codeDepartement}`)
+  url.searchParams.set("q", buildDepartmentQuery(codeDepartement, window))
   url.searchParams.set("rows", String(rows))
   url.searchParams.set("start", String(start))
   url.searchParams.set("sort", "-dateparution")
@@ -329,4 +362,21 @@ export async function fetchAvisMarcheRawForDepartment(codeDepartement: string, r
 
   const data = (await res.json()) as { records: Array<{ recordid?: string; fields: RawBoampRecordFields }> }
   return data.records.map((r) => ({ recordId: r.recordid ?? null, fields: r.fields }))
+}
+
+// Comptage seul (rows=0, vérifié réellement : renvoie nhits sans
+// enregistrement) — permet de décider AVANT de paginer si une fenêtre
+// de dates doit être subdivisée pour rester sous la limite de 10 000.
+export async function countAvisMarcheForDepartment(codeDepartement: string, window: DateWindow): Promise<number> {
+  const url = new URL(BASE_URL)
+  url.searchParams.set("dataset", "boamp")
+  url.searchParams.set("q", buildDepartmentQuery(codeDepartement, window))
+  url.searchParams.set("rows", "0")
+
+  const res = await fetch(url, { signal: AbortSignal.timeout(15000) })
+  if (!res.ok) {
+    throw new Error(`API BOAMP a répondu ${res.status} (comptage)`)
+  }
+  const data = (await res.json()) as { nhits: number }
+  return data.nhits
 }
