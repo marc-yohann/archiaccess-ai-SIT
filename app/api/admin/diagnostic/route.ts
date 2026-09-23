@@ -212,7 +212,7 @@ const CHECKS: Record<string, Diagnostic> = {
   "idempotence-check": async (prisma, params) => {
     const dep = requireDepartement(params)
     const before = await prisma.avisMarche.count({ where: { codeDepartement: dep } })
-    const job = await prisma.ingestionJob.findUnique({ where: { source_dataset_partition: { source: "boamp", dataset: "avis", partition: dep } } })
+    const job = await prisma.ingestionJob.findUnique({ where: { source_dataset_partition: { source: "boamp", dataset: "avis-marche", partition: dep } } })
     return { department: dep, avisMarcheCountNow: before, job: job ? { status: job.status, recordsInserted: job.recordsInserted, recordsUpdated: job.recordsUpdated, recordsProcessed: job.recordsProcessed } : null }
   },
 }
