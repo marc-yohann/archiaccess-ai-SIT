@@ -105,6 +105,32 @@ async function findSafeWindow(codeDepartement: string, windowStart: string, hard
   return { start: windowStart, end: windowStart }
 }
 
+// Phase 14 (mission "DERNIÈRE ÉTAPE AVANT INGESTION BOAMP NATIONALE") —
+// correction de la "fenêtre vivante" : un écart réel de 70 avis (sur
+// 34 737, département 38) a été mesuré et expliqué par la pagination
+// offset d'une fenêtre dont la borne haute était "aujourd'hui" au moment
+// de sa création, alors que ce jeu de données continue de recevoir de
+// nouveaux avis en continu — si cette fenêtre met des heures à être
+// intégralement paginée (cas réel constaté : ~23h, fenêtres de
+// credentials AWS de 5-15 min), de nouveaux avis insérés en tête de tri
+// (`sort=-dateparution`) décalent les positions et peuvent faire
+// manquer quelques enregistrements en bordure.
+//
+// Correction : toute fenêtre "historique" (calculée par findSafeWindow)
+// est désormais plafonnée à HIER, jamais à aujourd'hui — un jour déjà
+// entièrement écoulé ne reçoit plus jamais de nouvel avis, une fenêtre
+// qui s'y arrête est donc immuable pour toute sa durée de pagination,
+// quelle que soit sa longueur réelle. Le jour courant est traité à part,
+// comme une fenêtre dédiée d'un seul jour ({start: today, end: today})
+// — toujours petite (quelques avis/jour observés en pratique), donc
+// jamais soumise au même risque de dérive sur une longue pagination.
+async function computeWindow(codeDepartement: string, windowStart: string, today: string, yesterday: string): Promise<DateWindow> {
+  if (windowStart > yesterday) {
+    return { start: today, end: today }
+  }
+  return findSafeWindow(codeDepartement, windowStart, yesterday)
+}
+
 export class BoampIngestionRunner implements IngestionRunner {
   source = "boamp"
   dataset = "avis-marche"
@@ -116,11 +142,12 @@ export class BoampIngestionRunner implements IngestionRunner {
 
   async runBatch(checkpoint: IngestionCheckpoint | null, deadlineMs: number): Promise<BatchResult> {
     const today = new Date().toISOString().slice(0, 10)
+    const yesterday = addDays(today, -1)
     let cp: BoampCheckpoint
     if (checkpoint && "windowStart" in checkpoint) {
       cp = checkpoint as BoampCheckpoint
     } else {
-      const window = await findSafeWindow(this.codeDepartement, EARLIEST_DATE, today)
+      const window = await computeWindow(this.codeDepartement, EARLIEST_DATE, today, yesterday)
       cp = { windowStart: window.start, windowEnd: window.end, offset: 0 }
     }
 
@@ -159,7 +186,7 @@ export class BoampIngestionRunner implements IngestionRunner {
           break
         }
         const nextStart = addDays(cp.windowEnd, 1)
-        const nextWindow = await findSafeWindow(this.codeDepartement, nextStart, today)
+        const nextWindow = await computeWindow(this.codeDepartement, nextStart, today, yesterday)
         cp = { windowStart: nextWindow.start, windowEnd: nextWindow.end, offset: 0 }
         continue
       }
@@ -259,7 +286,7 @@ export class BoampIngestionRunner implements IngestionRunner {
           break
         }
         const nextStart = addDays(cp.windowEnd, 1)
-        const nextWindow = await findSafeWindow(this.codeDepartement, nextStart, today)
+        const nextWindow = await computeWindow(this.codeDepartement, nextStart, today, yesterday)
         cp = { windowStart: nextWindow.start, windowEnd: nextWindow.end, offset: 0 }
       }
     }
