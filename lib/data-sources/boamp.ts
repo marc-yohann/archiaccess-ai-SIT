@@ -42,7 +42,7 @@ export async function getPublicMarketsForDepartment(codeDepartement: string, lim
 async function fetchPublicMarketsLive(codeDepartement: string, limit: number): Promise<PublicMarket[]> {
   const url = new URL(BASE_URL)
   url.searchParams.set("dataset", "boamp")
-  url.searchParams.set("q", `code_departement:${codeDepartement}`)
+  url.searchParams.set("q", `code_departement:${normalizeDepartmentForBoampQuery(codeDepartement)}`)
   url.searchParams.set("rows", String(limit))
   url.searchParams.set("sort", "-dateparution")
 
@@ -314,8 +314,28 @@ export interface DateWindow {
   end: string
 }
 
+// Le champ code_departement de l'API BOAMP n'est PAS zero-paddé pour les
+// départements 1-9 : vérifié réellement par appel direct (Vague 1 national,
+// 2026-09-24) — code_departement:01 renvoie 0 résultat, code_departement:1
+// en renvoie 19 651. Notre convention interne (Site/Parcelle/etc, voir
+// CLAUDE.md) garde le code à deux chiffres partout ailleurs (stockage,
+// partition IngestionJob, UI) — seule la requête envoyée à CETTE API a
+// besoin du zéro retiré. Ne touche jamais aux départements >= 10 (déjà
+// corrects) ni aux codes non numériques (Corse : voir la note ci-dessous,
+// hors-scope tant que 2A/2B ne sont pas ingérés).
+//
+// Corse (2A/2B) : vérifié réellement que ni "2A" ni "2B" ne matchent —
+// l'API semble utiliser "20A"/"20B" (constaté sur un enregistrement
+// Ajaccio réel, champ code_departement="20A"). Non corrigé ici : aucun
+// département corse n'a encore été ingéré (Vague 1 = 01-10), à traiter
+// avant sa propre vague plutôt que deviné sans vérification complète.
+function normalizeDepartmentForBoampQuery(codeDepartement: string): string {
+  if (/^0[1-9]$/.test(codeDepartement)) return codeDepartement.slice(1)
+  return codeDepartement
+}
+
 function buildDepartmentQuery(codeDepartement: string, window?: DateWindow): string {
-  const base = `code_departement:${codeDepartement}`
+  const base = `code_departement:${normalizeDepartmentForBoampQuery(codeDepartement)}`
   return window ? `${base} AND dateparution:[${window.start} TO ${window.end}]` : base
 }
 
