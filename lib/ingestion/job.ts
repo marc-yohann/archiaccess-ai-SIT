@@ -27,6 +27,17 @@ export async function getOrCreateJob(
 const BASE_BACKOFF_MS = 30_000
 const MAX_BACKOFF_MS = 30 * 60_000
 
+// Plafond de retries (mission "BOAMP national", 2026-09-25) — générique à
+// tous les connecteurs, pas seulement BOAMP : avant ce changement, un job
+// FAILED était retenté indéfiniment (backoff croissant mais jamais de
+// fin), sans jamais distinguer une panne transitoire (réseau, 5xx) d'une
+// erreur permanente qui ne se résoudra jamais seule (format de données
+// invalide, département incohérent). Au-delà de MAX_RETRIES, le job passe
+// à FAILED_REQUIRES_REVIEW — jamais retenté automatiquement, doit être
+// explicitement relancé (ex: /api/admin/ingestion/boamp/national/retry-failed
+// après correction du problème sous-jacent).
+const MAX_RETRIES = 5
+
 export function computeBackoff(retryCount: number): Date {
   const delay = Math.min(BASE_BACKOFF_MS * 2 ** retryCount, MAX_BACKOFF_MS)
   return new Date(Date.now() + delay)
@@ -72,14 +83,18 @@ export async function markBatchFailed(jobId: string, error: string): Promise<voi
   const prisma = await getPrisma()
   const job = await prisma.ingestionJob.findUniqueOrThrow({ where: { id: jobId } })
   const retryCount = job.retryCount + 1
+  const exhausted = retryCount >= MAX_RETRIES
   await prisma.ingestionJob.update({
     where: { id: jobId },
     data: {
-      status: "FAILED",
+      status: exhausted ? "FAILED_REQUIRES_REVIEW" : "FAILED",
       errorCount: { increment: 1 },
       retryCount,
-      lastError: error,
-      nextRunAt: computeBackoff(retryCount),
+      lastError: exhausted ? `${error} (plafond de ${MAX_RETRIES} tentatives atteint, révision manuelle requise)` : error,
+      // Un job FAILED_REQUIRES_REVIEW n'est plus jamais retenté
+      // automatiquement (voir runOneInvocation) — nextRunAt n'a alors plus
+      // de sens, laissé null plutôt qu'un backoff qui ne serait jamais lu.
+      nextRunAt: exhausted ? null : computeBackoff(retryCount),
       lastHeartbeatAt: new Date(),
     },
   })

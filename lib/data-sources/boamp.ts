@@ -400,3 +400,44 @@ export async function countAvisMarcheForDepartment(codeDepartement: string, wind
   const data = (await res.json()) as { nhits: number }
   return data.nhits
 }
+
+// Résultat de preflight réel pour un département — expose le code
+// normalisé réellement envoyé (jamais reconstruit ailleurs par
+// supposition) ainsi que le statut HTTP brut, pour qu'un appelant puisse
+// distinguer "0 résultat réel" d'une erreur de requête (mission "BOAMP
+// national", section 3 : "un département avec 0 résultat ne doit PAS
+// être automatiquement considéré comme COMPLETED").
+export interface DepartmentPreflightResult {
+  queryCode: string
+  httpStatus: number | null
+  nhits: number | null
+  ok: boolean
+  error: string | null
+}
+
+// Comptage total réel d'un département, TOUTES ANNÉES confondues, SANS
+// filtre de date (contrairement à countAvisMarcheForDepartment ci-dessus,
+// qui a toujours besoin d'une fenêtre) — utilisé uniquement pour le
+// preflight de la campagne nationale, jamais par le runner d'ingestion
+// lui-même (qui reste inchangé, fenêtré comme avant). Ne lève jamais
+// d'exception : toute erreur réseau/HTTP est renvoyée dans le résultat,
+// pour que l'appelant puisse persister un preflight "échoué" plutôt que
+// de faire échouer tout le lot de preflight en cours.
+export async function preflightDepartment(codeDepartement: string): Promise<DepartmentPreflightResult> {
+  const queryCode = normalizeDepartmentForBoampQuery(codeDepartement)
+  const url = new URL(BASE_URL)
+  url.searchParams.set("dataset", "boamp")
+  url.searchParams.set("q", `code_departement:${queryCode}`)
+  url.searchParams.set("rows", "0")
+
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(15000) })
+    if (!res.ok) {
+      return { queryCode, httpStatus: res.status, nhits: null, ok: false, error: `API BOAMP a répondu ${res.status}` }
+    }
+    const data = (await res.json()) as { nhits: number }
+    return { queryCode, httpStatus: res.status, nhits: data.nhits, ok: true, error: null }
+  } catch (error) {
+    return { queryCode, httpStatus: null, nhits: null, ok: false, error: error instanceof Error ? error.message : "Erreur inconnue" }
+  }
+}

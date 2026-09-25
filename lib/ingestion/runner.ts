@@ -15,7 +15,7 @@ export interface RunOneInvocationResult {
   status: string
   batchesRun: number
   done: boolean
-  skipped?: "already_completed" | "already_cancelled" | "backoff"
+  skipped?: "already_completed" | "already_cancelled" | "backoff" | "requires_review"
 }
 
 export async function runOneInvocation(runner: IngestionRunner, maxDurationMs = getMaxBatchDurationMs()): Promise<RunOneInvocationResult> {
@@ -26,6 +26,12 @@ export async function runOneInvocation(runner: IngestionRunner, maxDurationMs = 
   }
   if (job.status === "CANCELLED") {
     return { jobId: job.id, status: job.status, batchesRun: 0, done: false, skipped: "already_cancelled" }
+  }
+  // Plafond de retries atteint (voir lib/ingestion/job.ts, markBatchFailed)
+  // — jamais retenté automatiquement, seule une action explicite (reset,
+  // retry-failed) peut le faire repartir.
+  if (job.status === "FAILED_REQUIRES_REVIEW") {
+    return { jobId: job.id, status: job.status, batchesRun: 0, done: false, skipped: "requires_review" }
   }
   if (job.status === "FAILED" && job.nextRunAt && job.nextRunAt.getTime() > Date.now()) {
     return { jobId: job.id, status: job.status, batchesRun: 0, done: false, skipped: "backoff" }

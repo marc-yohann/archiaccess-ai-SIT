@@ -1328,6 +1328,13 @@ enum IngestionStatus {
   COMPLETED
   FAILED
   CANCELLED
+  // Mission "BOAMP national" (2026-09-25) : un job FAILED est retenté
+  // automatiquement par backoff (voir lib/ingestion/job.ts) tant que
+  // retryCount < MAX_RETRIES — au-delà, FAILED_REQUIRES_REVIEW, jamais
+  // retenté automatiquement, jamais confondu avec COMPLETED. Ajout pur
+  // (aucune valeur existante modifiée), rétrocompatible avec tous les
+  // connecteurs déjà en place.
+  FAILED_REQUIRES_REVIEW
 }
 
 model IngestionJob {
@@ -1368,6 +1375,60 @@ model IngestionJob {
   // nouvelle ligne.
   @@unique([source, dataset, partition])
   @@index([source, status])
+}
+
+// Campagne nationale BOAMP (mission "PASSER BOAMP EN INGESTION NATIONALE
+// AUTOMATISÉE", 2026-09-25) — orchestration persistante des 101
+// départements, réutilise IngestionJob (source="boamp") comme unité de
+// travail par département : cette table ne duplique PAS cet état, elle
+// porte uniquement l'état GLOBAL de la campagne (une seule ligne vivante
+// à la fois, pas de partition). Les compteurs (completedDepartments...)
+// ne sont jamais la source de vérité — toujours recalculés depuis
+// IngestionJob à chaque tick, ici uniquement pour un accès rapide côté
+// monitoring/diagnostic sans réagréger 101 lignes à chaque lecture.
+model BoampNationalCampaign {
+  id     String          @id @default(cuid())
+  status IngestionStatus @default(PENDING)
+
+  totalDepartments     Int @default(101)
+  completedDepartments Int @default(0)
+  runningDepartments   Int @default(0)
+  failedDepartments    Int @default(0)
+  pendingDepartments   Int @default(101)
+
+  // Concurrence et garde-fou stockage — configurables sans redéploiement
+  // de code (relus à chaque tick), jamais figés en dur dans la logique.
+  maxConcurrency   Int   @default(1)
+  minFreeStorageGb Float @default(2)
+
+  preflightCompletedAt DateTime?
+  startedAt            DateTime?
+  completedAt          DateTime?
+  lastTickAt           DateTime?
+  lastDepartment       String?
+  lastError            String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Résultat réel d'un appel BOAMP rows=0 (comptage, sans fenêtre de dates)
+// pour UN département, avant toute création de job d'ingestion — jamais
+// une hypothèse ("0 résultat" n'implique PAS "département terminé", voir
+// le rapport de mission : c'est exactement l'erreur qui a produit un faux
+// COMPLETED sur les départements 01-09 lors de la Vague 1). Sert aussi de
+// référence ("sourceExpected") pour la validation avant COMPLETED.
+model BoampDepartmentPreflight {
+  id         String   @id @default(cuid())
+  department String   @unique // code administratif (ex: "01", "2A", "971") — JAMAIS le code normalisé envoyé à l'API
+  queryCode  String // code réellement envoyé à l'API après normalizeDepartmentForBoampQuery()
+  httpStatus Int?
+  nhits      Int?
+  ok         Boolean // requête réussie (httpStatus 200 et nhits exploitable) — indépendant de la valeur de nhits
+  error      String?
+  checkedAt  DateTime @default(now())
+
+  @@index([ok])
 }
 
 enum ManifestStatus {

@@ -850,6 +850,56 @@ WHERE b.id = sdu."batimentId" AND b."sourcePartition" IS NULL`,
       `ALTER TABLE "BesoinDocumentSit" ADD CONSTRAINT "BesoinDocumentSit_documentSitId_fkey" FOREIGN KEY ("documentSitId") REFERENCES "DocumentSit"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
     ],
   },
+  {
+    // Mission "BOAMP national" — voir
+    // prisma/migrations/20260925090000_boamp_national_campaign/migration.sql
+    // pour le contexte complet. Même principe de sécurité que l'entrée
+    // précédente : cette route revérifie _prisma_migrations en direct à
+    // chaque appel, ajouter cette entrée en 20e position est sûr
+    // indépendamment de toute supposition sur le nombre exact de
+    // migrations déjà appliquées. Ajout pur (nouvelle valeur d'enum +
+    // deux nouvelles tables) — aucune table métier existante modifiée.
+    name: "20260925090000_boamp_national_campaign",
+    checksum: "a0c0f61c5cfd909b1a66537717b8d0513d6907b34483b047e9e21ff335d10128",
+    statements: [
+      `ALTER TYPE "IngestionStatus" ADD VALUE 'FAILED_REQUIRES_REVIEW'`,
+      `CREATE TABLE "BoampNationalCampaign" (
+    "id" TEXT NOT NULL,
+    "status" "IngestionStatus" NOT NULL DEFAULT 'PENDING',
+    "totalDepartments" INTEGER NOT NULL DEFAULT 101,
+    "completedDepartments" INTEGER NOT NULL DEFAULT 0,
+    "runningDepartments" INTEGER NOT NULL DEFAULT 0,
+    "failedDepartments" INTEGER NOT NULL DEFAULT 0,
+    "pendingDepartments" INTEGER NOT NULL DEFAULT 101,
+    "maxConcurrency" INTEGER NOT NULL DEFAULT 1,
+    "minFreeStorageGb" DOUBLE PRECISION NOT NULL DEFAULT 2,
+    "preflightCompletedAt" TIMESTAMP(3),
+    "startedAt" TIMESTAMP(3),
+    "completedAt" TIMESTAMP(3),
+    "lastTickAt" TIMESTAMP(3),
+    "lastDepartment" TEXT,
+    "lastError" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "BoampNationalCampaign_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE TABLE "BoampDepartmentPreflight" (
+    "id" TEXT NOT NULL,
+    "department" TEXT NOT NULL,
+    "queryCode" TEXT NOT NULL,
+    "httpStatus" INTEGER,
+    "nhits" INTEGER,
+    "ok" BOOLEAN NOT NULL,
+    "error" TEXT,
+    "checkedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "BoampDepartmentPreflight_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE UNIQUE INDEX "BoampDepartmentPreflight_department_key" ON "BoampDepartmentPreflight"("department")`,
+      `CREATE INDEX "BoampDepartmentPreflight_ok_idx" ON "BoampDepartmentPreflight"("ok")`,
+    ],
+  },
 ]
 
 export async function POST(request: Request) {
