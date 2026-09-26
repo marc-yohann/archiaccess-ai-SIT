@@ -321,16 +321,20 @@ export interface DateWindow {
 // CLAUDE.md) garde le code à deux chiffres partout ailleurs (stockage,
 // partition IngestionJob, UI) — seule la requête envoyée à CETTE API a
 // besoin du zéro retiré. Ne touche jamais aux départements >= 10 (déjà
-// corrects) ni aux codes non numériques (Corse : voir la note ci-dessous,
-// hors-scope tant que 2A/2B ne sont pas ingérés).
+// corrects).
 //
-// Corse (2A/2B) : vérifié réellement que ni "2A" ni "2B" ne matchent —
-// l'API semble utiliser "20A"/"20B" (constaté sur un enregistrement
-// Ajaccio réel, champ code_departement="20A"). Non corrigé ici : aucun
-// département corse n'a encore été ingéré (Vague 1 = 01-10), à traiter
-// avant sa propre vague plutôt que deviné sans vérification complète.
+// Corse (2A/2B) : vérifié réellement par appel direct (mission "BOAMP
+// national", 2026-09-25, preflight des 101 départements) — ni "2A" ni "2B"
+// ne matchent (0 résultat chacun), l'API utilise "20A"/"20B" (confirmé sur
+// des enregistrements réels : COLLECTIVITE DE CORSE / COMMUNE D'AJACCIO,
+// champ code_departement="20A" ; nhits réels 20A=12 304, 20B=10 162 — donc
+// bien réels, pas des départements sans données). Toujours stocker/afficher
+// "2A"/"2B" partout ailleurs dans ce projet (convention administrative
+// standard) — seule la requête envoyée à CETTE API utilise "20A"/"20B".
 function normalizeDepartmentForBoampQuery(codeDepartement: string): string {
   if (/^0[1-9]$/.test(codeDepartement)) return codeDepartement.slice(1)
+  if (codeDepartement === "2A") return "20A"
+  if (codeDepartement === "2B") return "20B"
   return codeDepartement
 }
 
