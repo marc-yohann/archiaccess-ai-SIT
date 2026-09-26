@@ -43,8 +43,15 @@ function envFloat(name: string, fallback: number): number {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback
 }
 
-// Taille allouée réelle du volume RDS (gp3, voir CLAUDE.md) — configurable
-// sans changement de code si l'instance est redimensionnée.
+// Capacité UTILE du volume RDS vue par pg_database_size(), en GiB —
+// PAS la taille allouée brute. Mesuré le 2026-09-26 : 20 GiB alloués,
+// 15,90 GiB libres selon CloudWatch (FreeStorageSpace), mais
+// pg_database_size() ne voyait que 1,17 GiB utilisés : ~2,93 GiB (WAL,
+// journaux, bases système) lui sont invisibles. Avec 20 ici, le garde-fou
+// n'aurait jamais pu se déclencher avant saturation réelle du disque.
+// Production : RDS_ALLOCATED_STORAGE_GB=16.5 (20 - 2,93 mesurés - 0,5 de
+// marge pour la croissance du WAL sous charge d'écriture) — à recalibrer
+// contre CloudWatch si l'instance est redimensionnée.
 function rdsAllocatedStorageGb(): number {
   return envFloat("RDS_ALLOCATED_STORAGE_GB", 20)
 }

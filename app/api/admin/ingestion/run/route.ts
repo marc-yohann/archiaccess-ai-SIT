@@ -19,8 +19,10 @@ import type { IngestionRunner } from "@/lib/ingestion/types"
 // Déclenche une invocation bornée du moteur d'ingestion national (voir
 // CLAUDE.md et l'audit "transformation en data platform" du 2026-09-12) —
 // même pattern d'authentification que /api/admin/run-migration (jeton
-// bearer, pas de session : appelée par EventBridge Scheduler, pas par un
-// employé). Une invocation = un lot borné, jamais tout le fichier/toute
+// bearer, pas de session : appelée manuellement par un opérateur, pas par
+// un employé — vérifié le 2026-09-26 : AUCUNE règle EventBridge ne
+// l'appelle, seule la campagne BOAMP nationale est planifiée, via
+// .../boamp/national/tick). Une invocation = un lot borné, jamais tout le fichier/toute
 // l'itération d'un coup — voir lib/ingestion/runner.ts.
 //
 // "-stage" télécharge le fichier officiel par morceaux (resumable) ;

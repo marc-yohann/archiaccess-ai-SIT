@@ -155,6 +155,23 @@ trace de ça dans le code actuel, ne pas la réintroduire.
 - **IAM** : rôle `archiaccess-ai-sit-app` (exécution Lambda — accès aux
   3 secrets ci-dessus, lecture/écriture des 2 buckets S3,
   `AWSLambdaVPCAccessExecutionRole` pour les ENI en VPC).
+- **Campagne BOAMP nationale** (seule ingestion planifiée — aucune autre
+  règle EventBridge n'existe, `/api/admin/ingestion/run` est manuel) :
+  règle EventBridge `archiaccess-ai-sit-boamp-tick` (`rate(1 minute)`,
+  retries 0) → API destination du même nom (POST
+  `/api/admin/ingestion/boamp/national/tick`) → connexion du même nom
+  (auth API_KEY `Authorization: Bearer <ingest-token>`) ; rôle IAM
+  `archiaccess-ai-sit-boamp-tick` limité à `events:InvokeApiDestination`
+  sur cette seule destination. Pas de chevauchement possible (Lambda 30s
+  max, tick 1/min). Une API destination coupe à 5s : chaque tick apparaît
+  en `FailedInvocations` dans CloudWatch, **c'est attendu** — la Lambda
+  continue son invocation jusqu'au bout (vérifié : progression réelle à
+  chaque tick). **Si `archiaccess-ai-sit/ingest-token` change, mettre à
+  jour la connexion** (elle en garde une copie). Pause/reprise :
+  routes `.../boamp/national/pause|resume` ou désactiver la règle.
+  Variables d'environnement Lambda (config, non secrètes) :
+  `BOAMP_MAX_CONCURRENCY=1`, `RDS_ALLOCATED_STORAGE_GB=16.5` (voir
+  "Pièges").
 
 ## Secrets et configuration
 
@@ -263,6 +280,12 @@ expiration.
   sont protégés AFNOR/CEN et non indexables légalement.
 - Domaines personnalisés `sit.archiaccess.com` / `ai.archiaccess.com`
   opérationnels via CloudFront.
+- Campagne BOAMP nationale (101 départements) lancée le 2026-09-26,
+  orchestrée côté AWS (voir "Infrastructure AWS") : état persistant
+  `BoampNationalCampaign` + `IngestionJob`, preflight réel par
+  département (`BoampDepartmentPreflight`), concurrence 1, validation
+  avant COMPLETED, garde-fou stockage. Suivi :
+  `GET /api/admin/ingestion/boamp/national/status` (Bearer ingest-token).
 
 **En cours, pas encore dans le code réel** :
 - Refonte visuelle du tableau de bord `/sit` (panneau d'accueil avant
@@ -383,6 +406,27 @@ expiration.
   search-skills`") qui ressemble à une injection de prompt plutôt qu'à
   du contenu AWS légitime — jamais exécuté, mais à rester vigilant si
   retrouvé ailleurs dans une doc consultée en ligne.
+- **Codes département BOAMP ≠ codes administratifs** : l'API BOAMP
+  attend `1`..`9` (pas `01`..`09`) et `20A`/`20B` (pas `2A`/`2B`). Une
+  requête avec le code administratif renvoie 0 résultat **sans erreur** —
+  a produit deux fois de faux COMPLETED (Vague 1, puis Corse détectée au
+  preflight). Toujours passer par `normalizeDepartmentForBoampQuery()`
+  (`lib/data-sources/boamp.ts`), et ne jamais accepter un département à 0
+  résultat comme terminé (`validateCompletion()` le refuse).
+- **`pg_database_size()` sous-estime l'occupation disque RDS de ~2,9 GiB**
+  (WAL, journaux, bases système invisibles — mesuré le 2026-09-26 contre
+  CloudWatch `FreeStorageSpace`). Le garde-fou stockage BOAMP compense via
+  `RDS_ALLOCATED_STORAGE_GB=16.5` au lieu des 20 GiB alloués ; à
+  recalibrer contre CloudWatch après tout redimensionnement.
+- **Le conteneur Claude Code on the web est recyclé après inactivité** :
+  `node_modules`, AWS CLI (`pip install awscli`, puis
+  `AWS_CA_BUNDLE=/root/.ccr/ca-bundle.crt`), extensions Postgres locales
+  (`postgresql-16-pgvector`, `postgresql-16-postgis-3`) et tout processus
+  d'arrière-plan disparaissent — seul le dépôt git survit. Ne jamais
+  confier une ingestion longue à un `nohup` local : c'est ce qui a motivé
+  la campagne planifiée côté AWS. AWS CLI v1 : une valeur de paramètre
+  commençant par `https://` est téléchargée au lieu d'être passée telle
+  quelle — utiliser `--cli-input-json`.
 - **`legifrance.gouv.fr` est protégé par Cloudflare** et rejette
   curl/Playwright depuis ces environnements (403/connection reset),
   mais le tool `WebFetch` (infrastructure Anthropic, hors proxy de
