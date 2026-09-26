@@ -190,6 +190,63 @@ export async function seedDepartmentJobs(): Promise<{ seeded: number; alreadyCom
   return { seeded, alreadyCompleted: completedSet.size }
 }
 
+// Tolérance du contrôle recordsRead vs nhits du preflight. recordsRead
+// est cumulatif sur la vie du job (jamais inférieur au volume réellement
+// parcouru) et le jeu de données ne fait que croître entre le preflight
+// et la fin du job : un écart vers le bas de plus de 5 % n'a pas
+// d'explication bénigne connue. Mesuré : Vague 1 et test local, écart
+// observé < 1 % sur chaque département réellement terminé.
+const COMPLETION_MIN_RATIO = 0.95
+
+// Validation avant COMPLETED (mission section 9). Retourne null si le
+// département peut être accepté, sinon la raison du refus. Un
+// département sans preflight exploitable ou à 0 résultat n'est JAMAIS
+// accepté automatiquement : c'est exactement le cas des faux COMPLETED
+// de la Vague 1 (zero-padding 01-09) et de la Corse (2A/2B au lieu de
+// 20A/20B), où la requête elle-même était fausse et le preflight
+// "concordait" avec l'ingestion vide.
+export async function validateCompletion(department: string): Promise<string | null> {
+  const prisma = await getPrisma()
+  const [job, preflight] = await Promise.all([
+    prisma.ingestionJob.findUnique({
+      where: { source_dataset_partition: { source: SOURCE, dataset: DATASET, partition: department } },
+      select: { recordsRead: true, recordsRejected: true },
+    }),
+    prisma.boampDepartmentPreflight.findUnique({ where: { department } }),
+  ])
+  const read = job?.recordsRead ?? 0
+  if (!preflight) return "aucun preflight enregistré pour ce département"
+  if (!preflight.ok) return `preflight en échec (${preflight.error ?? "erreur inconnue"})`
+  const expected = preflight.nhits ?? 0
+  if (expected === 0) return `preflight à 0 résultat pour le code envoyé "${preflight.queryCode}" — validation explicite de la requête requise`
+  if (read === 0) return `preflight annonçait ${expected} avis réels mais recordsRead=0`
+  if (read < expected * COMPLETION_MIN_RATIO) return `recordsRead=${read} inférieur à ${Math.round(COMPLETION_MIN_RATIO * 100)} % des ${expected} avis annoncés au preflight`
+  return null
+}
+
+// Re-preflight ciblé — nécessaire après une correction de requête (ex:
+// Corse 2A/2B -> 20A/20B) : runPreflightBatch() ne revérifie jamais un
+// département déjà présent. Borné à PREFLIGHT_BATCH_SIZE par appel, même
+// budget qu'un lot normal.
+export async function refreshPreflight(departments: string[]) {
+  const invalid = departments.filter((d) => !BOAMP_DEPARTMENTS.includes(d))
+  if (invalid.length > 0) throw new Error(`Départements inconnus : ${invalid.join(", ")}`)
+  if (departments.length > PREFLIGHT_BATCH_SIZE) throw new Error(`Au plus ${PREFLIGHT_BATCH_SIZE} départements par appel.`)
+
+  const prisma = await getPrisma()
+  const results = []
+  for (const department of departments) {
+    const result = await preflightDepartment(department)
+    await prisma.boampDepartmentPreflight.upsert({
+      where: { department },
+      create: { department, ...result },
+      update: { ...result, checkedAt: new Date() },
+    })
+    results.push({ department, ...result })
+  }
+  return results
+}
+
 export interface TickResult {
   action: "preflight" | "storage-paused" | "ingest" | "idle"
   campaignStatus: string
@@ -266,27 +323,13 @@ export async function runCampaignTick(): Promise<TickResult> {
     const result = await runOneInvocation(new BoampIngestionRunner(department))
 
     if (result.status === "COMPLETED" && !result.skipped) {
-      // Validation avant COMPLETED (mission section 9, critique) :
-      // sourceExpected (nhits réel du preflight) > 0 mais recordsRead = 0
-      // ne doit JAMAIS rester COMPLETED — c'est exactement le bug réel
-      // rencontré Vague 1 (départements 01-09, zero-padding). Défense en
-      // profondeur : le bug racine est corrigé, ce contrôle protège contre
-      // toute régression future similaire, jamais supposé inutile.
-      const job = await prisma.ingestionJob.findUnique({
-        where: { source_dataset_partition: { source: SOURCE, dataset: DATASET, partition: department } },
-        select: { recordsRead: true },
-      })
-      const preflight = await prisma.boampDepartmentPreflight.findUnique({ where: { department } })
-      const sourceExpected = preflight?.nhits ?? null
-      if (sourceExpected !== null && sourceExpected > 0 && (job?.recordsRead ?? 0) === 0) {
+      const anomaly = await validateCompletion(department)
+      if (anomaly) {
         await prisma.ingestionJob.update({
           where: { source_dataset_partition: { source: SOURCE, dataset: DATASET, partition: department } },
-          data: {
-            status: "FAILED_REQUIRES_REVIEW",
-            lastError: `Anomalie de validation : preflight annonçait ${sourceExpected} avis réels mais recordsRead=0 — jamais accepté comme COMPLETED automatiquement.`,
-          },
+          data: { status: "FAILED_REQUIRES_REVIEW", completedAt: null, lastError: `Validation avant COMPLETED refusée : ${anomaly}` },
         })
-        results.push({ department, status: "FAILED_REQUIRES_REVIEW", anomaly: "sourceExpected>0 mais recordsRead=0" })
+        results.push({ department, status: "FAILED_REQUIRES_REVIEW", anomaly })
         continue
       }
     }
@@ -312,7 +355,14 @@ export async function runCampaignTick(): Promise<TickResult> {
   return { action: active.length > 0 ? "ingest" : "idle", campaignStatus: allDone ? "COMPLETED" : campaign.status, detail: { results, counters } }
 }
 
-export async function startCampaign(): Promise<{ started: boolean; campaign: unknown; preflight: PreflightBatchResult | { complete: true } }> {
+export interface StartResult {
+  started: boolean
+  campaign: unknown
+  preflight: PreflightBatchResult | { complete: true }
+  blockedBy?: { failed: unknown[]; zeroHits: unknown[] }
+}
+
+export async function startCampaign(): Promise<StartResult> {
   const prisma = await getPrisma()
   const campaign = await getOrCreateCampaign()
 
@@ -327,6 +377,15 @@ export async function startCampaign(): Promise<{ started: boolean; campaign: unk
     const batch = await runPreflightBatch()
     const updated = await prisma.boampNationalCampaign.findUniqueOrThrow({ where: { id: campaign.id } })
     return { started: false, campaign: updated, preflight: batch }
+  }
+
+  // Jamais de lancement tant qu'un département a un preflight en échec
+  // ou à 0 résultat : ce serait soit une requête fausse (cas réels déjà
+  // rencontrés : 01-09, Corse), soit un département réellement vide — à
+  // établir explicitement (refreshPreflight après correction), jamais à
+  // supposer.
+  if (summary.failed.length > 0 || summary.zeroHits.length > 0) {
+    return { started: false, campaign, preflight: { complete: true }, blockedBy: { failed: summary.failed, zeroHits: summary.zeroHits } }
   }
 
   // Preflight déjà complet : cet appel de start() est le déclenchement
