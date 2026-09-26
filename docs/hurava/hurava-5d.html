@@ -1,0 +1,722 @@
+<title>HURAVA 5D</title>
+<meta name="description" content="Maquette 5D du module HURAVA by Archiaccess : géométrie 3D, séquence de fabrication 4D et coûts 5D.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#E8EBEB; --surface:#F6F7F7; --surface-2:#DDE2E3; --ink:#15191B; --ink-2:#465055; --muted:#6E787D;
+  --line:#C9D0D2; --accent:#D9A100; --accent-ink:#7A5800; --accent-soft:rgba(217,161,0,.16);
+  --series:#A87C00; --viewport:#DCE1E2; --grid-a:#AEB7BA; --grid-b:#C6CDCF;
+  --ok:#2E7A4C; --warn:#A8620A; --danger:#B8352B;
+  --f-display:"Archivo","Arial Narrow",Arial,sans-serif; --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ground:#101315; --surface:#181C1F; --surface-2:#252B2F; --ink:#E6EAEB; --ink-2:#B1BABE; --muted:#838D92;
+    --line:#2D3438; --accent:#F0BE2C; --accent-ink:#F0BE2C; --accent-soft:rgba(240,190,44,.16);
+    --series:#F0BE2C; --viewport:#161A1D; --grid-a:#3A4246; --grid-b:#262D31;
+    --ok:#5DBB82; --warn:#E3A043; --danger:#E0645A;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#101315; --surface:#181C1F; --surface-2:#252B2F; --ink:#E6EAEB; --ink-2:#B1BABE; --muted:#838D92;
+  --line:#2D3438; --accent:#F0BE2C; --accent-ink:#F0BE2C; --accent-soft:rgba(240,190,44,.16);
+  --series:#F0BE2C; --viewport:#161A1D; --grid-a:#3A4246; --grid-b:#262D31;
+  --ok:#5DBB82; --warn:#E3A043; --danger:#E0645A;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5;padding-inline:16px;padding-block:20px 48px}
+.wrap{max-width:1320px;margin:0 auto;display:grid;gap:20px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance}
+.mono,td.num,.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* Header */
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 32px;border-bottom:2px solid var(--ink);padding-bottom:14px}
+.brand h1{font-size:clamp(34px,6vw,56px);font-weight:900;font-stretch:118%;letter-spacing:-.01em;line-height:.9}
+.brand h1 span{font-weight:500;font-stretch:90%;font-size:.38em;letter-spacing:.02em;margin-left:.4em;color:var(--ink-2)}
+.brand p{margin:8px 0 0;color:var(--ink-2);max-width:62ch}
+.dims5{display:flex;gap:6px;flex-wrap:wrap}
+.dims5 span{font-family:var(--f-mono);font-size:12px;padding:4px 8px;border:1px solid var(--line);color:var(--muted)}
+.dims5 span.on{border-color:var(--ink);color:var(--ink);background:var(--surface)}
+
+/* Main grid */
+.stage{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:960px){.stage{grid-template-columns:1fr}}
+.viewport{position:relative;background:var(--viewport);border:1px solid var(--line);aspect-ratio:4/3;max-width:100%;min-height:320px;overflow:hidden}
+.viewport canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.vp-tools{position:absolute;top:10px;left:10px;right:10px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.vp-tools > *{pointer-events:auto}
+.vp-legend{position:absolute;left:10px;bottom:10px;display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--ink-2);background:color-mix(in srgb,var(--surface) 88%,transparent);padding:6px 10px;border:1px solid var(--line)}
+.vp-legend i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
+.vp-hint{position:absolute;right:10px;bottom:10px;font-size:11px;color:var(--muted)}
+@media (max-width:560px){.vp-hint{display:none}}
+button,.chip{font:500 12px/1 var(--f-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);padding:7px 10px;cursor:pointer}
+button:hover{border-color:var(--ink-2)}
+button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+button:focus-visible,input:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Timeline control */
+.timeline{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);padding:12px 14px;margin-top:-1px}
+.timeline .day{font-family:var(--f-display);font-weight:800;font-stretch:110%;font-size:22px;min-width:3.4ch}
+.timeline .phase-now{grid-column:1/-1;font-size:13px;color:var(--ink-2);display:flex;gap:8px;flex-wrap:wrap;align-items:baseline}
+.timeline .phase-now b{color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+#play{min-width:74px}
+
+/* Side panel */
+aside.side{display:grid;gap:14px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line)}
+.tile{background:var(--surface);padding:12px 14px;display:grid;gap:2px;align-content:start}
+.tile .v{font-family:var(--f-display);font-weight:800;font-stretch:108%;font-size:24px;line-height:1.1;font-variant-numeric:tabular-nums}
+.tile .v small{font-family:var(--f-body);font-weight:500;font-size:13px;color:var(--ink-2);margin-left:3px}
+.tile .s{font-size:12px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:5px;font:600 11px/1 var(--f-body);padding:3px 7px;border:1px solid currentColor;letter-spacing:.02em}
+.pill.ok{color:var(--ok)} .pill.warn{color:var(--warn)} .pill.bad{color:var(--danger)}
+.card{background:var(--surface);border:1px solid var(--line);padding:14px 16px}
+.card h3{font-size:15px;font-weight:700;font-stretch:105%;margin-bottom:8px}
+.sel-empty{color:var(--muted);font-size:13px;margin:0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;font-size:13px;margin:0}
+.kv dt{color:var(--muted)} .kv dd{margin:0;text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* Sections */
+section.block{display:grid;gap:12px}
+.block-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 20px;border-top:1px solid var(--ink);padding-top:10px}
+.block-head h2{font-size:22px;font-weight:800;font-stretch:112%}
+.block-head h2 em{font-style:normal;color:var(--accent-ink);margin-right:.35em}
+.block-head p{margin:0;color:var(--ink-2);max-width:70ch;font-size:13px}
+.scroll-x{overflow-x:auto;background:var(--surface);border:1px solid var(--line)}
+svg text{font-family:var(--f-body)}
+.cost-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:960px){.cost-grid{grid-template-columns:1fr}}
+.chart-box{position:relative;background:var(--surface);border:1px solid var(--line);padding:10px}
+.chart-box svg{display:block;width:100%;height:auto}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--surface);font-size:12px;padding:6px 8px;white-space:nowrap;transform:translate(-50%,-110%)}
+.tip b{font-family:var(--f-mono)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface)}
+td.num,th.num{text-align:right;white-space:nowrap}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--accent-soft)}
+tbody tr.sel{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+tr.total td{font-weight:600;border-top:2px solid var(--ink);border-bottom:none;cursor:default}
+tr.total:hover{background:none}
+.spec{color:var(--muted);font-size:12px}
+.phase-tag{font-family:var(--f-mono);font-size:11px;color:var(--ink-2);white-space:nowrap}
+.inputs{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;font-size:13px}
+.inputs label{color:var(--ink-2)}
+.inputs input{width:92px;font:500 13px var(--f-mono);text-align:right;padding:5px 6px;background:var(--ground);color:var(--ink);border:1px solid var(--line)}
+.breakdown td{border-bottom:1px dashed var(--line);padding:5px 0}
+.breakdown td.num{padding-left:10px}
+.breakdown tr.strong td{border-top:1px solid var(--ink);border-bottom:none;font-weight:600;padding-top:8px}
+.breakdown tr.sale td{font-family:var(--f-display);font-weight:800;font-stretch:108%;font-size:18px;border:none;padding-top:6px}
+.breakdown tr{cursor:default}.breakdown tr:hover{background:none}
+.note{font-size:12px;color:var(--muted);max-width:90ch;margin:0}
+footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="eyebrow">Maquette numérique · module de stockage mobile</div>
+      <h1>HURAVA<span>by Archiaccess</span></h1>
+      <p>Géométrie paramétrique 3D, séquence de fabrication 4D et coût 5D reliés dans une même maquette. Chaque pièce porte sa masse, son prix et sa phase de fabrication.</p>
+    </div>
+    <div class="dims5" aria-label="Dimensions de la maquette">
+      <span class="on">3D géométrie</span><span class="on">4D planning</span><span class="on">5D coûts</span>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div>
+      <div class="viewport" id="vp">
+        <div class="vp-tools">
+          <button id="v-iso" type="button">Iso</button>
+          <button id="v-front" type="button">Façade</button>
+          <button id="v-side" type="button">Pignon</button>
+          <button id="v-top" type="button">Dessus</button>
+          <button id="t-doors" type="button" aria-pressed="true">Portes ouvertes</button>
+          <button id="t-ghost" type="button" aria-pressed="true">Pièces à venir</button>
+          <button id="t-dims" type="button" aria-pressed="true">Cotes</button>
+        </div>
+        <div class="vp-legend" aria-hidden="true">
+          <span><i style="background:#56616A"></i>Acier noir</span>
+          <span><i style="background:#BFC7CB"></i>Galvanisé</span>
+          <span><i style="background:var(--accent)"></i>Phase en cours</span>
+        </div>
+        <div class="vp-hint">Glisser pour tourner · molette pour zoomer · clic sur une pièce</div>
+      </div>
+      <div class="timeline">
+        <button id="play" type="button">▶ Lire</button>
+        <input id="t" type="range" min="0" max="18" step="0.05" value="18" aria-label="Jour de fabrication">
+        <div class="day mono" id="dayLbl">J18</div>
+        <div class="phase-now" id="phaseNow"></div>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="tiles">
+        <div class="tile"><span class="eyebrow">Tare calculée</span><span class="v" id="k-tare">–</span><span class="s">somme des pièces de la nomenclature</span></div>
+        <div class="tile"><span class="eyebrow">Charge par roue</span><span class="v" id="k-wheel">–</span><span class="s" id="k-wheel-s">–</span></div>
+        <div class="tile"><span class="eyebrow">Délai atelier</span><span class="v">18<small>j ouvrés</small></span><span class="s">dont 6 j de galvanisation sous-traitée</span></div>
+        <div class="tile"><span class="eyebrow">Main d'œuvre</span><span class="v" id="k-hours">–</span><span class="s">débit, soudure, montage, épreuve</span></div>
+        <div class="tile"><span class="eyebrow">Prix de revient</span><span class="v" id="k-cost">–</span><span class="s">matière + MO + galva, HT</span></div>
+        <div class="tile"><span class="eyebrow">Prix de vente</span><span class="v" id="k-sale">–</span><span class="s" id="k-sale-s">–</span></div>
+      </div>
+      <div class="card" id="selCard">
+        <h3>Pièce sélectionnée</h3>
+        <p class="sel-empty" id="selEmpty">Cliquez une pièce dans la vue 3D ou une ligne de la nomenclature.</p>
+        <dl class="kv" id="selKv" hidden></dl>
+      </div>
+      <div class="card">
+        <h3>Enveloppe</h3>
+        <dl class="kv">
+          <dt>Hors tout L × l × H</dt><dd>2 200 × 1 100 × 1 500 mm</dd>
+          <dt>Volume utile</dt><dd>≈ 2,6 m³</dd>
+          <dt>Surface de plancher</dt><dd>2,42 m²</dd>
+          <dt>Charge de dimensionnement</dt><dd>750 kg</dd>
+          <dt>Épreuve statique (× 1,25)</dt><dd>938 kg</dd>
+          <dt>Manutention</dt><dd>fourches · élingues · roues</dd>
+        </dl>
+      </div>
+    </aside>
+  </div>
+
+  <section class="block" id="planning">
+    <div class="block-head">
+      <h2><em>4D</em>Séquence de fabrication</h2>
+      <p>Dix phases en atelier sur 18 jours ouvrés. Les pièces soudées passent en galvanisation à chaud avant la pose des tôles pré-galvanisées. Cliquez sur le planning pour vous placer à une date.</p>
+    </div>
+    <div class="scroll-x"><svg id="gantt" role="img" aria-label="Diagramme de Gantt des phases de fabrication" style="display:block;min-width:760px;width:100%"></svg></div>
+  </section>
+
+  <section class="block" id="couts">
+    <div class="block-head">
+      <h2><em>5D</em>Coûts engagés</h2>
+      <p>Courbe d'engagement du prix de revient au fil de la fabrication. Les prix unitaires sont des hypothèses de travail à confirmer par devis fournisseurs.</p>
+    </div>
+    <div class="cost-grid">
+      <div class="chart-box" id="costBox">
+        <svg id="cost" viewBox="0 0 640 290" role="img" aria-label="Coût cumulé engagé par jour de fabrication"></svg>
+        <div class="tip" id="tip" hidden></div>
+      </div>
+      <div class="card">
+        <h3>Hypothèses de prix</h3>
+        <div class="inputs">
+          <label for="p-rate">Taux horaire atelier (€/h)</label><input id="p-rate" type="number" step="1" value="58">
+          <label for="p-tube">Tube acier S235 (€/kg)</label><input id="p-tube" type="number" step="0.05" value="1.95">
+          <label for="p-sheet">Tôle pré-galvanisée (€/kg)</label><input id="p-sheet" type="number" step="0.05" value="2.10">
+          <label for="p-galva">Galvanisation à chaud (€/kg)</label><input id="p-galva" type="number" step="0.05" value="0.95">
+          <label for="p-loss">Chutes de débit (%)</label><input id="p-loss" type="number" step="1" value="8">
+          <label for="p-fg">Frais généraux (%)</label><input id="p-fg" type="number" step="1" value="15">
+          <label for="p-margin">Marge (%)</label><input id="p-margin" type="number" step="1" value="20">
+        </div>
+        <table class="breakdown" style="margin-top:14px"><tbody id="breakdown"></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="nomenclature">
+    <div class="block-head">
+      <h2><em>BOM</em>Nomenclature chiffrée</h2>
+      <p>Masses calculées à partir des sections (acier 7 850 kg/m³). Les coûts matière incluent les chutes ; la main d'œuvre est portée par phase dans le planning.</p>
+    </div>
+    <div class="scroll-x">
+      <table style="min-width:760px">
+        <thead><tr><th>Rep.</th><th>Désignation</th><th class="num">Qté</th><th class="num">Masse</th><th class="num">Matière</th><th>Phase</th></tr></thead>
+        <tbody id="bom"></tbody>
+      </table>
+    </div>
+    <p class="note">Hypothèses : roues Ø 200 mm CMU 500 kg ; anneaux de levage soudés CMU 1 t ; charge par roue vérifiée sur 3 appuis (sol irrégulier). Contenu des étagères non compté. Prix HT, septembre 2026, à valider.</p>
+  </section>
+
+  <footer>Maquette Archiaccess AI · SI Technique. Modèle paramétrique indicatif, ne remplace pas une note de calcul ni les plans d'exécution.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+"use strict";
+const RHO = 7850;
+const kgm = (a,b,t) => (a*b - (a-2*t)*(b-2*t)) * 1e-6 * RHO; // tube rect a×b×t (mm) → kg/m
+const K80 = kgm(80,80,3), K60 = kgm(60,60,3), K200 = kgm(200,80,4), K30 = kgm(30,30,2);
+const T15 = 1.5e-3*RHO; // tôle 1,5 mm kg/m²
+const LARMEE = 26.6;    // tôle larmée 3/5 kg/m²
+
+/* ---------- 4D : phases ---------- */
+const PHASES = [
+  {id:'P1', name:'Débit et préparation', start:0,  dur:2, h:6},
+  {id:'P2', name:'Soudure châssis et fourreaux', start:2, dur:3, h:10},
+  {id:'P3', name:'Ossature, cadre haut, anneaux', start:5, dur:2, h:8},
+  {id:'P4', name:'Cadres de portes', start:5, dur:2, h:6},
+  {id:'P5', name:'Galvanisation à chaud', start:7, dur:6, h:0, galva:true},
+  {id:'P6', name:'Plancher, parois et toit', start:13, dur:2, h:7},
+  {id:'P7', name:'Portes et quincaillerie', start:15, dur:1, h:4},
+  {id:'P8', name:'Roues et attelage', start:15, dur:1, h:3},
+  {id:'P9', name:'Aménagement intérieur', start:16, dur:1, h:3},
+  {id:'P10',name:'Contrôle et épreuve de charge', start:17, dur:1, h:3}
+];
+const PH = Object.fromEntries(PHASES.map(p=>[p.id,p]));
+const T_END = 18, GALVA_END = PH.P5.start + PH.P5.dur;
+
+/* ---------- 5D : nomenclature ---------- */
+// mat: tube | sheet | larmee | buy (unit price)
+const ITEMS = [
+  {id:'CHL', rep:'01', label:'Longerons de châssis', spec:'Tube 80×80×3 · 2 × 2 200 mm', qty:2, kg:2*2.2*K80, mat:'tube', buy:'P1', phase:'P2', galva:true},
+  {id:'CHT', rep:'02', label:'Traverses de châssis', spec:'Tube 80×80×3 · 5 × 940 mm', qty:5, kg:5*0.94*K80, mat:'tube', buy:'P1', phase:'P2', galva:true},
+  {id:'FOU', rep:'03', label:'Fourreaux de fourches', spec:'Tube 200×80×4 · 2 × 1 100 mm', qty:2, kg:2*1.1*K200, mat:'tube', buy:'P1', phase:'P2', galva:true},
+  {id:'POT', rep:'04', label:'Poteaux', spec:'Tube 60×60×3 · 5 × 1 107 mm', qty:5, kg:5*1.107*K60, mat:'tube', buy:'P1', phase:'P3', galva:true},
+  {id:'CAD', rep:'05', label:'Cadre haut', spec:'Tube 60×60×3 · 2 × 2 200 + 2 × 980 mm', qty:4, kg:(4.4+1.96)*K60, mat:'tube', buy:'P1', phase:'P3', galva:true},
+  {id:'ANN', rep:'06', label:'Anneaux de levage à souder', spec:'CMU 1 t, platine soudée', qty:4, kg:4*0.6, mat:'buy', pu:24, buy:'P3', phase:'P3', galva:true},
+  {id:'CPO', rep:'07', label:'Cadres de portes', spec:'Tube 30×30×2 · 12,96 m', qty:3, kg:12.96*K30, mat:'tube', buy:'P1', phase:'P4', galva:true},
+  {id:'PLA', rep:'08', label:'Plancher tôle larmée', spec:'Larmée 3/5 galvanisée · 2 200 × 1 100', qty:1, kg:2.42*LARMEE, mat:'larmee', buy:'P1', phase:'P6'},
+  {id:'PAR', rep:'09', label:'Parois et toit', spec:'Tôle galva 1,5 mm · 6,07 m²', qty:3, kg:6.07*T15, mat:'sheet', buy:'P1', phase:'P6'},
+  {id:'VIS', rep:'10', label:'Visserie et rivets inox', spec:'Forfait, rivets Ø 5 + boulons M8', qty:1, kg:2.5, mat:'buy', pu:65, buy:'P6', phase:'P6', nomesh:true},
+  {id:'TPO', rep:'11', label:'Tôles de portes', spec:'Tôle galva 1,5 mm · 3,50 m²', qty:3, kg:3.498*T15, mat:'sheet', buy:'P1', phase:'P7'},
+  {id:'CHA', rep:'12', label:'Charnières soudables', spec:'Paumelles acier galva Ø 16', qty:9, kg:9*0.4, mat:'buy', pu:9, buy:'P7', phase:'P7'},
+  {id:'FER', rep:'13', label:'Fermetures', spec:'2 crémones cadenassables + poignée tubulaire', qty:3, kg:2.2, mat:'buy', pu:52, buy:'P7', phase:'P7'},
+  {id:'RPV', rep:'14', label:'Roues pivotantes à frein', spec:'Ø 200 mm, bandage caoutchouc, CMU 500 kg', qty:2, kg:2*5.5, mat:'buy', pu:86, buy:'P8', phase:'P8'},
+  {id:'RFX', rep:'15', label:'Roues fixes', spec:'Ø 200 mm, bandage caoutchouc, CMU 500 kg', qty:2, kg:2*4.8, mat:'buy', pu:58, buy:'P8', phase:'P8'},
+  {id:'BOU', rep:'16', label:'Boucle d\'attelage pivotante', spec:'Attelage gravitaire, côté pignon droit', qty:1, kg:3.2, mat:'buy', pu:145, buy:'P8', phase:'P8'},
+  {id:'ERG', rep:'17', label:'Ergot d\'attelage fixe', spec:'Axe Ø 30, côté pignon gauche', qty:1, kg:1.5, mat:'buy', pu:38, buy:'P8', phase:'P8'},
+  {id:'ETA', rep:'18', label:'Étagères galvanisées', spec:'900 × 400 × 1 050 mm, 4 niveaux', qty:2, kg:2*18, mat:'buy', pu:135, buy:'P9', phase:'P9'},
+  {id:'LED', rep:'19', label:'Éclairage LED sur batterie', spec:'Réglette 900 mm, détecteur d\'ouverture', qty:1, kg:1.2, mat:'buy', pu:48, buy:'P9', phase:'P9'},
+  {id:'MAR', rep:'20', label:'Marquage HURAVA', spec:'Adhésif polymère, 2 faces', qty:2, kg:0.2, mat:'buy', pu:45, buy:'P9', phase:'P9'}
+];
+const IT = Object.fromEntries(ITEMS.map(i=>[i.id,i]));
+
+const $ = s => document.querySelector(s);
+const fmtKg = v => v.toLocaleString('fr-FR',{maximumFractionDigits:1, minimumFractionDigits:1});
+const fmtEur = v => Math.round(v).toLocaleString('fr-FR') + ' €';
+const num = id => { const v = parseFloat($(id).value); return isFinite(v) ? v : 0; };
+
+function prices(){ return {rate:num('#p-rate'), tube:num('#p-tube'), sheet:num('#p-sheet'), galva:num('#p-galva'), loss:num('#p-loss')/100, fg:num('#p-fg')/100, margin:num('#p-margin')/100}; }
+function matCost(it,p){
+  if(it.mat==='buy') return it.qty*it.pu;
+  const perKg = it.mat==='tube'?p.tube : it.mat==='larmee'?p.sheet+0.20 : p.sheet;
+  return it.kg*perKg*(1+p.loss);
+}
+const GALVA_KG = ITEMS.filter(i=>i.galva).reduce((s,i)=>s+i.kg,0);
+const GALVA_FIXED = 120; // transport aller-retour galvaniseur
+const TARE = ITEMS.reduce((s,i)=>s+i.kg,0);
+const HOURS = PHASES.reduce((s,p)=>s+p.h,0);
+
+function costModel(){
+  const p = prices();
+  const mats = ITEMS.map(i=>matCost(i,p));
+  const mat = mats.reduce((a,b)=>a+b,0);
+  const mo = HOURS*p.rate;
+  const galva = GALVA_KG*p.galva + GALVA_FIXED;
+  const revient = mat+mo+galva;
+  const fg = revient*p.fg;
+  const complet = revient+fg;
+  const marge = complet*p.margin;
+  // événements étalés linéairement sur la phase
+  const ev = [];
+  ITEMS.forEach((it,k)=>{ const ph=PH[it.buy]; ev.push({s:ph.start,d:ph.dur,a:mats[k]}); });
+  PHASES.forEach(ph=>{ if(ph.h) ev.push({s:ph.start,d:ph.dur,a:ph.h*p.rate}); if(ph.galva) ev.push({s:ph.start,d:ph.dur,a:galva}); });
+  const at = t => ev.reduce((s,e)=>s+e.a*Math.min(1,Math.max(0,(t-e.s)/e.d)),0);
+  return {p,mats,mat,mo,galva,revient,fg,complet,marge,sale:complet+marge,at};
+}
+
+/* ---------- Tokens ---------- */
+function tok(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+/* ---------- 3D ---------- */
+const vp = $('#vp');
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+vp.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32,4/3,0.05,60);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.minDistance = 1.2; controls.maxDistance = 14; controls.maxPolarAngle = Math.PI*0.495;
+const VIEWS = {iso:[[3.9,2.5,4.1],[0,0.72,0]], front:[[0,0.85,5.6],[0,0.75,0]], side:[[-5,0.85,0],[0,0.75,0]], top:[[0.001,6.2,0.01],[0,0.6,0]]};
+let camAnim = null;
+function setView(k, instant){
+  const [p,tg] = VIEWS[k];
+  if(instant || matchMedia('(prefers-reduced-motion: reduce)').matches){ camera.position.set(...p); controls.target.set(...tg); controls.update(); return; }
+  camAnim = {t:0, p0:camera.position.clone(), p1:new THREE.Vector3(...p), g0:controls.target.clone(), g1:new THREE.Vector3(...tg)};
+}
+setView('iso', true);
+
+scene.add(new THREE.HemisphereLight(0xf2f5f7, 0x6d6a62, 0.75));
+const sun = new THREE.DirectionalLight(0xffffff, 0.95);
+sun.position.set(4,7,5); sun.castShadow = true;
+sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-3,right:3,top:3,bottom:-3,near:1,far:20});
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0xdfe8ff, 0.35); fill.position.set(-5,3,-4); scene.add(fill);
+
+const groundMat = new THREE.ShadowMaterial({opacity:0.22});
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(20,20), groundMat);
+ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+let grid = null;
+
+// Textures procédurales
+function canvasTex(w,h,draw,rx,ry){ const c=document.createElement('canvas'); c.width=w; c.height=h; draw(c.getContext('2d'),w,h); const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rx||1,ry||1); t.anisotropy=4; return t; }
+function rand(seed){ let s=seed; return ()=>{ s=(s*16807)%2147483647; return (s-1)/2147483646; }; }
+const spangle = canvasTex(256,256,(g,w,h)=>{ const r=rand(7); g.fillStyle='#c4cbcf'; g.fillRect(0,0,w,h); for(let i=0;i<260;i++){ const x=r()*w,y=r()*h,s=6+r()*22; const l=180+r()*45|0; g.fillStyle=`rgba(${l},${l+4},${l+8},.55)`; g.beginPath(); g.moveTo(x,y); for(let k=0;k<6;k++){ const a=k/6*Math.PI*2+r(); g.lineTo(x+Math.cos(a)*s,y+Math.sin(a)*s);} g.fill(); } },2,2);
+const larmee = canvasTex(128,128,(g,w,h)=>{ g.fillStyle='#b8c0c4'; g.fillRect(0,0,w,h); g.fillStyle='#9aa3a8'; for(let y=0;y<4;y++) for(let x=0;x<4;x++){ g.save(); g.translate(x*32+16,y*32+16); g.rotate((x+y)%2?Math.PI/4:-Math.PI/4); g.beginPath(); g.ellipse(0,0,9,3,0,0,Math.PI*2); g.fill(); g.restore(); } },16,8);
+
+const MATS = {
+  raw:{color:0x56616a, metalness:0.55, roughness:0.48},
+  galva:{color:0xd2d8db, metalness:0.45, roughness:0.42, map:spangle},
+  sheet:{color:0xdce1e4, metalness:0.4, roughness:0.4, map:spangle},
+  larmee:{color:0xdfe3e5, metalness:0.45, roughness:0.5, map:larmee},
+  rubber:{color:0x1d1f21, metalness:0.0, roughness:0.9},
+  dark:{color:0x2b2f33, metalness:0.5, roughness:0.45},
+  red:{color:0xb8352b, metalness:0.2, roughness:0.5},
+  zinc:{color:0xa8b0b5, metalness:0.7, roughness:0.35},
+  led:{color:0xf5f3ea, metalness:0.0, roughness:0.3, emissive:0xfff6d8, emissiveIntensity:0.9}
+};
+const parts = [];
+function mkMat(kind){ const m = new THREE.MeshStandardMaterial(Object.assign({}, MATS[kind])); m.userData.kind = kind; m.userData.baseEmissive = m.emissive.clone(); m.userData.baseEI = m.emissiveIntensity; return m; }
+function addMesh(parent, geo, x,y,z, item, kind){
+  const m = new THREE.Mesh(geo, mkMat(kind));
+  m.position.set(x,y,z); m.castShadow = true; m.receiveShadow = true;
+  m.userData.item = item; parent.add(m); parts.push(m); return m;
+}
+function box(parent, sx,sy,sz, x,y,z, item, kind){ return addMesh(parent, new THREE.BoxGeometry(sx,sy,sz), x,y,z, item, kind); }
+
+const model = new THREE.Group(); scene.add(model);
+const W2 = 1.1, D2 = 0.55;
+const Y_CH = 0.29, Y_FL = 0.335, Y_TOP = 1.5;
+const weld = it => IT[it].galva ? 'raw' : 'galva';
+
+// 01 longerons, 02 traverses
+[-1,1].forEach(s=> box(model, 2.2,0.08,0.08, 0,Y_CH, s*0.51, 'CHL', weld('CHL')));
+[-1.06,-0.55,0,0.55,1.06].forEach(x=> box(model, 0.08,0.08,0.94, x,Y_CH,0, 'CHT', weld('CHT')));
+// 03 fourreaux
+[-0.5,0.5].forEach(x=>{
+  const g = new THREE.Group(); g.position.set(x,0.21,0); model.add(g);
+  box(g, 0.2,0.004,1.1, 0,0.038,0,'FOU',weld('FOU')); box(g, 0.2,0.004,1.1, 0,-0.038,0,'FOU',weld('FOU'));
+  box(g, 0.004,0.08,1.1, -0.098,0,0,'FOU',weld('FOU')); box(g, 0.004,0.08,1.1, 0.098,0,0,'FOU',weld('FOU'));
+});
+// 04 poteaux
+const postH = 1.44 - Y_FL;
+[[-1.07,-0.52],[1.07,-0.52],[-1.07,0.52],[1.07,0.52],[0,-0.52]].forEach(([x,z])=> box(model, 0.06,postH,0.06, x,Y_FL+postH/2,z,'POT',weld('POT')));
+// 05 cadre haut
+[-1,1].forEach(s=> box(model, 2.2,0.06,0.06, 0,1.47,s*0.52,'CAD',weld('CAD')));
+[-1.07,1.07].forEach(x=> box(model, 0.06,0.06,0.98, x,1.47,0,'CAD',weld('CAD')));
+// 06 anneaux
+[[-1.04,-0.49],[1.04,-0.49],[-1.04,0.49],[1.04,0.49]].forEach(([x,z])=>{
+  box(model, 0.08,0.012,0.08, x,Y_TOP+0.008,z,'ANN',weld('ANN'));
+  const t = addMesh(model, new THREE.TorusGeometry(0.034,0.009,10,28), x,Y_TOP+0.05,z,'ANN',weld('ANN'));
+  t.rotation.y = Math.atan2(z,x) + Math.PI/2;
+});
+// 08 plancher, 09 parois & toit
+box(model, 2.2,0.004,1.1, 0,Y_FL-0.002+0.004,0,'PLA','larmee');
+box(model, 2.2,0.0025,1.1, 0,Y_TOP+0.001,0,'PAR','sheet');
+box(model, 2.2,postH,0.0025, 0,Y_FL+postH/2,-D2-0.001,'PAR','sheet');
+box(model, 0.0025,postH,1.1, W2+0.001,Y_FL+postH/2,0,'PAR','sheet');
+
+// Portes
+const doors = [];
+function leaf(pos, cfg, w){
+  const g = new THREE.Group(); g.position.set(...pos); model.add(g);
+  const h = postH, yc = Y_FL+h/2;
+  const B = (uc,ul,y,yl,off,th,item,kind)=> cfg.ax==='x'
+    ? box(g, ul,yl,th, cfg.s*uc,y,cfg.n*off, item,kind)
+    : box(g, th,yl,ul, cfg.n*off,y,cfg.s*uc, item,kind);
+  B(w/2,w-0.006,yc,h-0.006,0.004,0.0025,'TPO','sheet');                // tôle
+  B(w/2,w,Y_FL+0.015,0.03,-0.014,0.03,'CPO',weld('CPO'));              // traverses
+  B(w/2,w,Y_FL+h-0.015,0.03,-0.014,0.03,'CPO',weld('CPO'));
+  B(w/2,w,yc,0.03,-0.014,0.03,'CPO',weld('CPO'));
+  B(0.015,0.03,yc,h,-0.014,0.03,'CPO',weld('CPO'));                   // montants
+  B(w-0.015,0.03,yc,h,-0.014,0.03,'CPO',weld('CPO'));
+  [0.22,0.55,0.92].forEach(f=> B(0.0,0.05,Y_FL+h*f,0.11,0.016,0.024,'CHA','dark')); // charnières
+  doors.push({g,cfg}); return {g,B,w,h,yc};
+}
+const dl = leaf([-W2,0,D2],{ax:'x',s:1,n:1},1.095);
+const dr = leaf([W2,0,D2],{ax:'x',s:-1,n:1},1.095);
+const de = leaf([-W2,0,D2],{ax:'z',s:-1,n:-1},1.095);
+dr.B(dr.w-0.07,0.022,dr.yc,0.9,0.02,0.02,'FER','dark');                 // crémone
+dl.B(dl.w-0.07,0.022,dl.yc,0.9,0.02,0.02,'FER','dark');
+de.B(0.55,0.62,0.78,0.028,0.06,0.028,'FER','zinc');                      // poignée tubulaire
+de.B(0.26,0.02,0.78,0.02,0.035,0.04,'FER','zinc'); de.B(0.84,0.02,0.78,0.02,0.035,0.04,'FER','zinc');
+
+// 20 marquage
+function logoTex(){ return canvasTex(1024,640,(g,w,h)=>{
+  g.clearRect(0,0,w,h); g.fillStyle='#16191b';
+  g.beginPath(); g.moveTo(170,470); g.lineTo(330,110); g.lineTo(470,110); g.lineTo(470,470); g.lineTo(380,470); g.lineTo(380,330); g.lineTo(300,470); g.closePath(); g.fill();
+  g.fillStyle='#d7dcdf'; g.fillRect(360,170,22,90);
+  g.fillStyle='#16191b'; g.font='900 150px Archivo, Arial Black, sans-serif'; g.textBaseline='alphabetic';
+  g.fillText('HURAVA',500,330);
+  g.font='600 54px Archivo, Arial, sans-serif'; g.fillText('by ARCHIACCESS',560,410);
+  g.font='500 34px "IBM Plex Mono", monospace'; g.fillText('TRANSPORTER. ORGANISER. AVANCER.',170,560);
+},1,1); }
+const logoMats = [];
+function logo(parent,x,y,z,ry){ const t=logoTex(); t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping; t.repeat.set(1,1);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.86,0.54), new THREE.MeshStandardMaterial({map:t,transparent:true,roughness:0.6,metalness:0}));
+  m.material.userData.kind='logo'; m.material.userData.baseEmissive=m.material.emissive.clone(); m.material.userData.baseEI=1;
+  m.position.set(x,y,z); m.rotation.y=ry; m.userData.item='MAR'; parent.add(m); parts.push(m); logoMats.push(m); }
+logo(de.g, -0.007, 0.98, -0.55, -Math.PI/2);
+logo(model, 0.45, 0.95, -D2-0.004, Math.PI);
+
+// Roues
+function caster(x,z,swivel){
+  const id = swivel?'RPV':'RFX';
+  box(model, 0.14,0.01,0.12, x,0.245,z,id,'dark');
+  if(swivel) addMesh(model,new THREE.CylinderGeometry(0.05,0.05,0.02,20),x,0.232,z,id,'zinc');
+  [-1,1].forEach(s=> box(model, 0.1,0.13,0.008, x,0.165,z+s*0.034,id,'zinc'));
+  const w = addMesh(model,new THREE.CylinderGeometry(0.1,0.1,0.05,32),x,0.1,z,id,'rubber'); w.rotation.x=Math.PI/2;
+  const hub = addMesh(model,new THREE.CylinderGeometry(0.048,0.048,0.054,20),x,0.1,z,id,'zinc'); hub.rotation.x=Math.PI/2;
+  if(swivel) box(model, 0.05,0.012,0.04, x+0.075,0.19,z,id,'red');
+}
+caster(-0.96,-0.42,true); caster(-0.96,0.42,true); caster(0.96,-0.42,false); caster(0.96,0.42,false);
+// Attelage
+box(model, 0.07,0.06,0.12, 1.135,Y_CH,0,'BOU','zinc');
+const ring = addMesh(model,new THREE.TorusGeometry(0.055,0.012,10,28),1.225,Y_CH,0,'BOU','zinc'); ring.rotation.x=Math.PI/2;
+box(model, 0.12,0.014,0.1, -1.16,Y_CH,0,'ERG','zinc');
+addMesh(model,new THREE.CylinderGeometry(0.015,0.015,0.09,16),-1.19,Y_CH+0.05,0,'ERG','zinc');
+// Étagères
+[-0.52,0.46].forEach(cx=>{
+  const z0=-0.33;
+  [[-0.435,-0.185],[0.435,-0.185],[-0.435,0.185],[0.435,0.185]].forEach(([dx,dz])=> box(model,0.03,1.05,0.03,cx+dx,Y_FL+0.525,z0+dz,'ETA','galva'));
+  [0.06,0.34,0.62,0.9].forEach(h=> box(model,0.9,0.012,0.4,cx,Y_FL+h,z0,'ETA','galva'));
+});
+// LED
+box(model,0.9,0.025,0.05, 0,1.427,0.05,'LED','led');
+
+/* Cotes */
+const dims = new THREE.Group(); scene.add(dims);
+const dimLineMat = new THREE.LineBasicMaterial({color:0x465055});
+function dimLine(a,b,label,lp){
+  const pts=[new THREE.Vector3(...a),new THREE.Vector3(...b)];
+  dims.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),dimLineMat));
+  const dir=new THREE.Vector3().subVectors(pts[1],pts[0]).normalize();
+  const perp = Math.abs(dir.y)>0.9 ? new THREE.Vector3(0.04,0,0) : new THREE.Vector3(0,0.04,0);
+  pts.forEach(p=> dims.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([p.clone().sub(perp),p.clone().add(perp)]),dimLineMat)));
+  const c=document.createElement('canvas'); c.width=256; c.height=80; const g=c.getContext('2d');
+  g.fillStyle='rgba(22,25,27,.88)'; g.fillRect(8,10,240,60); g.fillStyle='#f0be2c'; g.fillRect(8,10,5,60);
+  g.fillStyle='#f3f5f6'; g.font='600 34px "IBM Plex Mono", monospace'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(label,132,41);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false}));
+  sp.scale.set(0.42,0.13,1); sp.position.set(...lp); sp.renderOrder=10; dims.add(sp);
+}
+dimLine([-1.1,0.01,0.85],[1.1,0.01,0.85],'2 200 mm',[0,0.1,0.85]);
+dimLine([1.35,0.01,-0.55],[1.35,0.01,0.55],'1 100 mm',[1.35,0.1,0]);
+dimLine([-1.35,0,0.7],[-1.35,1.5,0.7],'1 500 mm',[-1.35,0.75,0.7]);
+
+/* ---------- State ---------- */
+let T = T_END, selected = null, ghost = true, doorsOpen = true, doorAmt = 1;
+const accentColor = new THREE.Color();
+function phaseOf(id){ return PH[IT[id].phase]; }
+function applyState(){
+  accentColor.set(tok('--accent') || '#d9a100');
+  parts.forEach(m=>{
+    const it = m.userData.item, ph = phaseOf(it), mat = m.material, k = mat.userData.kind;
+    const started = T >= ph.start - 1e-6, active = started && T < ph.start+ph.dur;
+    if(k==='raw' || k==='galva'){
+      const g = !IT[it].galva || T >= GALVA_END;
+      if(g){ mat.color.setHex(MATS.galva.color); mat.map=spangle; mat.metalness=MATS.galva.metalness; mat.roughness=MATS.galva.roughness; mat.userData.kind='galva'; }
+      else { mat.color.setHex(MATS.raw.color); mat.map=null; mat.metalness=MATS.raw.metalness; mat.roughness=MATS.raw.roughness; mat.userData.kind='raw'; }
+      mat.needsUpdate = true;
+    }
+    if(!started){
+      m.visible = ghost; mat.transparent = true; mat.opacity = 0.07; mat.depthWrite = false; m.castShadow = false;
+    } else {
+      m.visible = true; mat.transparent = k==='logo'; mat.opacity = 1; mat.depthWrite = true; m.castShadow = k!=='logo';
+    }
+    const inGalva = IT[it].galva && T>=PH.P5.start && T<GALVA_END;
+    if(selected===it){ mat.emissive.copy(accentColor); mat.emissiveIntensity = 0.55; if(!started){mat.opacity=0.35;} }
+    else if(active || inGalva){ mat.emissive.copy(accentColor); mat.emissiveIntensity = 0.28; }
+    else { mat.emissive.copy(mat.userData.baseEmissive); mat.emissiveIntensity = mat.userData.baseEI; }
+  });
+}
+
+function currentPhases(){ return PHASES.filter(p=> T>=p.start && T<p.start+p.dur); }
+
+/* ---------- Gantt ---------- */
+function drawGantt(){
+  const svg = $('#gantt'), LW=290, CW=640, RH=30, TOP=30, W=LW+CW+20, H=TOP+PHASES.length*RH+8;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const x = d => LW + d/T_END*CW;
+  let s = '';
+  for(let d=0; d<=T_END; d++){
+    s += `<line x1="${x(d)}" x2="${x(d)}" y1="${TOP-6}" y2="${H-6}" stroke="var(--line)" stroke-width="1" ${d%2?'stroke-dasharray="2 3"':''}/>`;
+    if(d%2===0) s += `<text x="${x(d)}" y="${TOP-12}" font-size="11" text-anchor="middle" fill="var(--muted)" font-family="IBM Plex Mono, monospace">J${d}</text>`;
+  }
+  const r = model5 ? model5.p.rate : 58;
+  PHASES.forEach((p,i)=>{
+    const y = TOP + i*RH, act = T>=p.start && T<p.start+p.dur, done = Math.min(1,Math.max(0,(T-p.start)/p.dur));
+    s += `<text x="12" y="${y+RH/2+4}" font-size="12.5" fill="var(--ink)" font-weight="${act?700:400}">${p.name}</text>`;
+    s += `<text x="${LW-12}" y="${y+RH/2+4}" font-size="11" text-anchor="end" fill="var(--muted)" font-family="IBM Plex Mono, monospace">${p.galva?'sous-traité':p.h+' h'}</text>`;
+    const bx=x(p.start), bw=x(p.start+p.dur)-bx;
+    s += `<rect x="${bx+1}" y="${y+7}" width="${bw-2}" height="${RH-14}" rx="3" fill="var(--surface-2)" stroke="${act?'var(--accent)':'var(--line)'}" stroke-width="${act?2:1}"/>`;
+    if(done>0) s += `<rect x="${bx+1}" y="${y+7}" width="${Math.max(0,(bw-2)*done)}" height="${RH-14}" rx="3" fill="var(--accent)"/>`;
+  });
+  s += `<line x1="${x(T)}" x2="${x(T)}" y1="${TOP-6}" y2="${H-4}" stroke="var(--ink)" stroke-width="2"/>`;
+  s += `<rect x="${LW}" y="0" width="${CW+20}" height="${H}" fill="transparent" id="ganttHit" style="cursor:pointer"/>`;
+  svg.innerHTML = s;
+  $('#ganttHit').addEventListener('pointerdown', e=>{
+    const pt = svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
+    const lp = pt.matrixTransform(svg.getScreenCTM().inverse());
+    setT(Math.min(T_END,Math.max(0,(lp.x-LW)/CW*T_END)));
+  });
+}
+
+/* ---------- Courbe de coûts ---------- */
+const CM = {l:66,r:18,t:18,b:34,w:640,h:290};
+let model5 = null;
+function niceMax(v){ const p=Math.pow(10,Math.floor(Math.log10(v))); const n=v/p; return (n<=2?2:n<=2.5?2.5:n<=5?5:10)*p; }
+function drawCost(){
+  const svg=$('#cost'), ymax=niceMax(model5.revient*1.05);
+  const X=d=>CM.l+d/T_END*(CM.w-CM.l-CM.r), Y=v=>CM.h-CM.b-v/ymax*(CM.h-CM.t-CM.b);
+  let s='';
+  for(let i=0;i<=4;i++){ const v=ymax*i/4; s+=`<line x1="${CM.l}" x2="${CM.w-CM.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${CM.l-8}" y="${Y(v)+4}" font-size="11" text-anchor="end" fill="var(--muted)" font-family="IBM Plex Mono, monospace">${Math.round(v).toLocaleString('fr-FR')} €</text>`; }
+  for(let d=0;d<=T_END;d+=3) s+=`<text x="${X(d)}" y="${CM.h-CM.b+18}" font-size="11" text-anchor="middle" fill="var(--muted)" font-family="IBM Plex Mono, monospace">J${d}</text>`;
+  // galvanisation band
+  s+=`<rect x="${X(PH.P5.start)}" y="${CM.t}" width="${X(GALVA_END)-X(PH.P5.start)}" height="${CM.h-CM.t-CM.b}" fill="var(--surface-2)" opacity=".6"/>`;
+  s+=`<text x="${(X(PH.P5.start)+X(GALVA_END))/2}" y="${CM.t+14}" font-size="11" text-anchor="middle" fill="var(--muted)">galvanisation</text>`;
+  const pts=[]; for(let d=0; d<=T_END+1e-9; d+=0.1) pts.push([X(d),Y(model5.at(d))]);
+  const line = pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join('');
+  s+=`<path d="${line} L${X(T_END)} ${Y(0)} L${X(0)} ${Y(0)} Z" fill="var(--series)" opacity=".14"/>`;
+  s+=`<path d="${line}" fill="none" stroke="var(--series)" stroke-width="2" stroke-linejoin="round"/>`;
+  s+=`<line x1="${CM.l}" x2="${CM.w-CM.r}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--ink-2)" stroke-width="1"/>`;
+  const ve=model5.at(T_END); s+=`<circle cx="${X(T_END)}" cy="${Y(ve)}" r="4" fill="var(--series)" stroke="var(--surface)" stroke-width="2"/>`;
+  const vt=model5.at(T), tx=X(T), ty=Y(vt);
+  s+=`<line x1="${tx}" x2="${tx}" y1="${CM.t}" y2="${Y(0)}" stroke="var(--ink)" stroke-width="1.5"/>`;
+  s+=`<circle cx="${tx}" cy="${ty}" r="5" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"/>`;
+  const lab = `J${T.toFixed(1).replace('.',',')} · ${fmtEur(vt)}`;
+  const anchor = tx > CM.w-150 ? 'end' : 'start', dx = anchor==='end'?-10:10;
+  s+=`<text x="${tx+dx}" y="${Math.max(CM.t+30,ty-10)}" font-size="12.5" font-weight="600" text-anchor="${anchor}" fill="var(--ink)" font-family="IBM Plex Mono, monospace">${lab}</text>`;
+  s+=`<line id="hov" x1="0" x2="0" y1="${CM.t}" y2="${Y(0)}" stroke="var(--muted)" stroke-dasharray="3 3" visibility="hidden"/>`;
+  s+=`<rect id="costHit" x="${CM.l}" y="${CM.t}" width="${CM.w-CM.l-CM.r}" height="${CM.h-CM.t-CM.b}" fill="transparent" style="cursor:crosshair"/>`;
+  svg.innerHTML=s;
+  const hit=$('#costHit'), tip=$('#tip'), hov=$('#hov'), box=$('#costBox');
+  const toDay = e=>{ const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY; const lp=pt.matrixTransform(svg.getScreenCTM().inverse()); return Math.min(T_END,Math.max(0,(lp.x-CM.l)/(CM.w-CM.l-CM.r)*T_END)); };
+  hit.addEventListener('pointermove',e=>{
+    const d=toDay(e), v=model5.at(d); hov.setAttribute('x1',X(d)); hov.setAttribute('x2',X(d)); hov.setAttribute('visibility','visible');
+    const br=box.getBoundingClientRect(); tip.hidden=false; tip.style.left=(e.clientX-br.left)+'px'; tip.style.top=(e.clientY-br.top)+'px';
+    tip.innerHTML=`J${d.toFixed(1).replace('.',',')} · <b>${fmtEur(v)}</b> engagés`;
+  });
+  hit.addEventListener('pointerleave',()=>{ tip.hidden=true; hov.setAttribute('visibility','hidden'); });
+  hit.addEventListener('pointerdown',e=> setT(toDay(e)));
+}
+
+/* ---------- Tables & tuiles ---------- */
+function drawBom(){
+  const tb=$('#bom'); let s='';
+  ITEMS.forEach((it,k)=>{
+    s+=`<tr data-id="${it.id}" tabindex="0" class="${selected===it.id?'sel':''}"><td class="mono">${it.rep}</td><td>${it.label}<div class="spec">${it.spec}${it.galva?' · galvanisé à chaud':''}</div></td><td class="num">${it.qty}</td><td class="num">${fmtKg(it.kg)} kg</td><td class="num">${fmtEur(model5.mats[k])}</td><td><span class="phase-tag">${it.phase} · J${PH[it.phase].start}</span></td></tr>`;
+  });
+  s+=`<tr class="total"><td></td><td>Total nomenclature</td><td></td><td class="num">${fmtKg(TARE)} kg</td><td class="num">${fmtEur(model5.mat)}</td><td></td></tr>`;
+  tb.innerHTML=s;
+  tb.querySelectorAll('tr[data-id]').forEach(tr=>{
+    const go=()=>select(tr.dataset.id===selected?null:tr.dataset.id);
+    tr.addEventListener('click',go); tr.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();go();} });
+  });
+}
+function drawBreakdown(){
+  const m=model5, p=m.p;
+  $('#breakdown').innerHTML = [
+    ['Matière (chutes incluses)', m.mat],
+    [`Main d'œuvre · ${HOURS} h × ${p.rate} €`, m.mo],
+    [`Galvanisation · ${fmtKg(GALVA_KG)} kg + transport`, m.galva],
+  ].map(([l,v])=>`<tr><td>${l}</td><td class="num">${fmtEur(v)}</td></tr>`).join('')
+  + `<tr class="strong"><td>Prix de revient</td><td class="num">${fmtEur(m.revient)}</td></tr>`
+  + `<tr><td>Frais généraux ${Math.round(p.fg*100)} %</td><td class="num">${fmtEur(m.fg)}</td></tr>`
+  + `<tr><td>Marge ${Math.round(p.margin*100)} %</td><td class="num">${fmtEur(m.marge)}</td></tr>`
+  + `<tr class="sale"><td>Prix de vente HT</td><td class="num">${fmtEur(m.sale)}</td></tr>`;
+}
+function drawTiles(){
+  $('#k-tare').innerHTML = Math.round(TARE)+'<small>kg</small>';
+  const perWheel = (TARE+750)/3, ratio = perWheel/500;
+  $('#k-wheel').innerHTML = Math.round(perWheel)+'<small>kg</small>';
+  const cls = ratio<0.85?'ok':ratio<1?'warn':'bad', txt = ratio<0.85?'Conforme':ratio<1?'Marge faible':'Dépassement';
+  $('#k-wheel-s').innerHTML = `<span class="pill ${cls}">${ratio<1?'✓':'!'} ${txt}</span> ${Math.round(ratio*100)} % de 500 kg, 3 appuis`;
+  $('#k-hours').innerHTML = HOURS+'<small>h</small>';
+  $('#k-cost').innerHTML = Math.round(model5.revient).toLocaleString('fr-FR')+'<small>€ HT</small>';
+  $('#k-sale').innerHTML = Math.round(model5.sale).toLocaleString('fr-FR')+'<small>€ HT</small>';
+  $('#k-sale-s').textContent = `FG ${Math.round(model5.p.fg*100)} % + marge ${Math.round(model5.p.margin*100)} %`;
+}
+function drawSel(){
+  const kv=$('#selKv'), empty=$('#selEmpty');
+  if(!selected){ kv.hidden=true; empty.hidden=false; return; }
+  const k=ITEMS.findIndex(i=>i.id===selected), it=ITEMS[k], ph=PH[it.phase];
+  kv.innerHTML = `<dt>Repère</dt><dd>${it.rep} · ${it.label}</dd><dt>Spécification</dt><dd style="font-family:var(--f-body)">${it.spec}</dd><dt>Quantité</dt><dd>${it.qty}</dd><dt>Masse</dt><dd>${fmtKg(it.kg)} kg</dd><dt>Coût matière</dt><dd>${fmtEur(model5.mats[k])}</dd><dt>Phase</dt><dd style="font-family:var(--f-body)">${ph.name}, J${ph.start} → J${ph.start+ph.dur}</dd><dt>Finition</dt><dd style="font-family:var(--f-body)">${it.galva?'Galvanisation à chaud après soudure':(it.mat==='buy'?'Composant acheté':'Pré-galvanisé')}</dd>`;
+  kv.hidden=false; empty.hidden=true;
+}
+function drawTimeline(){
+  $('#t').value = T;
+  $('#dayLbl').textContent = 'J'+(Math.floor(T+1e-6));
+  const cur = currentPhases();
+  $('#phaseNow').innerHTML = T>=T_END-1e-6
+    ? `<b>Module livré</b><span>· épreuve de charge réalisée, ${Math.round(model5.at(T_END)).toLocaleString('fr-FR')} € engagés</span>`
+    : `<b>${cur.map(p=>p.name).join(' + ')||'Préparation'}</b><span>· ${fmtEur(model5.at(T))} engagés sur ${fmtEur(model5.revient)}</span>`;
+}
+
+function refreshAll(){ model5 = costModel(); drawTiles(); drawBreakdown(); drawBom(); drawCost(); drawGantt(); drawTimeline(); drawSel(); applyState(); }
+function setT(v){ T=v; drawTimeline(); drawGantt(); drawCost(); applyState(); }
+function select(id){ selected=id; drawBom(); drawSel(); applyState();
+  if(id){ const r=document.querySelector(`#bom tr[data-id="${id}"]`); if(r && r.getBoundingClientRect) {/* keep scroll */} } }
+
+/* ---------- Interactions ---------- */
+$('#t').addEventListener('input',e=>{ stopPlay(); setT(parseFloat(e.target.value)); });
+['#p-rate','#p-tube','#p-sheet','#p-galva','#p-loss','#p-fg','#p-margin'].forEach(id=> $(id).addEventListener('input',refreshAll));
+$('#v-iso').onclick=()=>setView('iso'); $('#v-front').onclick=()=>setView('front'); $('#v-side').onclick=()=>setView('side'); $('#v-top').onclick=()=>setView('top');
+function toggle(btn,fn){ btn.addEventListener('click',()=>{ const on=btn.getAttribute('aria-pressed')!=='true'; btn.setAttribute('aria-pressed',on); fn(on); }); }
+toggle($('#t-doors'),on=>{ doorsOpen=on; });
+toggle($('#t-ghost'),on=>{ ghost=on; applyState(); });
+toggle($('#t-dims'),on=>{ dims.visible=on; });
+
+let playing=false, lastTs=0;
+function stopPlay(){ playing=false; $('#play').textContent='▶ Lire'; }
+$('#play').addEventListener('click',()=>{
+  if(playing){ stopPlay(); return; }
+  if(T>=T_END-1e-6) setT(0);
+  playing=true; lastTs=0; $('#play').textContent='❚❚ Pause';
+});
+
+const ray=new THREE.Raycaster(), mouse=new THREE.Vector2(); let downAt=null;
+renderer.domElement.addEventListener('pointerdown',e=>{ downAt=[e.clientX,e.clientY]; });
+renderer.domElement.addEventListener('pointerup',e=>{
+  if(!downAt || Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1])>5) return;
+  const r=renderer.domElement.getBoundingClientRect();
+  mouse.set((e.clientX-r.left)/r.width*2-1, -(e.clientY-r.top)/r.height*2+1);
+  ray.setFromCamera(mouse,camera);
+  const hits=ray.intersectObjects(parts.filter(p=>p.visible && p.material.opacity>0.5),false);
+  select(hits.length?hits[0].object.userData.item:null);
+});
+
+/* ---------- Thème ---------- */
+function applyTheme(){
+  scene.background = new THREE.Color(tok('--viewport') || '#dce1e2');
+  if(grid){ scene.remove(grid); grid.geometry.dispose(); }
+  grid = new THREE.GridHelper(8,40,new THREE.Color(tok('--grid-a')||'#aeb7ba'),new THREE.Color(tok('--grid-b')||'#c6cdcf'));
+  grid.position.y=0.001; scene.add(grid);
+  dimLineMat.color.set(tok('--ink-2')||'#465055');
+  const dark = (tok('--ground')||'#fff').toLowerCase()==='#101315';
+  groundMat.opacity = dark?0.45:0.22;
+  applyState();
+}
+new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);
+
+/* ---------- Boucle ---------- */
+function resize(){ const w=vp.clientWidth, h=vp.clientHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(vp);
+function frame(ts){
+  requestAnimationFrame(frame);
+  if(playing){ if(lastTs){ const nt=T+(ts-lastTs)/1000*1.3; if(nt>=T_END){ setT(T_END); stopPlay(); } else setT(nt); } lastTs=ts; }
+  const target = doorsOpen?1:0, rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  doorAmt += rm ? (target-doorAmt) : (target-doorAmt)*0.12;
+  doors[0].g.rotation.y = -doorAmt*1.95; doors[1].g.rotation.y = doorAmt*1.95; doors[2].g.rotation.y = doorAmt*1.75;
+  if(camAnim){ camAnim.t=Math.min(1,camAnim.t+0.045); const e=1-Math.pow(1-camAnim.t,3);
+    camera.position.lerpVectors(camAnim.p0,camAnim.p1,e); controls.target.lerpVectors(camAnim.g0,camAnim.g1,e); if(camAnim.t>=1) camAnim=null; }
+  controls.update(); renderer.render(scene,camera);
+}
+resize(); refreshAll(); applyTheme(); requestAnimationFrame(frame);
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{ logoMats.forEach(m=>{ const t=logoTex(); t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping; m.material.map=t; m.material.needsUpdate=true; }); });
+})();
+</script>
