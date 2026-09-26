@@ -1,0 +1,42 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#f3f5f6;font-family:DejaVu Sans,Arial,sans-serif}
+#tb{position:absolute;right:16px;bottom:16px;border:1.5px solid #111;background:#fff;font-size:13px;min-width:360px}
+#tb div{padding:5px 10px;border-top:1px solid #111}#tb div:first-child{border-top:none;font-weight:700;font-size:17px;letter-spacing:.04em}
+#tb .row{display:flex;justify-content:space-between;gap:16px}
+#tl{position:absolute;left:18px;top:14px;font-size:22px;font-weight:700;letter-spacing:.03em}
+#tl small{display:block;font-size:13px;font-weight:400;color:#444;margin-top:2px}
+#ax{position:absolute;left:18px;bottom:16px;font-size:12px;color:#333}
+</style></head><body>
+<div id="tl"></div><div id="tb"></div><div id="ax"></div>
+<script src="three.min.js"></script><script src="GLTFLoader.js"></script>
+<script>
+const q=new URLSearchParams(location.search);const view=q.get('view'),file=q.get('file');
+const W=1600,H=1100;const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true,alpha:false});r.setSize(W,H);r.setPixelRatio(1);document.body.prepend(r.domElement);
+r.outputEncoding=THREE.sRGBEncoding;
+const sc=new THREE.Scene();sc.background=new THREE.Color(0xf3f5f6);
+sc.add(new THREE.HemisphereLight(0xffffff,0x8a8a8a,0.85));const d1=new THREE.DirectionalLight(0xffffff,0.75);sc.add(d1);const d2=new THREE.DirectionalLight(0xffffff,0.3);sc.add(d2);
+const V={front:{d:[0,0,1],up:[0,1,0],t:'VUE AVANT',s:'face 2200 — portes'},rear:{d:[0,0,-1],up:[0,1,0],t:'VUE ARRIÈRE',s:'face 2200 — attelage'},
+left:{d:[-1,0,0],up:[0,1,0],t:'VUE LATÉRALE GAUCHE',s:'face 1100 — barre de manutention'},right:{d:[1,0,0],up:[0,1,0],t:'VUE LATÉRALE DROITE',s:'face 1100 — barre de manutention'},
+top:{d:[0,1,0],up:[0,0,-1],t:'VUE SUPÉRIEURE',s:'points de levage — avant en bas'},bottom:{d:[0,-1,0],up:[0,0,-1],t:'VUE INFÉRIEURE',s:'fourreaux, roues, attelage — avant en bas'},
+iso:{d:[-1,0.75,1.15],up:[0,1,0],t:'VUE ISOMÉTRIQUE',s:'avant-gauche',p:1},iso_open:{d:[-1,0.75,1.15],up:[0,1,0],t:'VUE ISOMÉTRIQUE — PORTES À 90°',s:'avant-gauche, butées au contact',p:1},
+iso_rear:{d:[1,0.7,-1.2],up:[0,1,0],t:'VUE ISOMÉTRIQUE ARRIÈRE',s:'arrière-droite — crochet + anneau articulé',p:1},
+exploded:{d:[-1,0.8,1.1],up:[0,1,0],t:'VUE ÉCLATÉE',s:'composants 01 → 25',p:1},
+hitch:{d:[0.75,0.95,-1],up:[0,1,0],t:'DÉTAIL ATTELAGE',s:'crochet ouvert vers le haut + anneau articulé (engin)',p:1,zoom:'hitch'}};
+const v=V[view];
+new THREE.GLTFLoader().load(file,g=>{const m=g.scene;sc.add(m);
+ m.traverse(o=>{if(o.isMesh){o.material.side=THREE.DoubleSide;o.material.metalness=Math.min(o.material.metalness,0.2);o.material.roughness=0.6;
+  const e=new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry,28),new THREE.LineBasicMaterial({color:0x1a1a1a}));o.add(e);}});
+ let bb=new THREE.Box3().setFromObject(m);let c=bb.getCenter(new THREE.Vector3()),sz=bb.getSize(new THREE.Vector3());
+ if(v.zoom==='hitch'){c=new THREE.Vector3(1100,320,-1230);sz=new THREE.Vector3(650,420,650);}
+ const dir=new THREE.Vector3(...v.d).normalize();const R=sz.length()*0.62;
+ let cam;if(v.p){cam=new THREE.PerspectiveCamera(v.zoom?30:26,W/H,1,50000);cam.position.copy(c).addScaledVector(dir,R/Math.tan(THREE.MathUtils.degToRad(cam.fov/2))*(v.zoom?0.75:0.9));}
+ else{const a=W/H;let w,h;const ax=Math.abs(v.d[0])>0.5?'x':Math.abs(v.d[1])>0.5?'y':'z';
+  if(ax==='z'){w=sz.x;h=sz.y}else if(ax==='x'){w=sz.z;h=sz.y}else{w=sz.x;h=sz.z}
+  const k=1.18;let hw=Math.max(w/2,h/2*a)*k,hh=hw/a;cam=new THREE.OrthographicCamera(-hw,hw,hh,-hh,1,50000);cam.position.copy(c).addScaledVector(dir,6000);}
+ cam.up.set(...v.up);cam.lookAt(c);d1.position.copy(cam.position).add(new THREE.Vector3(800,2500,600));d2.position.set(-3000,1000,-2000);
+ r.render(sc,cam);requestAnimationFrame(()=>{r.render(sc,cam);requestAnimationFrame(()=>{r.render(sc,cam);});});
+ document.getElementById('tl').innerHTML=`HURAVA V1 — ${v.t}<small>${v.s}</small>`;
+ document.getElementById('tb').innerHTML=`<div>HURAVA by ARCHIACCESS</div><div class="row"><span>HURAVA_MASTER_ASSEMBLY</span><span>V1 — build CAO</span></div><div class="row"><span>Enveloppe caisse</span><span>2200 × 1100 × 1500 mm</span></div><div class="row"><span>Dessus caisse / garde au sol</span><span>Z 1830 / Z 250</span></div><div class="row"><span>Statut</span><span>PRÉLIMINAIRE — à valider</span></div>`;
+ document.getElementById('ax').textContent='Repère : X longueur · Y largeur (0 = avant) · Z hauteur — cotes en mm';setTimeout(()=>{r.render(sc,cam);const im=new Image();im.onload=()=>{r.domElement.replaceWith(im);setTimeout(()=>document.title='done',200);};im.style.display='block';im.src=r.domElement.toDataURL('image/png');},300);
+ });
+</script></body></html>

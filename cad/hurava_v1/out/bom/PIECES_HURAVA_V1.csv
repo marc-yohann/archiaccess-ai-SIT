@@ -1,0 +1,188 @@
+Identifiant;Composant;Nom;Matériau;Qté;Fonction;Type;Section;Longueur (mm);Masse (kg);Mobile;Sous-ensemble soudé;Statut;Dans BOM
+01-LON-AV-1;01_CHASSIS;Longeron AV tronçon 1;S235JR galvanisé à chaud;1;Longeron de châssis, reprise plancher et fourreaux;profilé;Tube rect. 60×40×3;533;2.360;;A — caisse mécano-soudée;;oui
+01-LON-AV-2;01_CHASSIS;Longeron AV tronçon 2;S235JR galvanisé à chaud;1;Longeron de châssis, reprise plancher et fourreaux;profilé;Tube rect. 60×40×3;670;2.966;;A — caisse mécano-soudée;;oui
+01-LON-AV-3;01_CHASSIS;Longeron AV tronçon 3;S235JR galvanisé à chaud;1;Longeron de châssis, reprise plancher et fourreaux;profilé;Tube rect. 60×40×3;533;2.360;;A — caisse mécano-soudée;;oui
+01-LON-AR-1;01_CHASSIS;Longeron AR tronçon 1;S235JR galvanisé à chaud;1;Longeron de châssis, reprise plancher et fourreaux;profilé;Tube rect. 60×40×3;533;2.360;;A — caisse mécano-soudée;;oui
+01-LON-AR-2;01_CHASSIS;Longeron AR tronçon 2;S235JR galvanisé à chaud;1;Longeron de châssis, reprise plancher et fourreaux;profilé;Tube rect. 60×40×3;670;2.966;;A — caisse mécano-soudée;;oui
+01-LON-AR-3;01_CHASSIS;Longeron AR tronçon 3;S235JR galvanisé à chaud;1;Longeron de châssis, reprise plancher et fourreaux;profilé;Tube rect. 60×40×3;533;2.360;;A — caisse mécano-soudée;;oui
+01-TRA-G;01_CHASSIS;Traverse de châssis d'extrémité;S235JR galvanisé à chaud;1;Traverse de châssis, appui plancher / reprise roues et attelage;profilé;Tube rect. 60×40×3;1016;4.498;;A — caisse mécano-soudée;;oui
+01-TRA-D;01_CHASSIS;Traverse de châssis d'extrémité;S235JR galvanisé à chaud;1;Traverse de châssis, appui plancher / reprise roues et attelage;profilé;Tube rect. 60×40×3;1016;4.498;;A — caisse mécano-soudée;;oui
+01-TRA-I1;01_CHASSIS;Traverse de châssis intermédiaire;S235JR galvanisé à chaud;1;Traverse de châssis, appui plancher / reprise roues et attelage;profilé;Tube rect. 60×40×3;1016;4.498;;A — caisse mécano-soudée;;oui
+01-TRA-I2;01_CHASSIS;Traverse de châssis intermédiaire;S235JR galvanisé à chaud;1;Traverse de châssis, appui plancher / reprise roues et attelage;profilé;Tube rect. 60×40×3;1016;4.498;;A — caisse mécano-soudée;;oui
+01-TRA-I3;01_CHASSIS;Traverse de châssis intermédiaire;S235JR galvanisé à chaud;1;Traverse de châssis, appui plancher / reprise roues et attelage;profilé;Tube rect. 60×40×3;1016;4.498;;A — caisse mécano-soudée;;oui
+01-GOU-AVG;01_CHASSIS;Gousset d'angle de châssis;S235JR galvanisé à chaud;1;Rigidification des nœuds d'angle du châssis;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+01-GOU-AVD;01_CHASSIS;Gousset d'angle de châssis;S235JR galvanisé à chaud;1;Rigidification des nœuds d'angle du châssis;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+01-GOU-ARG;01_CHASSIS;Gousset d'angle de châssis;S235JR galvanisé à chaud;1;Rigidification des nœuds d'angle du châssis;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+01-GOU-ARD;01_CHASSIS;Gousset d'angle de châssis;S235JR galvanisé à chaud;1;Rigidification des nœuds d'angle du châssis;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+01-MON-AVG;01_CHASSIS;Montant d'angle;S235JR galvanisé à chaud;1;Montant du cadre principal — chemin de charge des points de levage;profilé;Tube rect. 60×40×3;1438;6.367;;A — caisse mécano-soudée;;oui
+01-MON-AVD;01_CHASSIS;Montant d'angle;S235JR galvanisé à chaud;1;Montant du cadre principal — chemin de charge des points de levage;profilé;Tube rect. 60×40×3;1438;6.367;;A — caisse mécano-soudée;;oui
+01-MON-ARG;01_CHASSIS;Montant d'angle;S235JR galvanisé à chaud;1;Montant du cadre principal — chemin de charge des points de levage;profilé;Tube rect. 60×40×3;1438;6.367;;A — caisse mécano-soudée;;oui
+01-MON-ARD;01_CHASSIS;Montant d'angle;S235JR galvanisé à chaud;1;Montant du cadre principal — chemin de charge des points de levage;profilé;Tube rect. 60×40×3;1438;6.367;;A — caisse mécano-soudée;;oui
+01-CH-AV;01_CHASSIS;Traverse haute avant;S235JR galvanisé à chaud;1;Cadre haut — linteau de portes;profilé;Tube rect. 60×40×3;2196;9.723;;A — caisse mécano-soudée;;oui
+01-CH-AR;01_CHASSIS;Traverse haute arrière;S235JR galvanisé à chaud;1;Cadre haut arrière;profilé;Tube rect. 60×40×3;2196;9.723;;A — caisse mécano-soudée;;oui
+01-CH-G;01_CHASSIS;Traverse haute latérale;S235JR galvanisé à chaud;1;Cadre haut latéral;profilé;Tube rect. 60×40×3;1016;4.498;;A — caisse mécano-soudée;;oui
+01-CH-D;01_CHASSIS;Traverse haute latérale;S235JR galvanisé à chaud;1;Cadre haut latéral;profilé;Tube rect. 60×40×3;1016;4.498;;A — caisse mécano-soudée;;oui
+02-LIS-G;02_SECONDARY_STRUCTURE;Lisse latérale;S235JR galvanisé à chaud;1;Raidisseur de panneau latéral + reprise des supports de barre de manutention;profilé;Tube carré 40×40×3;976;3.402;;A — caisse mécano-soudée;;oui
+02-LIS-D;02_SECONDARY_STRUCTURE;Lisse latérale;S235JR galvanisé à chaud;1;Raidisseur de panneau latéral + reprise des supports de barre de manutention;profilé;Tube carré 40×40×3;976;3.402;;A — caisse mécano-soudée;;oui
+02-MON-AR;02_SECONDARY_STRUCTURE;Montant arrière intermédiaire;S235JR galvanisé à chaud;1;Raidisseur panneau arrière;profilé;Tube carré 40×40×3;1434;4.998;;A — caisse mécano-soudée;;oui
+02-LIS-AR-1;02_SECONDARY_STRUCTURE;Lisse arrière;S235JR galvanisé à chaud;1;Raidisseur panneau arrière;profilé;Tube carré 40×40×3;1038;3.618;;A — caisse mécano-soudée;;oui
+02-LIS-AR-2;02_SECONDARY_STRUCTURE;Lisse arrière;S235JR galvanisé à chaud;1;Raidisseur panneau arrière;profilé;Tube carré 40×40×3;1038;3.618;;A — caisse mécano-soudée;;oui
+02-TT-1;02_SECONDARY_STRUCTURE;Traverse de toit;S235JR galvanisé à chaud;1;Raidisseur de toit;profilé;Tube carré 40×40×3;1016;3.541;;A — caisse mécano-soudée;;oui
+02-TT-2;02_SECONDARY_STRUCTURE;Traverse de toit;S235JR galvanisé à chaud;1;Raidisseur de toit;profilé;Tube carré 40×40×3;1016;3.541;;A — caisse mécano-soudée;;oui
+02-GOU-ATT-G;02_SECONDARY_STRUCTURE;Gousset de reprise d'attelage;S235JR galvanisé à chaud;1;Transfert de l'effort de traction du longeron AR vers la traverse centrale;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+02-GOU-ATT-D;02_SECONDARY_STRUCTURE;Gousset de reprise d'attelage;S235JR galvanisé à chaud;1;Transfert de l'effort de traction du longeron AR vers la traverse centrale;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+03-PLA;03_FLOOR;Plancher;S235JR galvanisé à chaud;1;Plancher structurel, reprise charge utile;tôle;Tôle ép. 4;;75.273;;A — caisse mécano-soudée;PROVISOIRE (ép. 4, larmée à valider);oui
+04-TOI;04_ROOF;Tôle de toit;S235JR galvanisé à chaud;1;Couverture, étanchéité;tôle;Tôle ép. 2;;37.530;;A — caisse mécano-soudée;PROVISOIRE (ép.);oui
+05-PAN-G;05_SIDE_PANELS;Panneau latéral gauche;S235JR galvanisé à chaud;1;Paroi latérale (face 1100) porteuse de la barre de manutention;tôle;Tôle ép. 2;;25.847;;A — caisse mécano-soudée;PROVISOIRE (ép.);oui
+05-PAN-D;05_SIDE_PANELS;Panneau latéral droit;S235JR galvanisé à chaud;1;Paroi latérale (face 1100) porteuse de la barre de manutention;tôle;Tôle ép. 2;;25.847;;A — caisse mécano-soudée;PROVISOIRE (ép.);oui
+06-PAN-AR;06_REAR_PANEL;Panneau arrière;S235JR galvanisé à chaud;1;Paroi arrière (face attelage);tôle;Tôle ép. 2;;51.647;;A — caisse mécano-soudée;PROVISOIRE (ép.);oui
+07-VG-1;07_FRONT_DOORS;Vantail G — Tôle de parement;S235JR galvanisé à chaud;1;Vantail de porte avant (face 2200);tôle;Tôle ép. 2;;23.458;DOOR_L;B — vantail mécano-soudé gauche;;oui
+07-VG-2;07_FRONT_DOORS;Vantail G — Montant côté charnières;S235JR galvanisé à chaud;1;Vantail de porte avant (face 2200);profilé;Tube carré 40×40×3;1423;4.960;DOOR_L;B — vantail mécano-soudé gauche;;oui
+07-VG-3;07_FRONT_DOORS;Vantail G — Montant côté battement;S235JR galvanisé à chaud;1;Vantail de porte avant (face 2200);profilé;Tube carré 40×40×3;1423;4.960;DOOR_L;B — vantail mécano-soudé gauche;;oui
+07-VG-4;07_FRONT_DOORS;Vantail G — Traverse basse;S235JR galvanisé à chaud;1;Vantail de porte avant (face 2200);profilé;Tube carré 40×40×3;970;3.381;DOOR_L;B — vantail mécano-soudé gauche;;oui
+07-VG-5;07_FRONT_DOORS;Vantail G — Traverse haute;S235JR galvanisé à chaud;1;Vantail de porte avant (face 2200);profilé;Tube carré 40×40×3;970;3.381;DOOR_L;B — vantail mécano-soudé gauche;;oui
+07-VG-6;07_FRONT_DOORS;Vantail G — Traverse intermédiaire;S235JR galvanisé à chaud;1;Vantail de porte avant (face 2200);profilé;Tube carré 40×40×3;970;3.381;DOOR_L;B — vantail mécano-soudé gauche;;oui
+08-CHG1-F;08_DOOR_HINGES;Charnière — nœud fixe + patte;S235JR galvanisé à chaud;1;Articulation de vantail, partie dormante soudée au montant;pièce découpée;Nœud Ø30 + patte 20;;0.278;;A — caisse mécano-soudée;;oui
+08-CHG1-M;08_DOOR_HINGES;Charnière — nœud mobile + penture;S235JR galvanisé à chaud;1;Articulation de vantail, partie ouvrante soudée au vantail;pièce découpée;Nœud Ø30 + penture 6;;0.561;DOOR_L;B — vantail mécano-soudé gauche;;oui
+08-AXG1;08_DOOR_HINGES;Axe de charnière Ø16;Acier inox A2 (PROVISOIRE);1;Axe d'articulation démontable;quincaillerie;Ø16 × 118;118;0.197;;;PROVISOIRE (matière);oui
+08-CHG2-F;08_DOOR_HINGES;Charnière — nœud fixe + patte;S235JR galvanisé à chaud;1;Articulation de vantail, partie dormante soudée au montant;pièce découpée;Nœud Ø30 + patte 20;;0.278;;A — caisse mécano-soudée;;oui
+08-CHG2-M;08_DOOR_HINGES;Charnière — nœud mobile + penture;S235JR galvanisé à chaud;1;Articulation de vantail, partie ouvrante soudée au vantail;pièce découpée;Nœud Ø30 + penture 6;;0.561;DOOR_L;B — vantail mécano-soudé gauche;;oui
+08-AXG2;08_DOOR_HINGES;Axe de charnière Ø16;Acier inox A2 (PROVISOIRE);1;Axe d'articulation démontable;quincaillerie;Ø16 × 118;118;0.197;;;PROVISOIRE (matière);oui
+08-CHG3-F;08_DOOR_HINGES;Charnière — nœud fixe + patte;S235JR galvanisé à chaud;1;Articulation de vantail, partie dormante soudée au montant;pièce découpée;Nœud Ø30 + patte 20;;0.278;;A — caisse mécano-soudée;;oui
+08-CHG3-M;08_DOOR_HINGES;Charnière — nœud mobile + penture;S235JR galvanisé à chaud;1;Articulation de vantail, partie ouvrante soudée au vantail;pièce découpée;Nœud Ø30 + penture 6;;0.561;DOOR_L;B — vantail mécano-soudé gauche;;oui
+08-AXG3;08_DOOR_HINGES;Axe de charnière Ø16;Acier inox A2 (PROVISOIRE);1;Axe d'articulation démontable;quincaillerie;Ø16 × 118;118;0.197;;;PROVISOIRE (matière);oui
+08-BUTG;08_DOOR_HINGES;Butée d'ouverture 90°;S235JR galvanisé à chaud;1;Butée mécanique positive à 90° (tampon élastomère à ajouter);pièce découpée;Plat 40 découpé;;0.545;;A — caisse mécano-soudée;;oui
+07-VD-1;07_FRONT_DOORS;Vantail D — Tôle de parement;S235JR galvanisé à chaud;1;Vantail de porte avant (face 2200);tôle;Tôle ép. 2;;23.458;DOOR_R;B — vantail mécano-soudé droit;;oui
+07-VD-2;07_FRONT_DOORS;Vantail D — Montant côté charnières;S235JR galvanisé à chaud;1;Vantail de porte avant (face 2200);profilé;Tube carré 40×40×3;1423;4.960;DOOR_R;B — vantail mécano-soudé droit;;oui
+07-VD-3;07_FRONT_DOORS;Vantail D — Montant côté battement;S235JR galvanisé à chaud;1;Vantail de porte avant (face 2200);profilé;Tube carré 40×40×3;1423;4.960;DOOR_R;B — vantail mécano-soudé droit;;oui
+07-VD-4;07_FRONT_DOORS;Vantail D — Traverse basse;S235JR galvanisé à chaud;1;Vantail de porte avant (face 2200);profilé;Tube carré 40×40×3;970;3.381;DOOR_R;B — vantail mécano-soudé droit;;oui
+07-VD-5;07_FRONT_DOORS;Vantail D — Traverse haute;S235JR galvanisé à chaud;1;Vantail de porte avant (face 2200);profilé;Tube carré 40×40×3;970;3.381;DOOR_R;B — vantail mécano-soudé droit;;oui
+07-VD-6;07_FRONT_DOORS;Vantail D — Traverse intermédiaire;S235JR galvanisé à chaud;1;Vantail de porte avant (face 2200);profilé;Tube carré 40×40×3;970;3.381;DOOR_R;B — vantail mécano-soudé droit;;oui
+08-CHD1-F;08_DOOR_HINGES;Charnière — nœud fixe + patte;S235JR galvanisé à chaud;1;Articulation de vantail, partie dormante soudée au montant;pièce découpée;Nœud Ø30 + patte 20;;0.278;;A — caisse mécano-soudée;;oui
+08-CHD1-M;08_DOOR_HINGES;Charnière — nœud mobile + penture;S235JR galvanisé à chaud;1;Articulation de vantail, partie ouvrante soudée au vantail;pièce découpée;Nœud Ø30 + penture 6;;0.561;DOOR_R;B — vantail mécano-soudé droit;;oui
+08-AXD1;08_DOOR_HINGES;Axe de charnière Ø16;Acier inox A2 (PROVISOIRE);1;Axe d'articulation démontable;quincaillerie;Ø16 × 118;118;0.197;;;PROVISOIRE (matière);oui
+08-CHD2-F;08_DOOR_HINGES;Charnière — nœud fixe + patte;S235JR galvanisé à chaud;1;Articulation de vantail, partie dormante soudée au montant;pièce découpée;Nœud Ø30 + patte 20;;0.278;;A — caisse mécano-soudée;;oui
+08-CHD2-M;08_DOOR_HINGES;Charnière — nœud mobile + penture;S235JR galvanisé à chaud;1;Articulation de vantail, partie ouvrante soudée au vantail;pièce découpée;Nœud Ø30 + penture 6;;0.561;DOOR_R;B — vantail mécano-soudé droit;;oui
+08-AXD2;08_DOOR_HINGES;Axe de charnière Ø16;Acier inox A2 (PROVISOIRE);1;Axe d'articulation démontable;quincaillerie;Ø16 × 118;118;0.197;;;PROVISOIRE (matière);oui
+08-CHD3-F;08_DOOR_HINGES;Charnière — nœud fixe + patte;S235JR galvanisé à chaud;1;Articulation de vantail, partie dormante soudée au montant;pièce découpée;Nœud Ø30 + patte 20;;0.278;;A — caisse mécano-soudée;;oui
+08-CHD3-M;08_DOOR_HINGES;Charnière — nœud mobile + penture;S235JR galvanisé à chaud;1;Articulation de vantail, partie ouvrante soudée au vantail;pièce découpée;Nœud Ø30 + penture 6;;0.561;DOOR_R;B — vantail mécano-soudé droit;;oui
+08-AXD3;08_DOOR_HINGES;Axe de charnière Ø16;Acier inox A2 (PROVISOIRE);1;Axe d'articulation démontable;quincaillerie;Ø16 × 118;118;0.197;;;PROVISOIRE (matière);oui
+08-BUTD;08_DOOR_HINGES;Butée d'ouverture 90°;S235JR galvanisé à chaud;1;Butée mécanique positive à 90° (tampon élastomère à ajouter);pièce découpée;Plat 40 découpé;;0.545;;A — caisse mécano-soudée;;oui
+09-TRH-G;09_LOCKING_SYSTEM;Tringle haute Ø14;S235JR galvanisé à chaud;1;Verrouillage haut dans gâche;profilé;Rond Ø14;676;0.817;DOOR_L;;;oui
+09-TRB-G;09_LOCKING_SYSTEM;Tringle basse Ø14;S235JR galvanisé à chaud;1;Verrouillage bas dans gâche;profilé;Rond Ø14;652;0.787;DOOR_L;;;oui
+09-GUI-G1;09_LOCKING_SYSTEM;Guide de tringle;S235JR galvanisé à chaud;1;Guidage de tringle;pièce découpée;Bloc 30×24 percé Ø15.5;;0.083;DOOR_L;B — vantail mécano-soudé gauche;;oui
+09-GUI-G2;09_LOCKING_SYSTEM;Guide de tringle;S235JR galvanisé à chaud;1;Guidage de tringle;pièce découpée;Bloc 30×24 percé Ø15.5;;0.083;DOOR_L;B — vantail mécano-soudé gauche;;oui
+09-GUI-G3;09_LOCKING_SYSTEM;Guide de tringle;S235JR galvanisé à chaud;1;Guidage de tringle;pièce découpée;Bloc 30×24 percé Ø15.5;;0.083;DOOR_L;B — vantail mécano-soudé gauche;;oui
+09-GUI-G4;09_LOCKING_SYSTEM;Guide de tringle;S235JR galvanisé à chaud;1;Guidage de tringle;pièce découpée;Bloc 30×24 percé Ø15.5;;0.083;DOOR_L;B — vantail mécano-soudé gauche;;oui
+09-GAH-G;09_LOCKING_SYSTEM;Gâche haute renforcée;S235JR galvanisé à chaud;1;Réception tringle haute;pièce découpée;Bloc 24 percé Ø16;;0.088;;A — caisse mécano-soudée;;oui
+09-GAB-G;09_LOCKING_SYSTEM;Gâche basse renforcée;S235JR galvanisé à chaud;1;Réception tringle basse;pièce découpée;Bloc 24 percé Ø16;;0.063;;A — caisse mécano-soudée;;oui
+09-TRH-D;09_LOCKING_SYSTEM;Tringle haute Ø14;S235JR galvanisé à chaud;1;Verrouillage haut dans gâche;profilé;Rond Ø14;598;0.723;DOOR_R;;;oui
+09-TRB-D;09_LOCKING_SYSTEM;Tringle basse Ø14;S235JR galvanisé à chaud;1;Verrouillage bas dans gâche;profilé;Rond Ø14;670;0.810;DOOR_R;;;oui
+09-GUI-D1;09_LOCKING_SYSTEM;Guide de tringle;S235JR galvanisé à chaud;1;Guidage de tringle;pièce découpée;Bloc 30×24 percé Ø15.5;;0.083;DOOR_R;B — vantail mécano-soudé droit;;oui
+09-GUI-D2;09_LOCKING_SYSTEM;Guide de tringle;S235JR galvanisé à chaud;1;Guidage de tringle;pièce découpée;Bloc 30×24 percé Ø15.5;;0.083;DOOR_R;B — vantail mécano-soudé droit;;oui
+09-GUI-D3;09_LOCKING_SYSTEM;Guide de tringle;S235JR galvanisé à chaud;1;Guidage de tringle;pièce découpée;Bloc 30×24 percé Ø15.5;;0.083;DOOR_R;B — vantail mécano-soudé droit;;oui
+09-GUI-D4;09_LOCKING_SYSTEM;Guide de tringle;S235JR galvanisé à chaud;1;Guidage de tringle;pièce découpée;Bloc 30×24 percé Ø15.5;;0.083;DOOR_R;B — vantail mécano-soudé droit;;oui
+09-GAH-D;09_LOCKING_SYSTEM;Gâche haute renforcée;S235JR galvanisé à chaud;1;Réception tringle haute;pièce découpée;Bloc 24 percé Ø16;;0.088;;A — caisse mécano-soudée;;oui
+09-GAB-D;09_LOCKING_SYSTEM;Gâche basse renforcée;S235JR galvanisé à chaud;1;Réception tringle basse;pièce découpée;Bloc 24 percé Ø16;;0.063;;A — caisse mécano-soudée;;oui
+09-SER;09_LOCKING_SYSTEM;Boîtier de crémone-serrure;Acier zingué (achat);1;Serrure mécanique à cylindre, entraînement des tringles;acheté;Crémone 3 points à cylindre;;2.200;DOOR_R;;PROVISOIRE (référence);oui
+09-POI;09_LOCKING_SYSTEM;Poignée palette extérieure cadenassable;Acier zingué (achat);1;Manœuvre de la crémone depuis l'extérieur;acheté;Poignée palette + rosace;;1.100;DOOR_R;;PROVISOIRE (référence);oui
+09-CJ;09_LOCKING_SYSTEM;Couvre-joint anti-pince / anti-arrachement;S235JR galvanisé à chaud;1;Protège le battement contre l'effraction par levier;plat;Plat 65×3;1383;2.117;DOOR_R;B — vantail mécano-soudé droit;;oui
+10-RG-MT1;10_RACK_LEFT;Montant de rack;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;profilé;Tube carré 30×30×2;1494;2.627;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-MT2;10_RACK_LEFT;Montant de rack;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;profilé;Tube carré 30×30×2;1494;2.627;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-MT3;10_RACK_LEFT;Montant de rack;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;profilé;Tube carré 30×30×2;1494;2.627;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-MT4;10_RACK_LEFT;Montant de rack;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;profilé;Tube carré 30×30×2;1494;2.627;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-N1-L1;10_RACK_LEFT;Longeron de tablette;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;profilé;Tube carré 30×30×2;900;1.583;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-N1-L2;10_RACK_LEFT;Longeron de tablette;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;profilé;Tube carré 30×30×2;900;1.583;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-N1-T1;10_RACK_LEFT;Traverse de tablette;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;profilé;Tube carré 30×30×2;390;0.686;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-N1-T2;10_RACK_LEFT;Traverse de tablette;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;profilé;Tube carré 30×30×2;390;0.686;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-N1-TB;10_RACK_LEFT;Tablette tôle;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;tôle;Tôle ép. 2;;6.724;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-N2-L1;10_RACK_LEFT;Longeron de tablette;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;profilé;Tube carré 30×30×2;900;1.583;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-N2-L2;10_RACK_LEFT;Longeron de tablette;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;profilé;Tube carré 30×30×2;900;1.583;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-N2-T1;10_RACK_LEFT;Traverse de tablette;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;profilé;Tube carré 30×30×2;390;0.686;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-N2-T2;10_RACK_LEFT;Traverse de tablette;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;profilé;Tube carré 30×30×2;390;0.686;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-N2-TB;10_RACK_LEFT;Tablette tôle;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;tôle;Tôle ép. 2;;6.724;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-N3-L1;10_RACK_LEFT;Longeron de tablette;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;profilé;Tube carré 30×30×2;900;1.583;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-N3-L2;10_RACK_LEFT;Longeron de tablette;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;profilé;Tube carré 30×30×2;900;1.583;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-N3-T1;10_RACK_LEFT;Traverse de tablette;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;profilé;Tube carré 30×30×2;390;0.686;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-N3-T2;10_RACK_LEFT;Traverse de tablette;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;profilé;Tube carré 30×30×2;390;0.686;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+10-RG-N3-TB;10_RACK_LEFT;Tablette tôle;S235JR galvanisé à chaud;1;Rack intérieur gauche — 3 niveaux;tôle;Tôle ép. 2;;6.724;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-MT1;11_RACK_RIGHT;Montant de rack;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;1494;2.627;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-MT2;11_RACK_RIGHT;Montant de rack;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;1494;2.627;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-MT3;11_RACK_RIGHT;Montant de rack;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;1494;2.627;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-MT4;11_RACK_RIGHT;Montant de rack;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;1494;2.627;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-N1-L1;11_RACK_RIGHT;Longeron de tablette;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;900;1.583;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-N1-L2;11_RACK_RIGHT;Longeron de tablette;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;900;1.583;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-N1-T1;11_RACK_RIGHT;Traverse de tablette;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;390;0.686;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-N1-T2;11_RACK_RIGHT;Traverse de tablette;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;390;0.686;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-N1-TB;11_RACK_RIGHT;Tablette tôle;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;tôle;Tôle ép. 2;;6.724;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-N2-L1;11_RACK_RIGHT;Longeron de tablette;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;900;1.583;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-N2-L2;11_RACK_RIGHT;Longeron de tablette;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;900;1.583;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-N2-T1;11_RACK_RIGHT;Traverse de tablette;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;390;0.686;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-N2-T2;11_RACK_RIGHT;Traverse de tablette;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;390;0.686;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-N2-TB;11_RACK_RIGHT;Tablette tôle;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;tôle;Tôle ép. 2;;6.724;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-N3-L1;11_RACK_RIGHT;Longeron de tablette;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;900;1.583;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-N3-L2;11_RACK_RIGHT;Longeron de tablette;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;900;1.583;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-N3-T1;11_RACK_RIGHT;Traverse de tablette;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;390;0.686;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-N3-T2;11_RACK_RIGHT;Traverse de tablette;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;390;0.686;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+11-RD-N3-TB;11_RACK_RIGHT;Tablette tôle;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;tôle;Tôle ép. 2;;6.724;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
+13-PLA-AVG;13_WHEEL_SUPPORTS;Platine porte-roue;S235JR galvanisé à chaud;1;Support de roulette soudé sous longeron, traverse d'extrémité et traverse intermédiaire;plat;Tôle ép. 10;;7.840;;A — caisse mécano-soudée;;oui
+13-CAL-AVG;13_WHEEL_SUPPORTS;Cale de roulette;S235JR galvanisé à chaud;1;Rattrapage de hauteur roulette;plat;Plat ép. 15;;2.057;;A — caisse mécano-soudée;PROVISOIRE (dépend de la roulette retenue);oui
+12-ROU-AVG;12_WHEELS;Roulette pivotante Ø200 à frein total;Acier zingué / caoutchouc plein (achat);1;Roulage chantier, orientation, immobilisation;acheté;Ø200×50 H245 CMU 500 kg;;9.500;;;PROVISOIRE (référence catalogue);oui
+24-VIS-AVG1;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
+24-VIS-AVG2;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
+24-VIS-AVG3;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
+24-VIS-AVG4;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
+13-PLA-AVD;13_WHEEL_SUPPORTS;Platine porte-roue;S235JR galvanisé à chaud;1;Support de roulette soudé sous longeron, traverse d'extrémité et traverse intermédiaire;plat;Tôle ép. 10;;7.840;;A — caisse mécano-soudée;;oui
+13-CAL-AVD;13_WHEEL_SUPPORTS;Cale de roulette;S235JR galvanisé à chaud;1;Rattrapage de hauteur roulette;plat;Plat ép. 15;;2.057;;A — caisse mécano-soudée;PROVISOIRE (dépend de la roulette retenue);oui
+12-ROU-AVD;12_WHEELS;Roulette pivotante Ø200 à frein total;Acier zingué / caoutchouc plein (achat);1;Roulage chantier, orientation, immobilisation;acheté;Ø200×50 H245 CMU 500 kg;;9.500;;;PROVISOIRE (référence catalogue);oui
+24-VIS-AVD1;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
+24-VIS-AVD2;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
+24-VIS-AVD3;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
+24-VIS-AVD4;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
+13-PLA-ARG;13_WHEEL_SUPPORTS;Platine porte-roue;S235JR galvanisé à chaud;1;Support de roulette soudé sous longeron, traverse d'extrémité et traverse intermédiaire;plat;Tôle ép. 10;;7.840;;A — caisse mécano-soudée;;oui
+13-CAL-ARG;13_WHEEL_SUPPORTS;Cale de roulette;S235JR galvanisé à chaud;1;Rattrapage de hauteur roulette;plat;Plat ép. 15;;2.057;;A — caisse mécano-soudée;PROVISOIRE (dépend de la roulette retenue);oui
+12-ROU-ARG;12_WHEELS;Roulette pivotante Ø200 à blocage directionnel;Acier zingué / caoutchouc plein (achat);1;Roulage chantier, orientation, marche en ligne;acheté;Ø200×50 H245 CMU 500 kg;;9.500;;;PROVISOIRE (référence catalogue);oui
+24-VIS-ARG1;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
+24-VIS-ARG2;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
+24-VIS-ARG3;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
+24-VIS-ARG4;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
+13-PLA-ARD;13_WHEEL_SUPPORTS;Platine porte-roue;S235JR galvanisé à chaud;1;Support de roulette soudé sous longeron, traverse d'extrémité et traverse intermédiaire;plat;Tôle ép. 10;;7.840;;A — caisse mécano-soudée;;oui
+13-CAL-ARD;13_WHEEL_SUPPORTS;Cale de roulette;S235JR galvanisé à chaud;1;Rattrapage de hauteur roulette;plat;Plat ép. 15;;2.057;;A — caisse mécano-soudée;PROVISOIRE (dépend de la roulette retenue);oui
+12-ROU-ARD;12_WHEELS;Roulette pivotante Ø200 à blocage directionnel;Acier zingué / caoutchouc plein (achat);1;Roulage chantier, orientation, marche en ligne;acheté;Ø200×50 H245 CMU 500 kg;;9.500;;;PROVISOIRE (référence catalogue);oui
+24-VIS-ARD1;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
+24-VIS-ARD2;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
+24-VIS-ARD3;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
+24-VIS-ARD4;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
+14-BAR;14_HANDLING_BAR_LEFT;Barre de manutention;S235JR galvanisé à chaud;1;Pousser / tirer / orienter HURAVA à la main;profilé;Tube rond Ø33.7×4.0;900;2.637;;A — caisse mécano-soudée;;oui
+14-SUP1;14_HANDLING_BAR_LEFT;Support de barre;S235JR galvanisé à chaud;1;Liaison barre / lisse latérale au travers du panneau;plat;Plat 60×10;77;0.328;;A — caisse mécano-soudée;;oui
+14-SUP2;14_HANDLING_BAR_LEFT;Support de barre;S235JR galvanisé à chaud;1;Liaison barre / lisse latérale au travers du panneau;plat;Plat 60×10;77;0.328;;A — caisse mécano-soudée;;oui
+15-BAR;15_HANDLING_BAR_RIGHT;Barre de manutention;S235JR galvanisé à chaud;1;Pousser / tirer / orienter HURAVA à la main;profilé;Tube rond Ø33.7×4.0;900;2.637;;A — caisse mécano-soudée;;oui
+15-SUP1;15_HANDLING_BAR_RIGHT;Support de barre;S235JR galvanisé à chaud;1;Liaison barre / lisse latérale au travers du panneau;plat;Plat 60×10;77;0.328;;A — caisse mécano-soudée;;oui
+15-SUP2;15_HANDLING_BAR_RIGHT;Support de barre;S235JR galvanisé à chaud;1;Liaison barre / lisse latérale au travers du panneau;plat;Plat 60×10;77;0.328;;A — caisse mécano-soudée;;oui
+16-FOU;16_FORK_POCKET_LEFT;Fourreau de fourches;S235JR galvanisé à chaud;1;Manutention par chariot élévateur, ouvert AV et AR;profilé;Tube rect. 230×80×5;1100;25.905;;A — caisse mécano-soudée;PROVISOIRE (section, entraxe);oui
+16-GOU-AVG;16_FORK_POCKET_LEFT;Gousset fourreau / longeron;S235JR galvanisé à chaud;1;Renfort d'encastrement du fourreau;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+16-GOU-AVD;16_FORK_POCKET_LEFT;Gousset fourreau / longeron;S235JR galvanisé à chaud;1;Renfort d'encastrement du fourreau;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+16-GOU-ARG;16_FORK_POCKET_LEFT;Gousset fourreau / longeron;S235JR galvanisé à chaud;1;Renfort d'encastrement du fourreau;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+16-GOU-ARD;16_FORK_POCKET_LEFT;Gousset fourreau / longeron;S235JR galvanisé à chaud;1;Renfort d'encastrement du fourreau;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+17-FOU;17_FORK_POCKET_RIGHT;Fourreau de fourches;S235JR galvanisé à chaud;1;Manutention par chariot élévateur, ouvert AV et AR;profilé;Tube rect. 230×80×5;1100;25.905;;A — caisse mécano-soudée;PROVISOIRE (section, entraxe);oui
+17-GOU-AVG;17_FORK_POCKET_RIGHT;Gousset fourreau / longeron;S235JR galvanisé à chaud;1;Renfort d'encastrement du fourreau;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+17-GOU-AVD;17_FORK_POCKET_RIGHT;Gousset fourreau / longeron;S235JR galvanisé à chaud;1;Renfort d'encastrement du fourreau;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+17-GOU-ARG;17_FORK_POCKET_RIGHT;Gousset fourreau / longeron;S235JR galvanisé à chaud;1;Renfort d'encastrement du fourreau;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+17-GOU-ARD;17_FORK_POCKET_RIGHT;Gousset fourreau / longeron;S235JR galvanisé à chaud;1;Renfort d'encastrement du fourreau;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+18-PLT;18_LIFTING_POINT_FL;Platine d'oreille de levage;S235JR galvanisé à chaud;1;Répartition de l'effort de levage sur le nœud cadre haut / montant;plat;Plat 80×80×12;;0.603;;A — caisse mécano-soudée;;oui
+18-ORE;18_LIFTING_POINT_FL;Oreille de levage;S235JR galvanisé à chaud;1;Point d'élingage (manille);pièce découpée;Tôle ép. 15 oxycoupée;;0.484;;A — caisse mécano-soudée;PROVISOIRE (CMU à calculer);oui
+19-PLT;19_LIFTING_POINT_FR;Platine d'oreille de levage;S235JR galvanisé à chaud;1;Répartition de l'effort de levage sur le nœud cadre haut / montant;plat;Plat 80×80×12;;0.603;;A — caisse mécano-soudée;;oui
+19-ORE;19_LIFTING_POINT_FR;Oreille de levage;S235JR galvanisé à chaud;1;Point d'élingage (manille);pièce découpée;Tôle ép. 15 oxycoupée;;0.484;;A — caisse mécano-soudée;PROVISOIRE (CMU à calculer);oui
+20-PLT;20_LIFTING_POINT_RL;Platine d'oreille de levage;S235JR galvanisé à chaud;1;Répartition de l'effort de levage sur le nœud cadre haut / montant;plat;Plat 80×80×12;;0.603;;A — caisse mécano-soudée;;oui
+20-ORE;20_LIFTING_POINT_RL;Oreille de levage;S235JR galvanisé à chaud;1;Point d'élingage (manille);pièce découpée;Tôle ép. 15 oxycoupée;;0.484;;A — caisse mécano-soudée;PROVISOIRE (CMU à calculer);oui
+21-PLT;21_LIFTING_POINT_RR;Platine d'oreille de levage;S235JR galvanisé à chaud;1;Répartition de l'effort de levage sur le nœud cadre haut / montant;plat;Plat 80×80×12;;0.603;;A — caisse mécano-soudée;;oui
+21-ORE;21_LIFTING_POINT_RR;Oreille de levage;S235JR galvanisé à chaud;1;Point d'élingage (manille);pièce découpée;Tôle ép. 15 oxycoupée;;0.484;;A — caisse mécano-soudée;PROVISOIRE (CMU à calculer);oui
+22-PLT;22_HITCH_HOOK;Platine d'attelage;S235JR galvanisé à chaud;1;Liaison crochet / longeron arrière, dans l'axe de la traverse centrale;plat;Plat 140×59×15;;0.973;;A — caisse mécano-soudée;;oui
+22-CRO;22_HITCH_HOOK;Crochet d'attelage ouvert vers le haut (sans ressort);S235JR galvanisé à chaud;1;Réception de l'anneau articulé de l'engin tracteur — retenue par gravité (bec de 55);pièce découpée;Tôle ép. 25 oxycoupée;;1.383;;A — caisse mécano-soudée;PROVISOIRE (nuance S355 ou pièce forgée à étudier, hauteur d'attelage);oui
+23-ANN;23_ARTICULATED_TOWING_RING;Anneau de traction articulé (côté engin);Acier forgé (interface engin);1;"Entre dans le crochet HURAVA ; articulation autour de l'axe transversal";interface;Anneau Ø70 int., section Ø24;;1.406;;;Interface engin — hors périmètre HURAVA;non (interface)
+23-CHA-G;23_ARTICULATED_TOWING_RING;Flasque de chape (côté engin);Interface engin;1;Chape d'articulation de l'anneau;interface;;;0.391;;;;non (interface)
+23-CHA-D;23_ARTICULATED_TOWING_RING;Flasque de chape (côté engin);Interface engin;1;Chape d'articulation de l'anneau;interface;;;0.391;;;;non (interface)
+23-AXE;23_ARTICULATED_TOWING_RING;Axe d'articulation Ø20 (côté engin);Interface engin;1;Articulation de l'anneau;interface;;;0.133;;;;non (interface)
+23-TIM;23_ARTICULATED_TOWING_RING;Timon / traverse de l'engin (représentation);Interface engin;1;Repère de position de l'engin tracteur;interface;;;2.089;;;;non (interface)
+25-LOG-AR;25_LOGO;Marquage HURAVA by ARCHIACCESS — face arrière;Adhésif polymère 0,3;1;Identification produit;marquage;Film adhésif découpé;;0.050;;;;oui
+25-LOG-AV;25_LOGO;Marquage HURAVA — vantail gauche;Adhésif polymère 0,3;1;Identification produit;marquage;Film adhésif découpé;;0.020;DOOR_L;;;oui

@@ -1,0 +1,90 @@
+Paramètre;Valeur;Unité;Statut;Note
+HURAVA_LENGTH;2200.0;mm;FIGÉ;X, faces avant/arrière
+HURAVA_WIDTH;1100.0;mm;FIGÉ;Y, faces latérales
+HURAVA_BODY_HEIGHT;1500.0;mm;FIGÉ;hauteur de caisse, du dessus châssis au dessus toit
+CHASSIS_HEIGHT;330.0;mm;SPEC ≈;Z du dessus châssis / dessous plancher
+GROUND_CLEARANCE;250.0;mm;SPEC ≈;Z du point structurel le plus bas (dessous fourreaux)
+MAIN_PROFILE_H;60.0;mm;FIGÉ;tube 60×40×3 S235JR — grande dimension
+MAIN_PROFILE_W;40.0;mm;FIGÉ;tube 60×40×3 S235JR — petite dimension
+MAIN_PROFILE_T;3.0;mm;FIGÉ;tube 60×40×3 S235JR — épaisseur
+SEC_PROFILE;40.0;mm;FIGÉ;tube 40×40×3 S235JR
+SEC_PROFILE_T;3.0;mm;FIGÉ;
+LOCAL_PROFILE;30.0;mm;FIGÉ;tube 30×30×2 S235JR (racks)
+LOCAL_PROFILE_T;2.0;mm;FIGÉ;
+GUSSET_SIZE;100.0;mm;FIGÉ;gousset 100×100×5
+GUSSET_T;5.0;mm;FIGÉ;
+PANEL_T;2.0;mm;PROVISOIRE — À VALIDER;tôle parois latérales et arrière
+ROOF_T;2.0;mm;PROVISOIRE — À VALIDER;tôle de toit
+FLOOR_T;4.0;mm;PROVISOIRE — À VALIDER;tôle de plancher structurelle (larmée 4/6 envisageable)
+DOOR_SKIN_T;2.0;mm;PROVISOIRE — À VALIDER;tôle de parement des vantaux
+CHASSIS_CROSS_X;(290.0, 1100.0, 1910.0);mm;PROVISOIRE — À VALIDER;axes X des traverses intermédiaires de châssis (portée plancher ≤ 330)
+ROOF_BOW_X;(733.0, 1467.0);mm;PROVISOIRE — À VALIDER;axes X des traverses de toit 40×40
+SIDE_RAIL_Z;1000.0;mm;PROVISOIRE — À VALIDER;axe Z de la lisse latérale 40×40 (reprise des barres)
+REAR_RAIL_Z;1000.0;mm;PROVISOIRE — À VALIDER;axe Z de la lisse arrière 40×40
+REAR_MID_POST_X;1100.0;mm;PROVISOIRE — À VALIDER;axe X du montant arrière intermédiaire 40×40
+DOOR_COUNT;2;u;FIGÉ;vantaux sur la face avant
+HINGES_PER_DOOR;3;u;FIGÉ;
+HINGE_PIN_D;16.0;mm;FIGÉ;axe de charnière ≈ Ø16
+DOOR_OPEN_MAX;90.0;°;FIGÉ;ouverture 0 → 90° avec butée positive
+LOCK_ROD_D;14.0;mm;FIGÉ;tringles haute et basse Ø14
+DOOR_GAP_SIDE;5.0;mm;PROVISOIRE — À VALIDER;jeu vantail / montant
+DOOR_GAP_CENTER;6.0;mm;PROVISOIRE — À VALIDER;jeu entre vantaux
+DOOR_GAP_BOTTOM;6.0;mm;PROVISOIRE — À VALIDER;jeu vantail / plancher
+DOOR_GAP_TOP;5.0;mm;PROVISOIRE — À VALIDER;jeu vantail / traverse haute
+HINGE_AXIS_X;30.0;mm;PROVISOIRE — À VALIDER;position X de l'axe de charnière depuis le bord d'enveloppe
+HINGE_AXIS_Y;-20.0;mm;PROVISOIRE — À VALIDER;position Y de l'axe (devant la face avant)
+HINGE_KNUCKLE_OD;30.0;mm;PROVISOIRE — À VALIDER;nœud de charnière Ø30, alésage Ø17
+HINGE_KNUCKLE_LEN;55.0;mm;PROVISOIRE — À VALIDER;longueur d'un nœud
+HINGE_Z_MARGIN;150.0;mm;PROVISOIRE — À VALIDER;charnières haute/basse à 150 des bords du vantail
+DOOR_STOP_Z;0.75;;PROVISOIRE — À VALIDER;position relative de la butée 90° sur la hauteur du vantail
+HANDLING_BAR_DIAMETER;33.7;mm;FIGÉ;
+HANDLING_BAR_THICKNESS;4.0;mm;FIGÉ;
+HANDLING_BAR_LENGTH;900.0;mm;FIGÉ;
+HANDLING_BAR_COUNT;2;u;FIGÉ;une par face latérale
+HANDLING_BAR_Z;1000.0;mm;PROVISOIRE — À VALIDER;hauteur d'axe (ergonomie 900–1100)
+HANDLING_BAR_STANDOFF;75.0;mm;PROVISOIRE — À VALIDER;axe de barre / face extérieure du panneau (passage de main ≈ 58)
+HANDLING_BAR_SUPPORT_PITCH;760.0;mm;PROVISOIRE — À VALIDER;entraxe des 2 supports
+HANDLING_BAR_SUPPORT;(10.0, 60.0);mm;PROVISOIRE — À VALIDER;plat support ép. × hauteur
+RACK_COUNT;2;u;FIGÉ;gauche et droit
+RACK_LEVELS;3;u;FIGÉ;niveaux par rack
+RACK_DEPTH;450.0;mm;PROVISOIRE — À VALIDER;profondeur de rack selon X
+RACK_Y_RANGE;(70.0, 1030.0);mm;PROVISOIRE — À VALIDER;emprise Y du rack
+RACK_SHELF_Z;(700.0, 1100.0, 1500.0);mm;PROVISOIRE — À VALIDER;Z du dessus des 3 tablettes
+RACK_SHELF_T;2.0;mm;PROVISOIRE — À VALIDER;tôle de tablette
+WHEEL_COUNT;4;u;FIGÉ;
+CASTER_D;200.0;mm;PROVISOIRE — À VALIDER;roue Ø200, bandage caoutchouc plein sur jante acier
+CASTER_W;50.0;mm;PROVISOIRE — À VALIDER;largeur de bandage
+CASTER_H;245.0;mm;PROVISOIRE — À VALIDER;hauteur hors tout roulette (catalogue)
+CASTER_OFFSET;55.0;mm;PROVISOIRE — À VALIDER;déport de chape pivotante
+CASTER_PLATE;(140.0, 110.0, 8.0);mm;PROVISOIRE — À VALIDER;platine de roulette L×l×ép.
+CASTER_BOLT_PITCH;(110.0, 80.0);mm;PROVISOIRE — À VALIDER;entraxe perçages platine (4×M12)
+CASTER_AXIS_INSET;165.0;mm;PROVISOIRE — À VALIDER;axe de pivot à 165 des bords (balayage dans l'enveloppe)
+CASTER_CMU;500.0;kg;PROVISOIRE — À VALIDER;charge admissible par roue
+CASTER_MASS;9.5;kg;PROVISOIRE — À VALIDER;masse catalogue d'une roulette
+WHEEL_SUPPORT_PLATE_T;10.0;mm;PROVISOIRE — À VALIDER;platine porte-roue soudée sous châssis
+WHEEL_SPACER_T;15.0;mm;PROVISOIRE — À VALIDER;cale soudée (rattrapage hauteur roulette)
+FORK_POCKET_COUNT;2;u;FIGÉ;
+FORK_POCKET_PITCH;900.0;mm;PROVISOIRE — À VALIDER;entraxe — à confirmer selon engins ciblés (pas une norme)
+FORK_POCKET_W;230.0;mm;PROVISOIRE — À VALIDER;largeur extérieure (intérieur 220)
+FORK_POCKET_H;80.0;mm;PROVISOIRE — À VALIDER;hauteur extérieure (intérieur 70)
+FORK_POCKET_T;5.0;mm;PROVISOIRE — À VALIDER;épaisseur (tube 230×80×5 ou tôle pliée)
+LIFTING_POINT_COUNT;4;u;FIGÉ;
+LUG_T;15.0;mm;PROVISOIRE — À VALIDER;oreille de levage épaisseur
+LUG_W;80.0;mm;PROVISOIRE — À VALIDER;oreille largeur
+LUG_HOLE_D;32.0;mm;PROVISOIRE — À VALIDER;perçage manille
+LUG_HOLE_Z;30.0;mm;PROVISOIRE — À VALIDER;axe du perçage au-dessus de la platine
+LUG_BASE;(80.0, 12.0);mm;PROVISOIRE — À VALIDER;platine d'oreille carré × ép.
+ROOF_NOTCH;86.0;mm;PROVISOIRE — À VALIDER;dégagement de toit aux angles
+HOOK_T;25.0;mm;PROVISOIRE — À VALIDER;crochet oxycoupé ép. 25 (pièce forgée à étudier)
+HOOK_THROAT_Z;300.0;mm;PROVISOIRE — À VALIDER;Z du fond de gorge (hauteur d'attelage à confirmer)
+HOOK_THROAT_W;60.0;mm;PROVISOIRE — À VALIDER;largeur de gorge
+HOOK_TIP_H;55.0;mm;PROVISOIRE — À VALIDER;hauteur du bec au-dessus du fond de gorge
+HOOK_TIP_W;32.0;mm;PROVISOIRE — À VALIDER;épaisseur du bec selon Y
+RING_R;47.0;mm;PROVISOIRE — À VALIDER;anneau : rayon moyen (Ø int. 70)
+RING_r;12.0;mm;PROVISOIRE — À VALIDER;anneau : rayon de section (Ø24)
+RING_PIN_D;20.0;mm;PROVISOIRE — À VALIDER;axe d'articulation de l'anneau côté engin
+PAYLOAD_NOMINAL;500.0;kg;FIGÉ;
+PAYLOAD_DESIGN;750.0;kg;FIGÉ;
+DYNAMIC_FACTOR;1.5;;FIGÉ;
+SAFETY_FACTOR_MIN;1.5;;FIGÉ;cible préliminaire — pas une certification
+STEEL_DENSITY;7.85e-06;kg/mm³;FIGÉ;S235JR

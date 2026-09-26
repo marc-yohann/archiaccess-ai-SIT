@@ -1,0 +1,5 @@
+tools/three.min.js
+tools/GLTFLoader.js
+__pycache__/
+out/glb/hurava_v1_open90.glb
+out/glb/hurava_v1_exploded.glb
