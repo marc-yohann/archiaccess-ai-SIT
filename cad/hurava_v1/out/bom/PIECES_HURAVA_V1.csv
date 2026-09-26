@@ -129,34 +129,34 @@ Identifiant;Composant;Nom;Matériau;Qté;Fonction;Type;Section;Longueur (mm);Mas
 11-RD-N3-T1;11_RACK_RIGHT;Traverse de tablette;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;390;0.686;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
 11-RD-N3-T2;11_RACK_RIGHT;Traverse de tablette;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;profilé;Tube carré 30×30×2;390;0.686;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
 11-RD-N3-TB;11_RACK_RIGHT;Tablette tôle;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;tôle;Tôle ép. 2;;6.724;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
-13-PLA-AVG;13_WHEEL_SUPPORTS;Platine porte-roue;S235JR galvanisé à chaud;1;Support de roulette soudé sous longeron, traverse d'extrémité et traverse intermédiaire;plat;Tôle ép. 10;;7.840;;A — caisse mécano-soudée;;oui
-13-CAL-AVG;13_WHEEL_SUPPORTS;Cale de roulette;S235JR galvanisé à chaud;1;Rattrapage de hauteur roulette;plat;Plat ép. 15;;2.057;;A — caisse mécano-soudée;PROVISOIRE (dépend de la roulette retenue);oui
-12-ROU-AVG;12_WHEELS;Roulette pivotante Ø200 à frein total + blocage directionnel;Acier zingué / caoutchouc plein (achat);1;Roulage chantier, orientation, immobilisation;acheté;Ø200×50 H245 CMU 500 kg;;9.500;;;PROVISOIRE (référence catalogue);oui
-24-VIS-AVG1;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
-24-VIS-AVG2;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
-24-VIS-AVG3;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
-24-VIS-AVG4;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
-13-PLA-AVD;13_WHEEL_SUPPORTS;Platine porte-roue;S235JR galvanisé à chaud;1;Support de roulette soudé sous longeron, traverse d'extrémité et traverse intermédiaire;plat;Tôle ép. 10;;7.840;;A — caisse mécano-soudée;;oui
-13-CAL-AVD;13_WHEEL_SUPPORTS;Cale de roulette;S235JR galvanisé à chaud;1;Rattrapage de hauteur roulette;plat;Plat ép. 15;;2.057;;A — caisse mécano-soudée;PROVISOIRE (dépend de la roulette retenue);oui
-12-ROU-AVD;12_WHEELS;Roulette pivotante Ø200 à frein total + blocage directionnel;Acier zingué / caoutchouc plein (achat);1;Roulage chantier, orientation, immobilisation;acheté;Ø200×50 H245 CMU 500 kg;;9.500;;;PROVISOIRE (référence catalogue);oui
-24-VIS-AVD1;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
-24-VIS-AVD2;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
-24-VIS-AVD3;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
-24-VIS-AVD4;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
-13-PLA-ARG;13_WHEEL_SUPPORTS;Platine porte-roue;S235JR galvanisé à chaud;1;Support de roulette soudé sous longeron, traverse d'extrémité et traverse intermédiaire;plat;Tôle ép. 10;;7.840;;A — caisse mécano-soudée;;oui
-13-CAL-ARG;13_WHEEL_SUPPORTS;Cale de roulette;S235JR galvanisé à chaud;1;Rattrapage de hauteur roulette;plat;Plat ép. 15;;2.057;;A — caisse mécano-soudée;PROVISOIRE (dépend de la roulette retenue);oui
-12-ROU-ARG;12_WHEELS;Roulette pivotante Ø200 à blocage directionnel;Acier zingué / caoutchouc plein (achat);1;Roulage chantier, orientation, marche en ligne;acheté;Ø200×50 H245 CMU 500 kg;;9.500;;;PROVISOIRE (référence catalogue);oui
-24-VIS-ARG1;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
-24-VIS-ARG2;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
-24-VIS-ARG3;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
-24-VIS-ARG4;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
-13-PLA-ARD;13_WHEEL_SUPPORTS;Platine porte-roue;S235JR galvanisé à chaud;1;Support de roulette soudé sous longeron, traverse d'extrémité et traverse intermédiaire;plat;Tôle ép. 10;;7.840;;A — caisse mécano-soudée;;oui
-13-CAL-ARD;13_WHEEL_SUPPORTS;Cale de roulette;S235JR galvanisé à chaud;1;Rattrapage de hauteur roulette;plat;Plat ép. 15;;2.057;;A — caisse mécano-soudée;PROVISOIRE (dépend de la roulette retenue);oui
-12-ROU-ARD;12_WHEELS;Roulette pivotante Ø200 à blocage directionnel;Acier zingué / caoutchouc plein (achat);1;Roulage chantier, orientation, marche en ligne;acheté;Ø200×50 H245 CMU 500 kg;;9.500;;;PROVISOIRE (référence catalogue);oui
-24-VIS-ARD1;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
-24-VIS-ARD2;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
-24-VIS-ARD3;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
-24-VIS-ARD4;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
+13-PLA-AVG;13_WHEEL_SUPPORTS;Platine porte-roue;S235JR galvanisé à chaud;1;Support de roulette soudé sous longeron, traverse d'extrémité et traverse intermédiaire;plat;Tôle ép. 10;;7.811;;A — caisse mécano-soudée;;oui
+13-CAL-AVG;13_WHEEL_SUPPORTS;Cale de roulette;S235JR galvanisé à chaud;1;Rattrapage de hauteur roulette;plat;Plat ép. 15;;3.361;;A — caisse mécano-soudée;PROVISOIRE (dépend de la roulette retenue);oui
+12-ROU-AVG;12_WHEELS;Roulette pivotante Ø200 à frein total + blocage directionnel;Acier zingué / caoutchouc plein (achat);1;Roulage chantier, orientation, immobilisation;acheté;Ø200×50 H245 CMU 800 kg;;13.500;;;PROVISOIRE (référence catalogue);oui
+24-VIS-AVG1;24_FASTENERS_HARDWARE;Vis H M16×55 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M16×55;;0.160;;;;oui
+24-VIS-AVG2;24_FASTENERS_HARDWARE;Vis H M16×55 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M16×55;;0.160;;;;oui
+24-VIS-AVG3;24_FASTENERS_HARDWARE;Vis H M16×55 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M16×55;;0.160;;;;oui
+24-VIS-AVG4;24_FASTENERS_HARDWARE;Vis H M16×55 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M16×55;;0.160;;;;oui
+13-PLA-AVD;13_WHEEL_SUPPORTS;Platine porte-roue;S235JR galvanisé à chaud;1;Support de roulette soudé sous longeron, traverse d'extrémité et traverse intermédiaire;plat;Tôle ép. 10;;7.811;;A — caisse mécano-soudée;;oui
+13-CAL-AVD;13_WHEEL_SUPPORTS;Cale de roulette;S235JR galvanisé à chaud;1;Rattrapage de hauteur roulette;plat;Plat ép. 15;;3.361;;A — caisse mécano-soudée;PROVISOIRE (dépend de la roulette retenue);oui
+12-ROU-AVD;12_WHEELS;Roulette pivotante Ø200 à frein total + blocage directionnel;Acier zingué / caoutchouc plein (achat);1;Roulage chantier, orientation, immobilisation;acheté;Ø200×50 H245 CMU 800 kg;;13.500;;;PROVISOIRE (référence catalogue);oui
+24-VIS-AVD1;24_FASTENERS_HARDWARE;Vis H M16×55 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M16×55;;0.160;;;;oui
+24-VIS-AVD2;24_FASTENERS_HARDWARE;Vis H M16×55 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M16×55;;0.160;;;;oui
+24-VIS-AVD3;24_FASTENERS_HARDWARE;Vis H M16×55 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M16×55;;0.160;;;;oui
+24-VIS-AVD4;24_FASTENERS_HARDWARE;Vis H M16×55 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M16×55;;0.160;;;;oui
+13-PLA-ARG;13_WHEEL_SUPPORTS;Platine porte-roue;S235JR galvanisé à chaud;1;Support de roulette soudé sous longeron, traverse d'extrémité et traverse intermédiaire;plat;Tôle ép. 10;;7.811;;A — caisse mécano-soudée;;oui
+13-CAL-ARG;13_WHEEL_SUPPORTS;Cale de roulette;S235JR galvanisé à chaud;1;Rattrapage de hauteur roulette;plat;Plat ép. 15;;3.361;;A — caisse mécano-soudée;PROVISOIRE (dépend de la roulette retenue);oui
+12-ROU-ARG;12_WHEELS;Roulette pivotante Ø200 à blocage directionnel;Acier zingué / caoutchouc plein (achat);1;Roulage chantier, orientation, marche en ligne;acheté;Ø200×50 H245 CMU 800 kg;;13.500;;;PROVISOIRE (référence catalogue);oui
+24-VIS-ARG1;24_FASTENERS_HARDWARE;Vis H M16×55 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M16×55;;0.160;;;;oui
+24-VIS-ARG2;24_FASTENERS_HARDWARE;Vis H M16×55 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M16×55;;0.160;;;;oui
+24-VIS-ARG3;24_FASTENERS_HARDWARE;Vis H M16×55 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M16×55;;0.160;;;;oui
+24-VIS-ARG4;24_FASTENERS_HARDWARE;Vis H M16×55 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M16×55;;0.160;;;;oui
+13-PLA-ARD;13_WHEEL_SUPPORTS;Platine porte-roue;S235JR galvanisé à chaud;1;Support de roulette soudé sous longeron, traverse d'extrémité et traverse intermédiaire;plat;Tôle ép. 10;;7.811;;A — caisse mécano-soudée;;oui
+13-CAL-ARD;13_WHEEL_SUPPORTS;Cale de roulette;S235JR galvanisé à chaud;1;Rattrapage de hauteur roulette;plat;Plat ép. 15;;3.361;;A — caisse mécano-soudée;PROVISOIRE (dépend de la roulette retenue);oui
+12-ROU-ARD;12_WHEELS;Roulette pivotante Ø200 à blocage directionnel;Acier zingué / caoutchouc plein (achat);1;Roulage chantier, orientation, marche en ligne;acheté;Ø200×50 H245 CMU 800 kg;;13.500;;;PROVISOIRE (référence catalogue);oui
+24-VIS-ARD1;24_FASTENERS_HARDWARE;Vis H M16×55 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M16×55;;0.160;;;;oui
+24-VIS-ARD2;24_FASTENERS_HARDWARE;Vis H M16×55 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M16×55;;0.160;;;;oui
+24-VIS-ARD3;24_FASTENERS_HARDWARE;Vis H M16×55 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M16×55;;0.160;;;;oui
+24-VIS-ARD4;24_FASTENERS_HARDWARE;Vis H M16×55 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M16×55;;0.160;;;;oui
 14-BAR;14_HANDLING_BAR_LEFT;Barre de manutention;S235JR galvanisé à chaud;1;Pousser / tirer / orienter HURAVA à la main;profilé;Tube rond Ø33.7×4.0;900;2.637;;A — caisse mécano-soudée;;oui
 14-SUP1;14_HANDLING_BAR_LEFT;Support de barre;S235JR galvanisé à chaud;1;Liaison barre / lisse latérale au travers du panneau;plat;Plat 60×10;77;0.328;;A — caisse mécano-soudée;;oui
 14-SUP2;14_HANDLING_BAR_LEFT;Support de barre;S235JR galvanisé à chaud;1;Liaison barre / lisse latérale au travers du panneau;plat;Plat 60×10;77;0.328;;A — caisse mécano-soudée;;oui

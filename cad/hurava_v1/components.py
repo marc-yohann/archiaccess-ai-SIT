@@ -433,8 +433,9 @@ def _caster(ax, ay, trail, braked):
     pl, pw, pt = P["CASTER_PLATE"]
     r = D / 2
     top = box(ax - pl / 2, ax + pl / 2, ay - pw / 2, ay + pw / 2, H - pt, H)
+    rh = P["CASTER_BOLT_D"] / 2 + 0.5
     for (x, y) in _bolt_xy(ax, ay):
-        top = top.cut(cyl(6.5, (x, y, H - pt - 1), (x, y, H + 1)))
+        top = top.cut(cyl(rh, (x, y, H - pt - 1), (x, y, H + 1)))
     parts = [top, cyl(48, (ax, ay, H - pt - 25), (ax, ay, H - pt))]                  # couronne de pivot
     wx = ax + trail * off
     for sy in (-1, 1):
@@ -455,6 +456,10 @@ def phase_wheels(reg):
     H = P["CASTER_H"]
     tp, tsp = P["WHEEL_SUPPORT_PLATE_T"], P["WHEEL_SPACER_T"]
     assert abs(H + tsp + tp - s.Z_CH_BOT) < 1e-6, "chaîne de cotes roue / châssis incohérente"
+    pl, pw, pt = P["CASTER_PLATE"]
+    bd = P["CASTER_BOLT_D"]
+    rh = bd / 2 + 0.5                                   # perçage de passage
+    rn = bd * 1.5 / math.sqrt(3) + 0.1                  # enveloppe de l'écrou / tête (sur-plats 1,5 d)
     xi1 = P["CHASSIS_CROSS_X"][0] + s.mw / 2
     for tag, (ax, ay) in caster_positions().items():
         right = tag.endswith("D")
@@ -465,10 +470,11 @@ def phase_wheels(reg):
         px0, px1 = (s.XS0, xi1) if not right else (s.L - xi1, s.XS1)
         py0, py1 = (s.YS0, 2 * ay - s.YS0) if not rear else (2 * ay - s.YS1, s.YS1)
         plate = box(px0, px1, py0, py1, s.Z_CH_BOT - tp, s.Z_CH_BOT)
-        spacer = box(ax - 75, ax + 75, ay - 60, ay + 60, H, H + tsp)
+        sx, sy = pl / 2 + 7.5, pw / 2 + 7.5            # cale débordant de 7,5 mm autour de la platine de roulette
+        spacer = box(ax - sx, ax + sx, ay - sy, ay + sy, H, H + tsp)
         for (x, y) in _bolt_xy(ax, ay):
-            plate = plate.cut(cyl(6.5, (x, y, s.Z_CH_BOT - tp - 1), (x, y, s.Z_CH_BOT + 1)))
-            spacer = spacer.cut(cyl(6.5, (x, y, H - 1), (x, y, H + tsp + 1)))
+            plate = plate.cut(cyl(rh, (x, y, s.Z_CH_BOT - tp - 1), (x, y, s.Z_CH_BOT + 1)))
+            spacer = spacer.cut(cyl(rh, (x, y, H - 1), (x, y, H + tsp + 1)))
         reg.add(Part(f"13-PLA-{tag}", Gs, "Platine porte-roue", S235_GALVA,
                      "Support de roulette soudé sous longeron, traverse d'extrémité et traverse intermédiaire",
                      plate, "plat", f"Tôle ép. {tp:.0f}", 0, C_GALVA, weldment=CAISSE))
@@ -476,7 +482,7 @@ def phase_wheels(reg):
                      spacer, "plat", f"Plat ép. {tsp:.0f}", 0, C_GALVA, weldment=CAISSE,
                      status="PROVISOIRE (dépend de la roulette retenue)"))
         reg.weld(f"13-PLA-{tag}", "longeron + traverses", "angle a4 3 côtés", (px1 - px0) + 2 * (py1 - py0))
-        reg.weld(f"13-CAL-{tag}", f"13-PLA-{tag}", "angle a4 périphérique", 2 * (150 + 120))
+        reg.weld(f"13-CAL-{tag}", f"13-PLA-{tag}", "angle a4 périphérique", 4 * (sx + sy))
         nm = "Roulette pivotante Ø200 à frein total + blocage directionnel" if braked else "Roulette pivotante Ø200 à blocage directionnel"
         reg.add(Part(f"12-ROU-{tag}", Gw, nm, "Acier zingué / caoutchouc plein (achat)",
                      "Roulage chantier, orientation" + (", immobilisation" if braked else ", marche en ligne"),
@@ -484,12 +490,13 @@ def phase_wheels(reg):
                      f"Ø{P['CASTER_D']:.0f}×{P['CASTER_W']:.0f} H{H:.0f} CMU {P['CASTER_CMU']:.0f} kg",
                      0, C_RUBBER, mass=P["CASTER_MASS"], status="PROVISOIRE (référence catalogue)"))
         for k, (x, y) in enumerate(_bolt_xy(ax, ay), 1):
-            b = cyl(6, (x, y, H - P["CASTER_PLATE"][2] - 8), (x, y, s.Z_CH_BOT + 12))
-            b = b.fuse(cyl(9.5, (x, y, H - P["CASTER_PLATE"][2] - 8), (x, y, H - P["CASTER_PLATE"][2])))
-            b = b.fuse(cyl(9.5, (x, y, s.Z_CH_BOT), (x, y, s.Z_CH_BOT + 10)))
-            reg.add(Part(f"24-VIS-{tag}{k}", Gf, "Vis H M12×50 cl. 8.8 + écrou frein + rondelle",
+            L = pt + tsp + tp + 0.8 * bd + 5
+            b = cyl(bd / 2, (x, y, H - pt - 0.65 * bd), (x, y, H - pt + L))
+            b = b.fuse(cyl(rn, (x, y, H - pt - 0.65 * bd), (x, y, H - pt)))            # tête
+            b = b.fuse(cyl(rn, (x, y, s.Z_CH_BOT), (x, y, s.Z_CH_BOT + 0.8 * bd)))     # écrou frein
+            reg.add(Part(f"24-VIS-{tag}{k}", Gf, f"Vis H M{bd:.0f}×{5 * math.ceil(L / 5):.0f} cl. 8.8 + écrou frein + rondelle",
                          "Acier cl. 8.8 zingué", "Fixation démontable de roulette", b, "quincaillerie",
-                         "M12×50", 0, C_ZINC, mass=0.075))
+                         f"M{bd:.0f}×{5 * math.ceil(L / 5):.0f}", 0, C_ZINC, mass=0.16))
 
 
 # =====================================================================================

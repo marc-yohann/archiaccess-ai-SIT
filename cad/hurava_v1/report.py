@@ -57,6 +57,8 @@ def main(out):
         ("Soudures principales", "`out/bom/SOUDURES_HURAVA_V1.csv` + §7"),
         ("Masse estimative", "§5"),
         ("Points à valider", "§9"),
+        ("Contrôles pré-simulation", "§8 bis"),
+        ("Paramètres provisoires avant SimScale", "`out/bom/PROVISOIRES_AVANT_SIMSCALE.csv` + §10 bis"),
         ("Vues avant / arrière / gauche / droite / dessus / dessous / iso / éclatée", "`out/views/*.png`"),
         ("Visualisation 3D", "`out/glb/hurava_v1_closed.glb`"),
     ]
@@ -111,28 +113,47 @@ def main(out):
     for k, (n, l) in sorted(agg.items(), key=lambda x: -x[1][1]):
         w(f"| {k} | {n} | {l / 1000:.1f} |")
     w("\nJoints critiques (chemin de charge) : oreilles de levage / platines / montants ; crochet / platine / "
-      "longeron arrière ; fourreaux / longerons (traversée) ; platines porte-roues / châssis ; supports de barres / lisses.")
+      "traverse d'extrémité / longeron d'attelage ; fourreaux / longerons (traversée) ; platines porte-roues / châssis ; supports de barres / lisses.")
 
     w("\n## 8. Contrôles préliminaires (ordres de grandeur — pas une note de calcul)\n")
     w("| Élément | Hypothèse | Valeur | Commentaire |\n|---|---|---|---|")
     w(f"| Roulette | 3 appuis sur 4, charge statique | {per_wheel_static:.0f} kg / roue | "
       f"{per_wheel_static / P['CASTER_CMU'] * 100:.0f} % de la CMU {P['CASTER_CMU']:.0f} kg |")
     w(f"| Roulette | idem × facteur dynamique 1,5 | {per_wheel_dyn:.0f} kg / roue | "
-      f"**{'dépasse' if per_wheel_dyn > P['CASTER_CMU'] else 'sous'} la CMU {P['CASTER_CMU']:.0f} kg → prévoir roulettes CMU ≥ 750 kg** |")
+      f"{per_wheel_dyn / P['CASTER_CMU'] * 100:.0f} % de la CMU {P['CASTER_CMU']:.0f} kg (série renforcée, PRE-01) — l'ancienne CMU 500 kg était dépassée |")
     w(f"| Oreille de levage | élingue 4 brins, 3 brins porteurs, 60°, × 1,5 | {leg:.0f} kg / oreille | "
-      "manille et oreille CMU ≥ 1 t minimum ; oreille ép. 15 à vérifier (arrachement, pression diamétrale, soudure) |")
+      "manille CMU ≥ 1 t ; oreille vérifiée en ordre de grandeur (PRE-04, §8 bis) |")
     w(f"| Attelage | roulement chantier 10 % + rampe 10 %, × 1,5 | {tow:.1f} kN | effort horizontal (selon X) sur crochet latéral, traverse d'extrémité et longeron d'attelage |")
     w(f"| Facteur de sécurité | cible ≥ {P['SAFETY_FACTOR_MIN']} | non évalué | simulation SimScale à réaliser (§10) |")
+
+    w("\n## 8 bis. Contrôles pré-simulation\n")
+    w("| Contrôle | Intitulé | Résultat | Détail |\n|---|---|---|---|")
+    for k, (n, r, d) in S["presim"].items():
+        w(f"| {k} | {n} | {'✅' if r else '❌'} | {d} |")
+    LF = S["lifting"]
+    w(f"\n**Points de levage — géométrie** (effort de calcul {LF['F_kg']:.0f} kg par brin, soit {LF['F_kN']:.2f} kN : "
+      "(tare + 750) × 1,5 / 3 brins / sin 60°)\n")
+    w("| Point | Assise sur cadre haut | Recouvrement du montant | Excentricité trou / axe montant | Plan d'oreille / CdG | "
+      "Garde trou / toit | Longueur de brin pour 60° |\n|---|---|---|---|---|---|---|")
+    for r in LF["rows"]:
+        w(f"| {r['code']} | {r['area']:.0f} mm² ({r['area_pct']:.0f} %) | {r['post_area']:.0f} mm² | {r['ecc']:.1f} mm | "
+          f"{r['ang']:.1f}° | {r['clear']:.0f} mm | ≥ {r['leg_len']:.0f} mm |")
+    w(f"\n**Points de levage — ordres de grandeur** (γ = {P['SAFETY_FACTOR_MIN']}, S235 fy 235 / fu 360, axe de manille supposé Ø{LF['d_pin']:.0f})\n")
+    w("| Mode | Capacité (kN) | Taux |\n|---|---|---|")
+    for k, v in LF["cap"].items():
+        w(f"| {k} | {v:.1f} | {LF['util'][k] * 100:.0f} % |")
+    w("\nNon couvert par ce calcul, à traiter en simulation : flexion locale de la paroi 3 mm du cadre haut sous la platine, "
+      "nœud cadre haut / montant, cas de levage avec un brin détendu.")
 
     w("\n## 9. Points nécessitant validation\n")
     pts = [
         ("Hauteur", "Le cahier des charges donne 1500 mm d'enveloppe et un dessus de caisse à Z ≈ 1830. Le modèle place la caisse de Z 330 à Z 1830 (1500 mm de caisse posée sur le châssis). Hauteur hors tout 1910 mm avec les oreilles. La visualisation 5D précédente avait 1500 mm hors tout : **l'interprétation retenue ici est à confirmer.**"),
         ("Portes", "« 2 portes à deux vantaux » interprété comme **une porte double de 2 vantaux** (DOOR_COUNT = 2, 3 charnières par vantail). Vantail gauche semi-fixe (verrous haut/bas), vantail droit actif (crémone 3 points, poignée cadenassable, couvre-joint anti-arrachement)."),
-        ("Roues", f"Architecture PROVISOIRE : 4 roulettes pivotantes Ø200, toutes à blocage directionnel (marche en ligne selon X pour la traction), 2 avec frein total côté portes. **CMU {P['CASTER_CMU']:.0f} kg insuffisante avec le facteur dynamique** ({per_wheel_dyn:.0f} kg/roue) → choisir une référence ≥ 750 kg de même hauteur (245 mm) ou reprendre la cale."),
+        ("Roues", f"La CMU 500 kg initiale était insuffisante ({per_wheel_dyn:.0f} kg/roue avec 3 appuis × 1,5, soit {per_wheel_dyn / 500 * 100:.0f} %). **Géométrie proposée** : roulettes Ø200 × 50 série renforcée **CMU {P['CASTER_CMU']:.0f} kg** (taux {per_wheel_dyn / P['CASTER_CMU'] * 100:.0f} %), même hauteur 245 mm donc même cale de 15 et même silhouette, platine {P['CASTER_PLATE'][0]:.0f}×{P['CASTER_PLATE'][1]:.0f}×{P['CASTER_PLATE'][2]:.0f}, fixation 4×M{P['CASTER_BOLT_D']:.0f} (entraxes {P['CASTER_BOLT_PITCH'][0]:.0f}×{P['CASTER_BOLT_PITCH'][1]:.0f}). Référence catalogue à choisir : si sa hauteur diffère de 245, seule la cale change. Architecture : 4 pivotantes à blocage directionnel, 2 à frein total côté portes (PROVISOIRE)."),
         ("Masse", f"Tare calculée {tare:.0f} kg, élevée par rapport à la charge utile. Leviers : tôles 1,5 mm, cadres de vantaux 30×30, racks, plancher 3 mm raidi."),
-        ("Fourreaux", "Entraxe 900 et section intérieure 220 × 70 **à confirmer selon les engins ciblés** (pas une norme). Fourreaux traversants : les longerons AV/AR sont interrompus et soudés sur les flancs des fourreaux."),
-        ("Attelage", "**Déplacé sur les faces latérales de 1100 mm (décision du 26/09)** au lieu de la face arrière du cahier des charges §11 : un crochet de chaque côté (paramètre HITCH_SIDES), à Y 550, sous la barre de manutention ; traction selon la longueur, reprise par un longeron d'attelage 60×40 jusqu'à la 1re traverse intermédiaire. Hors tout avec crochets 2470 mm. Un seul côté suffit-il ? Crochet oxycoupé ép. 25 en S235 : nuance S355 ou pièce forgée à étudier. Hauteur de gorge Z 300 à caler sur les engins tracteurs. Retenue de l'anneau par la seule géométrie (bec de 55 mm, pas de ressort) : ajouter ou non une goupille de sécurité est **une décision à prendre**. L'anneau articulé, la chape et le timon sont côté engin, hors nomenclature HURAVA."),
-        ("Levage", "Oreilles orientées vers le centre de gravité, décalées d'environ 20 mm de l'axe des montants : à recentrer après calcul. CMU à calculer."),
+        ("Fourreaux", "Entraxe **900 mm conservé comme valeur PROVISOIRE de travail** — ce n'est ni une norme ni un standard ; section intérieure 220 × 70 à confirmer selon les engins ciblés. Fourreaux traversants : les longerons AV/AR sont interrompus et soudés sur les flancs des fourreaux."),
+        ("Attelage", "**Architecture FIGÉE (validée le 26/09)** — ne plus la déplacer sans validation : un crochet sur chaque face latérale de 1100 (au lieu de la face arrière du cahier des charges §11), axe Y 550, sous la barre de manutention ; traction selon la longueur, reprise par un longeron d'attelage 60×40 jusqu'à la 1re traverse intermédiaire. Garde-fou dans params.py : le build refuse toute autre configuration. Hors tout avec crochets 2470 mm. Restent PROVISOIRES les seules cotes de dimensionnement : crochet oxycoupé ép. 25 en S235 : nuance S355 ou pièce forgée à étudier. Hauteur de gorge Z 300 à caler sur les engins tracteurs. Retenue de l'anneau par la seule géométrie (bec de 55 mm, pas de ressort) : ajouter ou non une goupille de sécurité est **une décision à prendre**. L'anneau articulé, la chape et le timon sont côté engin, hors nomenclature HURAVA."),
+        ("Levage", "Cohérence vérifiée (PRE-04, §8 bis) : chaque platine repose sur le nœud cadre haut / montant, oreille dans le plan du brin (écart ≤ 1,3°), CdG à l'intérieur des 4 points. Excentricité de 22 mm entre le trou et l'axe du montant : acceptée à ce stade, flexion locale de la paroi 3 mm du cadre haut à contrôler en simulation."),
         ("Galvanisation", "Trous d'évent et d'écoulement (Ø10–12 à chaque extrémité de profil creux) **non modélisés**. Tôles de 2 mm soudées sur cadre : risque de déformation dans le bain ; alternative : tôles pré-galvanisées rivetées après galvanisation de l'ossature. Compatibilité du bain (≈ 2,4 × 1,3 × 1,95 m) à vérifier avec le galvaniseur."),
         ("Butée à 90°", "Bloc soudé sur le montant avant, jeu 0,5 mm pour un tampon élastomère. Saillie de 60 mm devant la face avant : à arrondir, ou remplacer par un arrêt de porte."),
         ("Barres de manutention", "Axe à Z 1000 et à 75 mm du panneau (passage de main 58 mm). Extrémités ouvertes : bouchons à décider (utiles aussi pour l'écoulement du zinc)."),
@@ -153,6 +174,18 @@ def main(out):
     w("- Levage : alésages Ø32 des oreilles `18…21-ORE`. Fourches : faces intérieures basses des fourreaux `16/17-FOU`.")
     w("- Traction : flanc intérieur du bec des crochets latéraux `22-CRO-G` / `22-CRO-D` (effort selon X).")
     w("- Pièces à exclure : 23 (interface engin), 24 (boulonnerie), 25 (marquage).")
+
+    w("\n## 10 bis. Paramètres PROVISOIRES à valider avant export SimScale\n")
+    prov = read_csv(os.path.join(out, "bom", "PROVISOIRES_AVANT_SIMSCALE.csv"))
+    nA = sum(1 for r in prov[1:] if r[3] == "Bloquant SimScale")
+    w(f"{len(prov) - 1} paramètres restent PROVISOIRES, dont **{nA} bloquants** pour la simulation "
+      "(ils changent la rigidité, la résistance, les appuis ou les charges). Les dimensions principales, "
+      "l'architecture d'attelage et les critères de charge sont FIGÉS et n'apparaissent pas ici.\n")
+    w(md_table(prov, ["Paramètre", "Valeur", "Unité", "Catégorie", "Effet sur la simulation"]))
+    w("\nDonnées d'entrée à fixer en plus des paramètres :\n")
+    import presim as PS
+    for t, d in PS.SIMSCALE_INPUTS:
+        w(f"- **{t}** — {d}")
 
     w("\n## 11. Vues\n")
     for v, t in [("front", "Vue avant"), ("rear", "Vue arrière"), ("left", "Vue latérale gauche"),

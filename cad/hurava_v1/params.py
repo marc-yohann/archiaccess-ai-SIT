@@ -99,16 +99,20 @@ _P = [
     Param("CASTER_W", 50.0, "mm", PROV, "largeur de bandage"),
     Param("CASTER_H", 245.0, "mm", PROV, "hauteur hors tout roulette (catalogue)"),
     Param("CASTER_OFFSET", 55.0, "mm", PROV, "déport de chape pivotante"),
-    Param("CASTER_PLATE", (140.0, 110.0, 8.0), "mm", PROV, "platine de roulette L×l×ép."),
-    Param("CASTER_BOLT_PITCH", (110.0, 80.0), "mm", PROV, "entraxe perçages platine (4×M12)"),
+    Param("CASTER_PLATE", (175.0, 140.0, 10.0), "mm", PROV,
+          "platine de roulette série renforcée L×l×ép. (était 140×110×8 en CMU 500)"),
+    Param("CASTER_BOLT_PITCH", (140.0, 105.0), "mm", PROV, "entraxe perçages platine (4×M16) — à caler sur la référence"),
+    Param("CASTER_BOLT_D", 16.0, "mm", PROV, "vis de fixation roulette M16 cl. 8.8 (était M12)"),
     Param("CASTER_AXIS_INSET", 165.0, "mm", PROV, "axe de pivot à 165 des bords (balayage dans l'enveloppe)"),
-    Param("CASTER_CMU", 500.0, "kg", PROV, "charge admissible par roue"),
-    Param("CASTER_MASS", 9.5, "kg", PROV, "masse catalogue d'une roulette"),
+    Param("CASTER_CMU", 800.0, "kg", PROV,
+          "charge admissible par roue ≥ (tare + 750) × 1,5 / 3 ≈ 720 kg — était 500 kg (insuffisant)"),
+    Param("CASTER_DESIGN_SUPPORTS", 3, "u", PROV, "nombre de roues porteuses retenu pour le dimensionnement (sol irrégulier)"),
+    Param("CASTER_MASS", 13.5, "kg", PROV, "masse catalogue d'une roulette Ø200 série renforcée"),
     Param("WHEEL_SUPPORT_PLATE_T", 10.0, "mm", PROV, "platine porte-roue soudée sous châssis"),
-    Param("WHEEL_SPACER_T", 15.0, "mm", PROV, "cale soudée (rattrapage hauteur roulette)"),
+    Param("WHEEL_SPACER_T", 15.0, "mm", PROV, "cale soudée : Z dessous châssis − platine porte-roue − CASTER_H"),
     # --- Fourreaux (§9) ------------------------------------------------------------
     Param("FORK_POCKET_COUNT", 2, "u", FIGE, ""),
-    Param("FORK_POCKET_PITCH", 900.0, "mm", PROV, "entraxe — à confirmer selon engins ciblés (pas une norme)"),
+    Param("FORK_POCKET_PITCH", 900.0, "mm", PROV, "entraxe PROVISOIRE — valeur de travail, pas une norme ni un standard ; à confirmer selon les engins ciblés"),
     Param("FORK_POCKET_W", 230.0, "mm", PROV, "largeur extérieure (intérieur 220)"),
     Param("FORK_POCKET_H", 80.0, "mm", PROV, "hauteur extérieure (intérieur 70)"),
     Param("FORK_POCKET_T", 5.0, "mm", PROV, "épaisseur (tube 230×80×5 ou tôle pliée)"),
@@ -121,8 +125,11 @@ _P = [
     Param("LUG_BASE", (80.0, 12.0), "mm", PROV, "platine d'oreille carré × ép."),
     Param("ROOF_NOTCH", 86.0, "mm", PROV, "dégagement de toit aux angles"),
     # --- Attelage (§11) ------------------------------------------------------------
-    Param("HITCH_SIDES", ("G", "D"), "", PROV,
-          "attelage sur les faces latérales 1100 (décision utilisateur) — un crochet de chaque côté ; ('D',) pour un seul"),
+    Param("HITCH_SIDES", ("G", "D"), "", FIGE,
+          "ARCHITECTURE FIGÉE (validée 26/09) : un crochet sur chaque face latérale 1100 — ne pas déplacer sans validation"),
+    Param("HITCH_ARCHITECTURE", "crochet ouvert vers le haut, sans ressort, platine sur traverse d'extrémité, "
+          "longeron d'attelage 60×40 jusqu'à la 1re traverse intermédiaire, axe Y = 550, anneau articulé côté engin",
+          "", FIGE, "architecture figée ; seules les cotes de dimensionnement ci-dessous restent PROVISOIRES"),
     Param("HOOK_T", 25.0, "mm", PROV, "crochet oxycoupé ép. 25 (pièce forgée à étudier)"),
     Param("HOOK_THROAT_Z", 300.0, "mm", PROV, "Z du fond de gorge (hauteur d'attelage à confirmer)"),
     Param("HOOK_THROAT_W", 60.0, "mm", PROV, "largeur de gorge"),
@@ -142,3 +149,8 @@ _P = [
 
 P = {p.name: p.value for p in _P}
 ALL = _P
+
+# --- Garde-fous -------------------------------------------------------------------
+assert (P["HURAVA_LENGTH"], P["HURAVA_WIDTH"], P["HURAVA_BODY_HEIGHT"]) == (2200.0, 1100.0, 1500.0), \
+    "dimensions principales gelées 2200 × 1100 × 1500 mm modifiées"
+assert tuple(P["HITCH_SIDES"]) == ("G", "D"), "architecture d'attelage figée : modification non validée"

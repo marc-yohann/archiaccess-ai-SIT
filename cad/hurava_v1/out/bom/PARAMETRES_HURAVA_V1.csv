@@ -56,15 +56,17 @@ CASTER_D;200.0;mm;PROVISOIRE — À VALIDER;roue Ø200, bandage caoutchouc plein
 CASTER_W;50.0;mm;PROVISOIRE — À VALIDER;largeur de bandage
 CASTER_H;245.0;mm;PROVISOIRE — À VALIDER;hauteur hors tout roulette (catalogue)
 CASTER_OFFSET;55.0;mm;PROVISOIRE — À VALIDER;déport de chape pivotante
-CASTER_PLATE;(140.0, 110.0, 8.0);mm;PROVISOIRE — À VALIDER;platine de roulette L×l×ép.
-CASTER_BOLT_PITCH;(110.0, 80.0);mm;PROVISOIRE — À VALIDER;entraxe perçages platine (4×M12)
+CASTER_PLATE;(175.0, 140.0, 10.0);mm;PROVISOIRE — À VALIDER;platine de roulette série renforcée L×l×ép. (était 140×110×8 en CMU 500)
+CASTER_BOLT_PITCH;(140.0, 105.0);mm;PROVISOIRE — À VALIDER;entraxe perçages platine (4×M16) — à caler sur la référence
+CASTER_BOLT_D;16.0;mm;PROVISOIRE — À VALIDER;vis de fixation roulette M16 cl. 8.8 (était M12)
 CASTER_AXIS_INSET;165.0;mm;PROVISOIRE — À VALIDER;axe de pivot à 165 des bords (balayage dans l'enveloppe)
-CASTER_CMU;500.0;kg;PROVISOIRE — À VALIDER;charge admissible par roue
-CASTER_MASS;9.5;kg;PROVISOIRE — À VALIDER;masse catalogue d'une roulette
+CASTER_CMU;800.0;kg;PROVISOIRE — À VALIDER;charge admissible par roue ≥ (tare + 750) × 1,5 / 3 ≈ 720 kg — était 500 kg (insuffisant)
+CASTER_DESIGN_SUPPORTS;3;u;PROVISOIRE — À VALIDER;nombre de roues porteuses retenu pour le dimensionnement (sol irrégulier)
+CASTER_MASS;13.5;kg;PROVISOIRE — À VALIDER;masse catalogue d'une roulette Ø200 série renforcée
 WHEEL_SUPPORT_PLATE_T;10.0;mm;PROVISOIRE — À VALIDER;platine porte-roue soudée sous châssis
-WHEEL_SPACER_T;15.0;mm;PROVISOIRE — À VALIDER;cale soudée (rattrapage hauteur roulette)
+WHEEL_SPACER_T;15.0;mm;PROVISOIRE — À VALIDER;cale soudée : Z dessous châssis − platine porte-roue − CASTER_H
 FORK_POCKET_COUNT;2;u;FIGÉ;
-FORK_POCKET_PITCH;900.0;mm;PROVISOIRE — À VALIDER;entraxe — à confirmer selon engins ciblés (pas une norme)
+FORK_POCKET_PITCH;900.0;mm;PROVISOIRE — À VALIDER;"entraxe PROVISOIRE — valeur de travail, pas une norme ni un standard ; à confirmer selon les engins ciblés"
 FORK_POCKET_W;230.0;mm;PROVISOIRE — À VALIDER;largeur extérieure (intérieur 220)
 FORK_POCKET_H;80.0;mm;PROVISOIRE — À VALIDER;hauteur extérieure (intérieur 70)
 FORK_POCKET_T;5.0;mm;PROVISOIRE — À VALIDER;épaisseur (tube 230×80×5 ou tôle pliée)
@@ -75,7 +77,8 @@ LUG_HOLE_D;32.0;mm;PROVISOIRE — À VALIDER;perçage manille
 LUG_HOLE_Z;30.0;mm;PROVISOIRE — À VALIDER;axe du perçage au-dessus de la platine
 LUG_BASE;(80.0, 12.0);mm;PROVISOIRE — À VALIDER;platine d'oreille carré × ép.
 ROOF_NOTCH;86.0;mm;PROVISOIRE — À VALIDER;dégagement de toit aux angles
-HITCH_SIDES;('G', 'D');;PROVISOIRE — À VALIDER;"attelage sur les faces latérales 1100 (décision utilisateur) — un crochet de chaque côté ; ('D',) pour un seul"
+HITCH_SIDES;('G', 'D');;FIGÉ;ARCHITECTURE FIGÉE (validée 26/09) : un crochet sur chaque face latérale 1100 — ne pas déplacer sans validation
+HITCH_ARCHITECTURE;crochet ouvert vers le haut, sans ressort, platine sur traverse d'extrémité, longeron d'attelage 60×40 jusqu'à la 1re traverse intermédiaire, axe Y = 550, anneau articulé côté engin;;FIGÉ;"architecture figée ; seules les cotes de dimensionnement ci-dessous restent PROVISOIRES"
 HOOK_T;25.0;mm;PROVISOIRE — À VALIDER;crochet oxycoupé ép. 25 (pièce forgée à étudier)
 HOOK_THROAT_Z;300.0;mm;PROVISOIRE — À VALIDER;Z du fond de gorge (hauteur d'attelage à confirmer)
 HOOK_THROAT_W;60.0;mm;PROVISOIRE — À VALIDER;largeur de gorge

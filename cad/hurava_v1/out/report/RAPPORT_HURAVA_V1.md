@@ -18,8 +18,10 @@
 | 8 | Soudures principales | `out/bom/SOUDURES_HURAVA_V1.csv` + §7 |
 | 9 | Masse estimative | §5 |
 | 10 | Points à valider | §9 |
-| 11 | Vues avant / arrière / gauche / droite / dessus / dessous / iso / éclatée | `out/views/*.png` |
-| 12 | Visualisation 3D | `out/glb/hurava_v1_closed.glb` |
+| 11 | Contrôles pré-simulation | §8 bis |
+| 12 | Paramètres provisoires avant SimScale | `out/bom/PROVISOIRES_AVANT_SIMSCALE.csv` + §10 bis |
+| 13 | Vues avant / arrière / gauche / droite / dessus / dessous / iso / éclatée | `out/views/*.png` |
+| 14 | Visualisation 3D | `out/glb/hurava_v1_closed.glb` |
 
 ## 2. Validation automatique (phase 14)
 
@@ -109,15 +111,17 @@ Build : 198 corps, 20 contrôles — **20 / 20 validés**. Chaque phase 1 → 13
 | `CASTER_W` | 50.0 | mm | **PROVISOIRE — À VALIDER** | largeur de bandage |
 | `CASTER_H` | 245.0 | mm | **PROVISOIRE — À VALIDER** | hauteur hors tout roulette (catalogue) |
 | `CASTER_OFFSET` | 55.0 | mm | **PROVISOIRE — À VALIDER** | déport de chape pivotante |
-| `CASTER_PLATE` | (140.0, 110.0, 8.0) | mm | **PROVISOIRE — À VALIDER** | platine de roulette L×l×ép. |
-| `CASTER_BOLT_PITCH` | (110.0, 80.0) | mm | **PROVISOIRE — À VALIDER** | entraxe perçages platine (4×M12) |
+| `CASTER_PLATE` | (175.0, 140.0, 10.0) | mm | **PROVISOIRE — À VALIDER** | platine de roulette série renforcée L×l×ép. (était 140×110×8 en CMU 500) |
+| `CASTER_BOLT_PITCH` | (140.0, 105.0) | mm | **PROVISOIRE — À VALIDER** | entraxe perçages platine (4×M16) — à caler sur la référence |
+| `CASTER_BOLT_D` | 16.0 | mm | **PROVISOIRE — À VALIDER** | vis de fixation roulette M16 cl. 8.8 (était M12) |
 | `CASTER_AXIS_INSET` | 165.0 | mm | **PROVISOIRE — À VALIDER** | axe de pivot à 165 des bords (balayage dans l'enveloppe) |
-| `CASTER_CMU` | 500.0 | kg | **PROVISOIRE — À VALIDER** | charge admissible par roue |
-| `CASTER_MASS` | 9.5 | kg | **PROVISOIRE — À VALIDER** | masse catalogue d'une roulette |
+| `CASTER_CMU` | 800.0 | kg | **PROVISOIRE — À VALIDER** | charge admissible par roue ≥ (tare + 750) × 1,5 / 3 ≈ 720 kg — était 500 kg (insuffisant) |
+| `CASTER_DESIGN_SUPPORTS` | 3 | u | **PROVISOIRE — À VALIDER** | nombre de roues porteuses retenu pour le dimensionnement (sol irrégulier) |
+| `CASTER_MASS` | 13.5 | kg | **PROVISOIRE — À VALIDER** | masse catalogue d'une roulette Ø200 série renforcée |
 | `WHEEL_SUPPORT_PLATE_T` | 10.0 | mm | **PROVISOIRE — À VALIDER** | platine porte-roue soudée sous châssis |
-| `WHEEL_SPACER_T` | 15.0 | mm | **PROVISOIRE — À VALIDER** | cale soudée (rattrapage hauteur roulette) |
+| `WHEEL_SPACER_T` | 15.0 | mm | **PROVISOIRE — À VALIDER** | cale soudée : Z dessous châssis − platine porte-roue − CASTER_H |
 | `FORK_POCKET_COUNT` | 2 | u | FIGÉ |  |
-| `FORK_POCKET_PITCH` | 900.0 | mm | **PROVISOIRE — À VALIDER** | entraxe — à confirmer selon engins ciblés (pas une norme) |
+| `FORK_POCKET_PITCH` | 900.0 | mm | **PROVISOIRE — À VALIDER** | entraxe PROVISOIRE — valeur de travail, pas une norme ni un standard ; à confirmer selon les engins ciblés |
 | `FORK_POCKET_W` | 230.0 | mm | **PROVISOIRE — À VALIDER** | largeur extérieure (intérieur 220) |
 | `FORK_POCKET_H` | 80.0 | mm | **PROVISOIRE — À VALIDER** | hauteur extérieure (intérieur 70) |
 | `FORK_POCKET_T` | 5.0 | mm | **PROVISOIRE — À VALIDER** | épaisseur (tube 230×80×5 ou tôle pliée) |
@@ -128,7 +132,8 @@ Build : 198 corps, 20 contrôles — **20 / 20 validés**. Chaque phase 1 → 13
 | `LUG_HOLE_Z` | 30.0 | mm | **PROVISOIRE — À VALIDER** | axe du perçage au-dessus de la platine |
 | `LUG_BASE` | (80.0, 12.0) | mm | **PROVISOIRE — À VALIDER** | platine d'oreille carré × ép. |
 | `ROOF_NOTCH` | 86.0 | mm | **PROVISOIRE — À VALIDER** | dégagement de toit aux angles |
-| `HITCH_SIDES` | ('G', 'D') |  | **PROVISOIRE — À VALIDER** | attelage sur les faces latérales 1100 (décision utilisateur) — un crochet de chaque côté ; ('D',) pour un seul |
+| `HITCH_SIDES` | ('G', 'D') |  | FIGÉ | ARCHITECTURE FIGÉE (validée 26/09) : un crochet sur chaque face latérale 1100 — ne pas déplacer sans validation |
+| `HITCH_ARCHITECTURE` | crochet ouvert vers le haut, sans ressort, platine sur traverse d'extrémité, longeron d'attelage 60×40 jusqu'à la 1re traverse intermédiaire, axe Y = 550, anneau articulé côté engin |  | FIGÉ | architecture figée ; seules les cotes de dimensionnement ci-dessous restent PROVISOIRES |
 | `HOOK_T` | 25.0 | mm | **PROVISOIRE — À VALIDER** | crochet oxycoupé ép. 25 (pièce forgée à étudier) |
 | `HOOK_THROAT_Z` | 300.0 | mm | **PROVISOIRE — À VALIDER** | Z du fond de gorge (hauteur d'attelage à confirmer) |
 | `HOOK_THROAT_W` | 60.0 | mm | **PROVISOIRE — À VALIDER** | largeur de gorge |
@@ -156,9 +161,9 @@ Build : 198 corps, 20 contrôles — **20 / 20 validés**. Chaque phase 1 → 13
 
 ## 5. Masse estimative
 
-- Masse à vide calculée (volumes B-rep × 7850 kg/m³, masses catalogue pour les achats) : **678 kg**
-- Centre de gravité à vide : X 1100 · Y 519 · Z 857 mm
-- Masse en charge de dimensionnement (750 kg) : **1428 kg** ; avec facteur dynamique 1,5 : 2142 kg
+- Masse à vide calculée (volumes B-rep × 7850 kg/m³, masses catalogue pour les achats) : **700 kg**
+- Centre de gravité à vide : X 1100 · Y 520 · Z 834 mm
+- Masse en charge de dimensionnement (750 kg) : **1450 kg** ; avec facteur dynamique 1,5 : 2176 kg
 
 | Composant | Masse (kg) |
 |---|---|
@@ -173,9 +178,9 @@ Build : 198 corps, 20 contrôles — **20 / 20 validés**. Chaque phase 1 → 13
 | 09_LOCKING_SYSTEM | 9.5 |
 | 10_RACK_LEFT | 44.3 |
 | 11_RACK_RIGHT | 44.3 |
-| 13_WHEEL_SUPPORTS | 39.6 |
-| 12_WHEELS | 38.0 |
-| 24_FASTENERS_HARDWARE | 1.2 |
+| 13_WHEEL_SUPPORTS | 44.7 |
+| 12_WHEELS | 54.0 |
+| 24_FASTENERS_HARDWARE | 2.6 |
 | 14_HANDLING_BAR_LEFT | 3.3 |
 | 15_HANDLING_BAR_RIGHT | 3.3 |
 | 16_FORK_POCKET_LEFT | 26.7 |
@@ -194,9 +199,9 @@ Build : 198 corps, 20 contrôles — **20 / 20 validés**. Chaque phase 1 → 13
 | Axe de charnière Ø16 | Ø16 × 118 | 6 | 1.18 | PROVISOIRE (matière) |
 | Boîtier de crémone-serrure | Crémone 3 points à cylindre | 1 | 2.20 | PROVISOIRE (référence) |
 | Poignée palette extérieure cadenassable | Poignée palette + rosace | 1 | 1.10 | PROVISOIRE (référence) |
-| Roulette pivotante Ø200 à frein total + blocage directionnel | Ø200×50 H245 CMU 500 kg | 2 | 19.00 | PROVISOIRE (référence catalogue) |
-| Vis H M12×50 cl. 8.8 + écrou frein + rondelle | M12×50 | 16 | 1.20 |  |
-| Roulette pivotante Ø200 à blocage directionnel | Ø200×50 H245 CMU 500 kg | 2 | 19.00 | PROVISOIRE (référence catalogue) |
+| Roulette pivotante Ø200 à frein total + blocage directionnel | Ø200×50 H245 CMU 800 kg | 2 | 27.00 | PROVISOIRE (référence catalogue) |
+| Vis H M16×55 cl. 8.8 + écrou frein + rondelle | M16×55 | 16 | 2.56 |  |
+| Roulette pivotante Ø200 à blocage directionnel | Ø200×50 H245 CMU 800 kg | 2 | 27.00 | PROVISOIRE (référence catalogue) |
 | Marquage HURAVA by ARCHIACCESS — face arrière | Film adhésif découpé | 1 | 0.05 |  |
 | Marquage HURAVA — vantail gauche | Film adhésif découpé | 1 | 0.02 |  |
 
@@ -221,8 +226,8 @@ Procédé envisagé : MAG 135, gorges indicatives a3 à a8 — **PROVISOIRE — 
 | angle a3 cadre ; bouchons Ø8 pas 150 parement | 2 | 23.0 |
 | angle a3 discontinue 50/150 | 1 | 9.9 |
 | angle a4 3 côtés | 20 | 6.9 |
+| angle a4 périphérique | 18 | 5.2 |
 | angle a3 | 18 | 4.6 |
-| angle a4 périphérique | 18 | 4.6 |
 | angle a4 discontinue 50/100 ×2 | 2 | 4.4 |
 | angle a2,5 | 2 | 2.9 |
 | angle a3 périphérique | 14 | 2.8 |
@@ -236,27 +241,58 @@ Procédé envisagé : MAG 135, gorges indicatives a3 à a8 — **PROVISOIRE — 
 | angle a4 périphérique (gueule de loup) | 4 | 0.6 |
 | angle a8 double + chanfrein (pleine pénétration à étudier) | 2 | 0.4 |
 
-Joints critiques (chemin de charge) : oreilles de levage / platines / montants ; crochet / platine / longeron arrière ; fourreaux / longerons (traversée) ; platines porte-roues / châssis ; supports de barres / lisses.
+Joints critiques (chemin de charge) : oreilles de levage / platines / montants ; crochet / platine / traverse d'extrémité / longeron d'attelage ; fourreaux / longerons (traversée) ; platines porte-roues / châssis ; supports de barres / lisses.
 
 ## 8. Contrôles préliminaires (ordres de grandeur — pas une note de calcul)
 
 | Élément | Hypothèse | Valeur | Commentaire |
 |---|---|---|---|
-| Roulette | 3 appuis sur 4, charge statique | 476 kg / roue | 95 % de la CMU 500 kg |
-| Roulette | idem × facteur dynamique 1,5 | 714 kg / roue | **dépasse la CMU 500 kg → prévoir roulettes CMU ≥ 750 kg** |
-| Oreille de levage | élingue 4 brins, 3 brins porteurs, 60°, × 1,5 | 824 kg / oreille | manille et oreille CMU ≥ 1 t minimum ; oreille ép. 15 à vérifier (arrachement, pression diamétrale, soudure) |
-| Attelage | roulement chantier 10 % + rampe 10 %, × 1,5 | 4.2 kN | effort horizontal (selon X) sur crochet latéral, traverse d'extrémité et longeron d'attelage |
+| Roulette | 3 appuis sur 4, charge statique | 483 kg / roue | 60 % de la CMU 800 kg |
+| Roulette | idem × facteur dynamique 1,5 | 725 kg / roue | 91 % de la CMU 800 kg (série renforcée, PRE-01) — l'ancienne CMU 500 kg était dépassée |
+| Oreille de levage | élingue 4 brins, 3 brins porteurs, 60°, × 1,5 | 837 kg / oreille | manille CMU ≥ 1 t ; oreille vérifiée en ordre de grandeur (PRE-04, §8 bis) |
+| Attelage | roulement chantier 10 % + rampe 10 %, × 1,5 | 4.3 kN | effort horizontal (selon X) sur crochet latéral, traverse d'extrémité et longeron d'attelage |
 | Facteur de sécurité | cible ≥ 1.5 | non évalué | simulation SimScale à réaliser (§10) |
+
+## 8 bis. Contrôles pré-simulation
+
+| Contrôle | Intitulé | Résultat | Détail |
+|---|---|---|---|
+| PRE-01 | Roulettes Ø200 compatibles avec 750 kg | ✅ | (700 + 750) kg × 1.5 / 3 appuis = 725 kg/roue ≤ CMU 800 kg (taux 91 %) ; statique 483 kg. Ancienne CMU 500 kg : taux 145 % → insuffisante. Géométrie retenue : Ø200 × 50, H 245, platine 175×140×10, 4×M16 |
+| PRE-02 | Entraxe fourreaux 900 mm PROVISOIRE | ✅ | entraxe modélisé 900 mm, statut PROVISOIRE — valeur de travail, non déclarée standard |
+| PRE-03 | Architecture d'attelage figée | ✅ | statut FIGÉ ; G : face latérale ✓, axe Y 550, chaîne crochet → platine → traverse → longeron → traverse I ✓ ; D : face latérale ✓, axe Y 550, chaîne crochet → platine → traverse → longeron → traverse I ✓ |
+| PRE-04 | Cohérence structurelle des 4 points de levage | ✅ | assise sur nœud cadre haut / montant ✓ ; excentricité trou / axe montant 22.4 mm ; écart plan d'oreille / direction du CdG 1.3° ; effort de calcul 837 kg/brin ; taux maxi 13 % (Cisaillement arrière du trou (2 plans)) avec γ = 1.5 |
+| PRE-05 | Dimensions principales inchangées | ✅ | 2200.0 × 1100.0 × 1500.0 mm |
+
+**Points de levage — géométrie** (effort de calcul 837 kg par brin, soit 8.21 kN : (tare + 750) × 1,5 / 3 brins / sin 60°)
+
+| Point | Assise sur cadre haut | Recouvrement du montant | Excentricité trou / axe montant | Plan d'oreille / CdG | Garde trou / toit | Longueur de brin pour 60° |
+|---|---|---|---|---|---|---|
+| FL | 4800 mm² (75 %) | 2400 mm² | 22.4 mm | 1.3° | 24 mm | ≥ 2322 mm |
+| FR | 4800 mm² (75 %) | 2400 mm² | 22.4 mm | 1.3° | 24 mm | ≥ 2321 mm |
+| RL | 4800 mm² (75 %) | 2400 mm² | 22.4 mm | 1.3° | 24 mm | ≥ 2375 mm |
+| RR | 4800 mm² (75 %) | 2400 mm² | 22.4 mm | 1.3° | 24 mm | ≥ 2374 mm |
+
+**Points de levage — ordres de grandeur** (γ = 1.5, S235 fy 235 / fu 360, axe de manille supposé Ø28)
+
+| Mode | Capacité (kN) | Taux |
+|---|---|---|
+| Cisaillement arrière du trou (2 plans) | 97.7 | 13 % |
+| Traction section nette | 169.2 | 7 % |
+| Pression diamétrale (1,5 fy) | 148.1 | 8 % |
+| Soudure oreille / platine (2 × a6 × 80) | 199.5 | 6 % |
+| Soudure platine / cadre haut (a5 × 4 × 80) | 332.6 | 4 % |
+
+Non couvert par ce calcul, à traiter en simulation : flexion locale de la paroi 3 mm du cadre haut sous la platine, nœud cadre haut / montant, cas de levage avec un brin détendu.
 
 ## 9. Points nécessitant validation
 
 1. **Hauteur** — Le cahier des charges donne 1500 mm d'enveloppe et un dessus de caisse à Z ≈ 1830. Le modèle place la caisse de Z 330 à Z 1830 (1500 mm de caisse posée sur le châssis). Hauteur hors tout 1910 mm avec les oreilles. La visualisation 5D précédente avait 1500 mm hors tout : **l'interprétation retenue ici est à confirmer.**
 2. **Portes** — « 2 portes à deux vantaux » interprété comme **une porte double de 2 vantaux** (DOOR_COUNT = 2, 3 charnières par vantail). Vantail gauche semi-fixe (verrous haut/bas), vantail droit actif (crémone 3 points, poignée cadenassable, couvre-joint anti-arrachement).
-3. **Roues** — Architecture PROVISOIRE : 4 roulettes pivotantes Ø200, toutes à blocage directionnel (marche en ligne selon X pour la traction), 2 avec frein total côté portes. **CMU 500 kg insuffisante avec le facteur dynamique** (714 kg/roue) → choisir une référence ≥ 750 kg de même hauteur (245 mm) ou reprendre la cale.
-4. **Masse** — Tare calculée 678 kg, élevée par rapport à la charge utile. Leviers : tôles 1,5 mm, cadres de vantaux 30×30, racks, plancher 3 mm raidi.
-5. **Fourreaux** — Entraxe 900 et section intérieure 220 × 70 **à confirmer selon les engins ciblés** (pas une norme). Fourreaux traversants : les longerons AV/AR sont interrompus et soudés sur les flancs des fourreaux.
-6. **Attelage** — **Déplacé sur les faces latérales de 1100 mm (décision du 26/09)** au lieu de la face arrière du cahier des charges §11 : un crochet de chaque côté (paramètre HITCH_SIDES), à Y 550, sous la barre de manutention ; traction selon la longueur, reprise par un longeron d'attelage 60×40 jusqu'à la 1re traverse intermédiaire. Hors tout avec crochets 2470 mm. Un seul côté suffit-il ? Crochet oxycoupé ép. 25 en S235 : nuance S355 ou pièce forgée à étudier. Hauteur de gorge Z 300 à caler sur les engins tracteurs. Retenue de l'anneau par la seule géométrie (bec de 55 mm, pas de ressort) : ajouter ou non une goupille de sécurité est **une décision à prendre**. L'anneau articulé, la chape et le timon sont côté engin, hors nomenclature HURAVA.
-7. **Levage** — Oreilles orientées vers le centre de gravité, décalées d'environ 20 mm de l'axe des montants : à recentrer après calcul. CMU à calculer.
+3. **Roues** — La CMU 500 kg initiale était insuffisante (725 kg/roue avec 3 appuis × 1,5, soit 145 %). **Géométrie proposée** : roulettes Ø200 × 50 série renforcée **CMU 800 kg** (taux 91 %), même hauteur 245 mm donc même cale de 15 et même silhouette, platine 175×140×10, fixation 4×M16 (entraxes 140×105). Référence catalogue à choisir : si sa hauteur diffère de 245, seule la cale change. Architecture : 4 pivotantes à blocage directionnel, 2 à frein total côté portes (PROVISOIRE).
+4. **Masse** — Tare calculée 700 kg, élevée par rapport à la charge utile. Leviers : tôles 1,5 mm, cadres de vantaux 30×30, racks, plancher 3 mm raidi.
+5. **Fourreaux** — Entraxe **900 mm conservé comme valeur PROVISOIRE de travail** — ce n'est ni une norme ni un standard ; section intérieure 220 × 70 à confirmer selon les engins ciblés. Fourreaux traversants : les longerons AV/AR sont interrompus et soudés sur les flancs des fourreaux.
+6. **Attelage** — **Architecture FIGÉE (validée le 26/09)** — ne plus la déplacer sans validation : un crochet sur chaque face latérale de 1100 (au lieu de la face arrière du cahier des charges §11), axe Y 550, sous la barre de manutention ; traction selon la longueur, reprise par un longeron d'attelage 60×40 jusqu'à la 1re traverse intermédiaire. Garde-fou dans params.py : le build refuse toute autre configuration. Hors tout avec crochets 2470 mm. Restent PROVISOIRES les seules cotes de dimensionnement : crochet oxycoupé ép. 25 en S235 : nuance S355 ou pièce forgée à étudier. Hauteur de gorge Z 300 à caler sur les engins tracteurs. Retenue de l'anneau par la seule géométrie (bec de 55 mm, pas de ressort) : ajouter ou non une goupille de sécurité est **une décision à prendre**. L'anneau articulé, la chape et le timon sont côté engin, hors nomenclature HURAVA.
+7. **Levage** — Cohérence vérifiée (PRE-04, §8 bis) : chaque platine repose sur le nœud cadre haut / montant, oreille dans le plan du brin (écart ≤ 1,3°), CdG à l'intérieur des 4 points. Excentricité de 22 mm entre le trou et l'axe du montant : acceptée à ce stade, flexion locale de la paroi 3 mm du cadre haut à contrôler en simulation.
 8. **Galvanisation** — Trous d'évent et d'écoulement (Ø10–12 à chaque extrémité de profil creux) **non modélisés**. Tôles de 2 mm soudées sur cadre : risque de déformation dans le bain ; alternative : tôles pré-galvanisées rivetées après galvanisation de l'ossature. Compatibilité du bain (≈ 2,4 × 1,3 × 1,95 m) à vérifier avec le galvaniseur.
 9. **Butée à 90°** — Bloc soudé sur le montant avant, jeu 0,5 mm pour un tampon élastomère. Saillie de 60 mm devant la face avant : à arrondir, ou remplacer par un arrêt de porte.
 10. **Barres de manutention** — Axe à Z 1000 et à 75 mm du panneau (passage de main 58 mm). Extrémités ouvertes : bouchons à décider (utiles aussi pour l'écoulement du zinc).
@@ -274,6 +310,82 @@ Joints critiques (chemin de charge) : oreilles de levage / platines / montants ;
 - Levage : alésages Ø32 des oreilles `18…21-ORE`. Fourches : faces intérieures basses des fourreaux `16/17-FOU`.
 - Traction : flanc intérieur du bec des crochets latéraux `22-CRO-G` / `22-CRO-D` (effort selon X).
 - Pièces à exclure : 23 (interface engin), 24 (boulonnerie), 25 (marquage).
+
+## 10 bis. Paramètres PROVISOIRES à valider avant export SimScale
+
+58 paramètres restent PROVISOIRES, dont **36 bloquants** pour la simulation (ils changent la rigidité, la résistance, les appuis ou les charges). Les dimensions principales, l'architecture d'attelage et les critères de charge sont FIGÉS et n'apparaissent pas ici.
+
+| Paramètre | Valeur | Unité | Catégorie | Effet sur la simulation |
+|---|---|---|---|---|
+| CASTER_AXIS_INSET | 165.0 | mm | Bloquant SimScale | Position des appuis (conditions aux limites) |
+| CASTER_BOLT_PITCH | (140.0, 105.0) | mm | Bloquant SimScale | Zone d'appui et perçages de la platine porte-roue |
+| CASTER_CMU | 800.0 | kg | Bloquant SimScale | Critère de vérification des roues (référence catalogue à choisir) |
+| CASTER_DESIGN_SUPPORTS | 3 | u | Bloquant SimScale | Hypothèse d'appui (3 roues porteuses) des cas de charge roulage |
+| CASTER_H | 245.0 | mm | Bloquant SimScale | Chaîne de cotes cale / platine ; à figer avec la référence |
+| CASTER_PLATE | (175.0, 140.0, 10.0) | mm | Bloquant SimScale | Zone d'appui des roues sur la platine porte-roue |
+| CHASSIS_CROSS_X | (290.0, 1100.0, 1910.0) | mm | Bloquant SimScale | Portées du plancher et appuis du châssis |
+| FLOOR_T | 4.0 | mm | Bloquant SimScale | Plancher porteur de la charge utile |
+| FORK_POCKET_H | 80.0 | mm | Bloquant SimScale | Section des fourreaux |
+| FORK_POCKET_PITCH | 900.0 | mm | Bloquant SimScale | Appuis du cas de charge « levage par fourches » — pas une norme |
+| FORK_POCKET_T | 5.0 | mm | Bloquant SimScale | Section des fourreaux |
+| FORK_POCKET_W | 230.0 | mm | Bloquant SimScale | Section des fourreaux |
+| HANDLING_BAR_STANDOFF | 75.0 | mm | Bloquant SimScale | Bras de levier de l'effort de poussée sur les supports |
+| HANDLING_BAR_SUPPORT | (10.0, 60.0) | mm | Bloquant SimScale | Section des supports de barre |
+| HANDLING_BAR_SUPPORT_PITCH | 760.0 | mm | Bloquant SimScale | Portée de la barre entre supports |
+| HANDLING_BAR_Z | 1000.0 | mm | Bloquant SimScale | Point d'application de l'effort de poussée manuelle |
+| HOOK_T | 25.0 | mm | Bloquant SimScale | Section du crochet |
+| HOOK_THROAT_Z | 300.0 | mm | Bloquant SimScale | Hauteur d'application de la traction |
+| HOOK_TIP_W | 32.0 | mm | Bloquant SimScale | Section du bec (effort de traction) |
+| LUG_BASE | (80.0, 12.0) | mm | Bloquant SimScale | Assise sur le cadre haut |
+| LUG_HOLE_D | 32.0 | mm | Bloquant SimScale | Oreille / manille |
+| LUG_HOLE_Z | 30.0 | mm | Bloquant SimScale | Bras de levier sur la platine |
+| LUG_T | 15.0 | mm | Bloquant SimScale | Oreille de levage |
+| LUG_W | 80.0 | mm | Bloquant SimScale | Oreille de levage |
+| PANEL_T | 2.0 | mm | Bloquant SimScale | Rigidité des parois, contreventement de la caisse |
+| RACK_DEPTH | 450.0 | mm | Bloquant SimScale | Géométrie et masse des racks, position des charges de tablettes |
+| RACK_SHELF_T | 2.0 | mm | Bloquant SimScale | Tablettes porteuses |
+| RACK_SHELF_Z | (700.0, 1100.0, 1500.0) | mm | Bloquant SimScale | Hauteur des charges de tablettes (CdG chargé) |
+| RACK_Y_RANGE | (70.0, 1030.0) | mm | Bloquant SimScale | Portée des tablettes |
+| REAR_MID_POST_X | 1100.0 | mm | Bloquant SimScale | Raidissage de la paroi arrière |
+| REAR_RAIL_Z | 1000.0 | mm | Bloquant SimScale | Raidissage de la paroi arrière |
+| ROOF_BOW_X | (733.0, 1467.0) | mm | Bloquant SimScale | Raidissage du toit |
+| ROOF_T | 2.0 | mm | Bloquant SimScale | Rigidité du toit, diaphragme horizontal |
+| SIDE_RAIL_Z | 1000.0 | mm | Bloquant SimScale | Position de la reprise des barres de manutention |
+| WHEEL_SPACER_T | 15.0 | mm | Bloquant SimScale | Dépend de CASTER_H |
+| WHEEL_SUPPORT_PLATE_T | 10.0 | mm | Bloquant SimScale | Rigidité de la platine porte-roue |
+| CASTER_BOLT_D | 16.0 | mm | Non bloquant | Assemblage démontable |
+| CASTER_D | 200.0 | mm | Non bloquant | Appui ponctuel en simulation |
+| CASTER_MASS | 13.5 | kg | Non bloquant | Masse ajoutée |
+| CASTER_OFFSET | 55.0 | mm | Non bloquant | Cinématique de pivot |
+| CASTER_W | 50.0 | mm | Non bloquant | Appui ponctuel en simulation |
+| DOOR_GAP_BOTTOM | 6.0 | mm | Non bloquant | Jeux de fonctionnement |
+| DOOR_GAP_CENTER | 6.0 | mm | Non bloquant | Jeux de fonctionnement |
+| DOOR_GAP_SIDE | 5.0 | mm | Non bloquant | Jeux de fonctionnement |
+| DOOR_GAP_TOP | 5.0 | mm | Non bloquant | Jeux de fonctionnement |
+| DOOR_SKIN_T | 2.0 | mm | Non bloquant | Masse des vantaux ; hors chemin de charge principal |
+| DOOR_STOP_Z | 0.75 |  | Non bloquant | Position de butée |
+| HINGE_AXIS_X | 30.0 | mm | Non bloquant | Cinématique de porte |
+| HINGE_AXIS_Y | -20.0 | mm | Non bloquant | Cinématique de porte |
+| HINGE_KNUCKLE_LEN | 55.0 | mm | Non bloquant | Détail de charnière |
+| HINGE_KNUCKLE_OD | 30.0 | mm | Non bloquant | Détail de charnière |
+| HINGE_Z_MARGIN | 150.0 | mm | Non bloquant | Détail de charnière |
+| HOOK_THROAT_W | 60.0 | mm | Non bloquant | Forme de gorge |
+| HOOK_TIP_H | 55.0 | mm | Non bloquant | Retenue géométrique de l'anneau |
+| RING_PIN_D | 20.0 | mm | Non bloquant | Interface engin, hors modèle de calcul |
+| RING_R | 47.0 | mm | Non bloquant | Interface engin, hors modèle de calcul |
+| RING_r | 12.0 | mm | Non bloquant | Interface engin, hors modèle de calcul |
+| ROOF_NOTCH | 86.0 | mm | Non bloquant | Découpe de toit aux angles |
+
+Données d'entrée à fixer en plus des paramètres :
+
+- **Répartition de la charge utile** — 750 kg : part sur le plancher / part sur les 6 tablettes, et charge maximale par tablette
+- **Effort de traction** — valeur d'essai au crochet (ordre de grandeur actuel ≈ 4 kN × 1,5) et angle de traction
+- **Effort de poussée manuelle** — effort horizontal sur une barre de manutention (valeur ergonomique à fixer)
+- **Configuration de levage** — élingue 4 brins, angle minimal (60° retenu), 3 brins porteurs
+- **Levage par fourches** — longueur d'engagement et position des fourches dans les fourreaux
+- **Matériau** — S235JR : E = 210 GPa, ν = 0,3, fy = 235 MPa ; coefficient de sécurité cible 1,5
+- **Modélisation des soudures** — liaison collée (bonded) aux faces coïncidentes ou coques + poutres
+- **Trous d'évent de galvanisation** — non modélisés — sans effet global, à ajouter avant plans
 
 ## 11. Vues
 
@@ -384,11 +496,11 @@ Joints critiques (chemin de charge) : oreilles de levage / platines / montants ;
 | 056 | 11_RACK_RIGHT | Longeron de tablette | Tube carré 30×30×2 | 900 | 6 | 9.50 | PROVISOIRE (profondeur, cotes de niveaux) |
 | 057 | 11_RACK_RIGHT | Traverse de tablette | Tube carré 30×30×2 | 390 | 6 | 4.11 | PROVISOIRE (profondeur, cotes de niveaux) |
 | 058 | 11_RACK_RIGHT | Tablette tôle | Tôle ép. 2 |  | 3 | 20.17 | PROVISOIRE (profondeur, cotes de niveaux) |
-| 059 | 13_WHEEL_SUPPORTS | Platine porte-roue | Tôle ép. 10 |  | 4 | 31.36 |  |
-| 060 | 13_WHEEL_SUPPORTS | Cale de roulette | Plat ép. 15 |  | 4 | 8.23 | PROVISOIRE (dépend de la roulette retenue) |
-| 061 | 12_WHEELS | Roulette pivotante Ø200 à frein total + blocage directionnel | Ø200×50 H245 CMU 500 kg |  | 2 | 19.00 | PROVISOIRE (référence catalogue) |
-| 062 | 24_FASTENERS_HARDWARE | Vis H M12×50 cl. 8.8 + écrou frein + rondelle | M12×50 |  | 16 | 1.20 |  |
-| 063 | 12_WHEELS | Roulette pivotante Ø200 à blocage directionnel | Ø200×50 H245 CMU 500 kg |  | 2 | 19.00 | PROVISOIRE (référence catalogue) |
+| 059 | 13_WHEEL_SUPPORTS | Platine porte-roue | Tôle ép. 10 |  | 4 | 31.24 |  |
+| 060 | 13_WHEEL_SUPPORTS | Cale de roulette | Plat ép. 15 |  | 4 | 13.44 | PROVISOIRE (dépend de la roulette retenue) |
+| 061 | 12_WHEELS | Roulette pivotante Ø200 à frein total + blocage directionnel | Ø200×50 H245 CMU 800 kg |  | 2 | 27.00 | PROVISOIRE (référence catalogue) |
+| 062 | 24_FASTENERS_HARDWARE | Vis H M16×55 cl. 8.8 + écrou frein + rondelle | M16×55 |  | 16 | 2.56 |  |
+| 063 | 12_WHEELS | Roulette pivotante Ø200 à blocage directionnel | Ø200×50 H245 CMU 800 kg |  | 2 | 27.00 | PROVISOIRE (référence catalogue) |
 | 064 | 14_HANDLING_BAR_LEFT | Barre de manutention | Tube rond Ø33.7×4.0 | 900 | 1 | 2.64 |  |
 | 065 | 14_HANDLING_BAR_LEFT | Support de barre | Plat 60×10 | 77 | 2 | 0.66 |  |
 | 066 | 15_HANDLING_BAR_RIGHT | Barre de manutention | Tube rond Ø33.7×4.0 | 900 | 1 | 2.64 |  |

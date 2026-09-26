@@ -15,6 +15,7 @@ from skeleton import SK as s
 from geom import Registry, bbox, V, rotate_z
 import components as C
 import checks as K
+import presim as PS
 
 GROUPS = ["00_MASTER_SKELETON", "01_CHASSIS", "02_SECONDARY_STRUCTURE", "03_FLOOR", "04_ROOF", "05_SIDE_PANELS",
           "06_REAR_PANEL", "07_FRONT_DOORS", "08_DOOR_HINGES", "09_LOCKING_SYSTEM", "10_RACK_LEFT",
@@ -395,6 +396,14 @@ def main():
         if by.get(G):
             log(f"  - {G} : {by[G]:.1f} kg")
 
+    # ---- Contrôles pré-simulation ------------------------------------------------------
+    log("\n## Contrôles pré-simulation (PRE-01 … PRE-05)\n")
+    PRE, LIFT, LOADS = PS.presim_checks(reg, tot, cog)
+    log("| Contrôle | Intitulé | Résultat | Détail |\n|---|---|---|---|")
+    for k, (n, r, d) in PRE.items():
+        log(f"| {k} | {n} | {ok(r)} | {d} |")
+    all_ok = all_ok and all(r for _, r, _ in PRE.values())
+
     # ---- Exports -----------------------------------------------------------------------
     log("\n## Exports\n")
     assy = build_assembly(reg.parts)
@@ -437,10 +446,13 @@ def main():
         wr.writerow(["Paramètre", "Valeur", "Unité", "Statut", "Note"])
         for p in PARAMS:
             wr.writerow([p.name, p.value, p.unit, p.status + (" — À VALIDER" if p.status == "PROVISOIRE" else ""), p.note])
-    log("- bom/BOM_HURAVA_V1.csv, PIECES, ACHATS, DEBIT_PROFILES, SOUDURES, PARAMETRES")
+    write_csv(os.path.join(out, "bom", "PROVISOIRES_AVANT_SIMSCALE.csv"),
+              ["Paramètre", "Valeur", "Unité", "Catégorie", "Effet sur la simulation", "Note"], PS.provisional_rows())
+    log("- bom/BOM_HURAVA_V1.csv, PIECES, ACHATS, DEBIT_PROFILES, SOUDURES, PARAMETRES, PROVISOIRES_AVANT_SIMSCALE")
 
     summary = dict(total_mass=tot, cog=cog, mass_by_group=dict(by), n_parts=len(reg.parts), n_bom=len(rows),
                    welds=len(reg.welds), weld_length=sum(w.length for w in reg.welds), checks={k: [n, r, d] for k, (n, r, d) in R.items()},
+                   presim={k: [n, r, d] for k, (n, r, d) in PRE.items()}, lifting=LIFT, loads=LOADS,
                    phases=phase_ok, all_ok=all_ok, build_s=time.time() - t0,
                    overall_bb=K._union_bb([bbox(p.shape) for p in reg.parts if p.in_bom]),
                    bom=[dict(zip(H, r)) for r in rows], profiles={k: v for k, v in prof.items()})

@@ -1,9 +1,9 @@
 {
- "total_mass": 677.9458119641666,
+ "total_mass": 700.4028239361968,
  "cog": [
-  1100.2599071048808,
-  518.7843872065641,
-  856.6440960996136
+  1100.251573704779,
+  519.7852532314579,
+  834.3099787110397
  ],
  "mass_by_group": {
   "01_CHASSIS": 94.57504159999998,
@@ -17,9 +17,9 @@
   "09_LOCKING_SYSTEM": 9.5198482772747,
   "10_RACK_LEFT": 44.2901553,
   "11_RACK_RIGHT": 44.2901553,
-  "13_WHEEL_SUPPORTS": 39.58933261061151,
-  "12_WHEELS": 38.0,
-  "24_FASTENERS_HARDWARE": 1.1999999999999997,
+  "13_WHEEL_SUPPORTS": 44.68634458264334,
+  "12_WHEELS": 54.0,
+  "24_FASTENERS_HARDWARE": 2.56,
   "14_HANDLING_BAR_LEFT": 3.2921282752414682,
   "15_HANDLING_BAR_RIGHT": 3.292128275241445,
   "16_FORK_POCKET_LEFT": 26.68999999999998,
@@ -34,7 +34,7 @@
  "n_parts": 198,
  "n_bom": 83,
  "welds": 111,
- "weld_length": 93291.0,
+ "weld_length": 93891.0,
  "checks": {
   "CHECK 01": [
    "Dimensions principales 2200 × 1100 × 1500",
@@ -137,6 +137,114 @@
    "198 corps valides ✅ OK ; chaque corps soudé, boulonné ou guidé (jeu ≤ 1 mm) sur un autre ; corps isolés : aucun"
   ]
  },
+ "presim": {
+  "PRE-01": [
+   "Roulettes Ø200 compatibles avec 750 kg",
+   true,
+   "(700 + 750) kg × 1.5 / 3 appuis = 725 kg/roue ≤ CMU 800 kg (taux 91 %) ; statique 483 kg. Ancienne CMU 500 kg : taux 145 % → insuffisante. Géométrie retenue : Ø200 × 50, H 245, platine 175×140×10, 4×M16"
+  ],
+  "PRE-02": [
+   "Entraxe fourreaux 900 mm PROVISOIRE",
+   true,
+   "entraxe modélisé 900 mm, statut PROVISOIRE — valeur de travail, non déclarée standard"
+  ],
+  "PRE-03": [
+   "Architecture d'attelage figée",
+   true,
+   "statut FIGÉ ; G : face latérale ✓, axe Y 550, chaîne crochet → platine → traverse → longeron → traverse I ✓ ; D : face latérale ✓, axe Y 550, chaîne crochet → platine → traverse → longeron → traverse I ✓"
+  ],
+  "PRE-04": [
+   "Cohérence structurelle des 4 points de levage",
+   true,
+   "assise sur nœud cadre haut / montant ✓ ; excentricité trou / axe montant 22.4 mm ; écart plan d'oreille / direction du CdG 1.3° ; effort de calcul 837 kg/brin ; taux maxi 13 % (Cisaillement arrière du trou (2 plans)) avec γ = 1.5"
+  ],
+  "PRE-05": [
+   "Dimensions principales inchangées",
+   true,
+   "2200.0 × 1100.0 × 1500.0 mm"
+  ]
+ },
+ "lifting": {
+  "F_kN": 8.214800420771306,
+  "F_kg": 837.3904608329567,
+  "cap": {
+   "Cisaillement arrière du trou (2 plans)": 97.68766554688469,
+   "Traction section nette": 169.2,
+   "Pression diamétrale (1,5 fy)": 148.05,
+   "Soudure oreille / platine (2 × a6 × 80)": 199.53225303193466,
+   "Soudure platine / cadre haut (a5 × 4 × 80)": 332.55375505322445
+  },
+  "util": {
+   "Cisaillement arrière du trou (2 plans)": 0.1261387562306214,
+   "Traction section nette": 0.07282624486499385,
+   "Pression diamétrale (1,5 fy)": 0.08322999413142154,
+   "Soudure oreille / platine (2 × a6 × 80)": 0.0617554327379084,
+   "Soudure platine / cadre haut (a5 × 4 × 80)": 0.037053259642745036
+  },
+  "rows": [
+   {
+    "code": "FL",
+    "area": 4800.0,
+    "area_pct": 75.0,
+    "post_area": 2400.0,
+    "ecc": 22.360679774997898,
+    "ang": 1.3495611909605585,
+    "hole_z": 1870.0,
+    "clear": 24.0,
+    "horiz": 1161.1094442187996,
+    "leg_len": 2322.2188884375987,
+    "ok": true
+   },
+   {
+    "code": "FR",
+    "area": 4800.0,
+    "area_pct": 75.0,
+    "post_area": 2400.0,
+    "ecc": 22.360679774997898,
+    "ang": 1.3393406036685491,
+    "hole_z": 1870.0,
+    "clear": 24.0,
+    "horiz": 1160.6508870179116,
+    "leg_len": 2321.3017740358227,
+    "ok": true
+   },
+   {
+    "code": "RL",
+    "area": 4800.0,
+    "area_pct": 75.0,
+    "post_area": 2400.0,
+    "ecc": 22.360679774997898,
+    "ang": 1.3093246182195866,
+    "hole_z": 1870.0,
+    "clear": 24.0,
+    "horiz": 1187.253766845053,
+    "leg_len": 2374.5075336901054,
+    "ok": true
+   },
+   {
+    "code": "RR",
+    "area": 4800.0,
+    "area_pct": 75.0,
+    "post_area": 2400.0,
+    "ecc": 22.360679774997898,
+    "ang": 1.3203362183372367,
+    "hole_z": 1870.0,
+    "clear": 24.0,
+    "horiz": 1186.805311316537,
+    "leg_len": 2373.6106226330735,
+    "ok": true
+   }
+  ],
+  "geo_ok": true,
+  "cog_inside": true,
+  "d_pin": 28.0
+ },
+ "loads": {
+  "gross": 1450.402823936197,
+  "wheel_static": 483.4676079787323,
+  "wheel_design": 725.2014119680985,
+  "leg_kg": 837.3904608329567
+ },
  "phases": {
   "PHASE 1": true,
   "PHASE 2": true,
@@ -153,7 +261,7 @@
   "PHASE 13": true
  },
  "all_ok": true,
- "build_s": 14.37567400932312,
+ "build_s": 13.356672763824463,
  "overall_bb": [
   -135.0000000999998,
   2335.0000001,
@@ -1100,8 +1208,8 @@
    "Matériau": "S235JR galvanisé à chaud",
    "Type": "plat",
    "Qté": 4,
-   "Masse unit. (kg)": "7.84",
-   "Masse totale (kg)": "31.36",
+   "Masse unit. (kg)": "7.81",
+   "Masse totale (kg)": "31.24",
    "Fonction": "Support de roulette soudé sous longeron, traverse d'extrémité et traverse intermédiaire",
    "Sous-ensemble soudé": "A — caisse mécano-soudée",
    "Statut": "",
@@ -1116,8 +1224,8 @@
    "Matériau": "S235JR galvanisé à chaud",
    "Type": "plat",
    "Qté": 4,
-   "Masse unit. (kg)": "2.06",
-   "Masse totale (kg)": "8.23",
+   "Masse unit. (kg)": "3.36",
+   "Masse totale (kg)": "13.44",
    "Fonction": "Rattrapage de hauteur roulette",
    "Sous-ensemble soudé": "A — caisse mécano-soudée",
    "Statut": "PROVISOIRE (dépend de la roulette retenue)",
@@ -1127,13 +1235,13 @@
    "Rep": "061",
    "Composant": "12_WHEELS",
    "Désignation": "Roulette pivotante Ø200 à frein total + blocage directionnel",
-   "Section / référence": "Ø200×50 H245 CMU 500 kg",
+   "Section / référence": "Ø200×50 H245 CMU 800 kg",
    "Longueur débit (mm)": "",
    "Matériau": "Acier zingué / caoutchouc plein (achat)",
    "Type": "acheté",
    "Qté": 2,
-   "Masse unit. (kg)": "9.50",
-   "Masse totale (kg)": "19.00",
+   "Masse unit. (kg)": "13.50",
+   "Masse totale (kg)": "27.00",
    "Fonction": "Roulage chantier, orientation, immobilisation",
    "Sous-ensemble soudé": "",
    "Statut": "PROVISOIRE (référence catalogue)",
@@ -1142,14 +1250,14 @@
   {
    "Rep": "062",
    "Composant": "24_FASTENERS_HARDWARE",
-   "Désignation": "Vis H M12×50 cl. 8.8 + écrou frein + rondelle",
-   "Section / référence": "M12×50",
+   "Désignation": "Vis H M16×55 cl. 8.8 + écrou frein + rondelle",
+   "Section / référence": "M16×55",
    "Longueur débit (mm)": "",
    "Matériau": "Acier cl. 8.8 zingué",
    "Type": "quincaillerie",
    "Qté": 16,
-   "Masse unit. (kg)": "0.07",
-   "Masse totale (kg)": "1.20",
+   "Masse unit. (kg)": "0.16",
+   "Masse totale (kg)": "2.56",
    "Fonction": "Fixation démontable de roulette",
    "Sous-ensemble soudé": "",
    "Statut": "",
@@ -1159,13 +1267,13 @@
    "Rep": "063",
    "Composant": "12_WHEELS",
    "Désignation": "Roulette pivotante Ø200 à blocage directionnel",
-   "Section / référence": "Ø200×50 H245 CMU 500 kg",
+   "Section / référence": "Ø200×50 H245 CMU 800 kg",
    "Longueur débit (mm)": "",
    "Matériau": "Acier zingué / caoutchouc plein (achat)",
    "Type": "acheté",
    "Qté": 2,
-   "Masse unit. (kg)": "9.50",
-   "Masse totale (kg)": "19.00",
+   "Masse unit. (kg)": "13.50",
+   "Masse totale (kg)": "27.00",
    "Fonction": "Roulage chantier, orientation, marche en ligne",
    "Sous-ensemble soudé": "",
    "Statut": "PROVISOIRE (référence catalogue)",

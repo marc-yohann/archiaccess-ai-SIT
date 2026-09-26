@@ -46,7 +46,7 @@
 - Collisions (volume commun > 1.0 mm³) : ✅ OK
 - Emprise : X 0.0…2200.0 | Y 0.0…1100.0 | Z 330.0…1830.0
 - Enveloppe 2200 × 1100 × 1500 : ✅ OK 2200.0 × 1100.0 × 1500.0
-- **Phase validée** (1 s)
+- **Phase validée** (0 s)
 
 ## PHASE 5 — PORTES
 
@@ -69,9 +69,9 @@
 
 - Corps créés : 28 — géométrie valide : ✅ OK 
 - Collisions (volume commun > 1.0 mm³) : ✅ OK
-- Emprise : X 2.0…2198.0 | Y 2.0…1098.0 | Z 0.0…282.0
+- Emprise : X 2.0…2198.0 | Y 2.0…1098.0 | Z 0.0…287.8
 - 4 roues au sol (Z min = 0) : ✅ OK 4 roues, Z min 0.00
-- **Phase validée** (3 s)
+- **Phase validée** (2 s)
 
 ## PHASE 8 — BARRES DE MANUTENTION
 
@@ -80,7 +80,7 @@
 - Emprise : X -91.8…2291.8 | Y 100.0…1000.0 | Z 970.0…1030.0
 - 14-BAR horizontale, L = 900 : ✅ OK X -91.8…-58.1 | Y 100.0…1000.0 | Z 983.1…1016.9
 - 15-BAR horizontale, L = 900 : ✅ OK X 2258.2…2291.8 | Y 100.0…1000.0 | Z 983.1…1016.9
-- **Phase validée** (3 s)
+- **Phase validée** (2 s)
 
 ## PHASE 9 — FOURREAUX
 
@@ -105,7 +105,7 @@
 - Emprise : X -421.0…2621.0 | Y 480.0…620.0 | Z 262.0…355.0
 - Crochet G sur la face latérale 1100 : ✅ OK X -135.0…-13.0 | Y 537.5…562.5 | Z 262.0…355.0
 - Crochet D sur la face latérale 1100 : ✅ OK X 2213.0…2335.0 | Y 537.5…562.5 | Z 262.0…355.0
-- **Phase validée** (4 s)
+- **Phase validée** (3 s)
 
 ## PHASE 12 — ASSEMBLY
 
@@ -116,7 +116,7 @@
 - Corps créés : 2 — géométrie valide : ✅ OK 
 - Collisions (volume commun > 1.0 mm³) : ✅ OK
 - Emprise : X 393.1…1398.2 | Y -0.3…1100.3 | Z 1416.6…1646.1
-- **Phase validée** (5 s)
+- **Phase validée** (4 s)
 
 ## PHASE 14 — VALIDATION AUTOMATIQUE
 
@@ -148,8 +148,8 @@
 
 ## Masse estimative
 
-- Masse à vide estimée : **677.9 kg**
-- Centre de gravité à vide : X 1100 · Y 519 · Z 857 mm
+- Masse à vide estimée : **700.4 kg**
+- Centre de gravité à vide : X 1100 · Y 520 · Z 834 mm
   - 01_CHASSIS : 94.6 kg
   - 02_SECONDARY_STRUCTURE : 26.9 kg
   - 03_FLOOR : 75.3 kg
@@ -161,8 +161,8 @@
   - 09_LOCKING_SYSTEM : 9.5 kg
   - 10_RACK_LEFT : 44.3 kg
   - 11_RACK_RIGHT : 44.3 kg
-  - 12_WHEELS : 38.0 kg
-  - 13_WHEEL_SUPPORTS : 39.6 kg
+  - 12_WHEELS : 54.0 kg
+  - 13_WHEEL_SUPPORTS : 44.7 kg
   - 14_HANDLING_BAR_LEFT : 3.3 kg
   - 15_HANDLING_BAR_RIGHT : 3.3 kg
   - 16_FORK_POCKET_LEFT : 26.7 kg
@@ -172,12 +172,22 @@
   - 20_LIFTING_POINT_RL : 1.1 kg
   - 21_LIFTING_POINT_RR : 1.1 kg
   - 22_HITCH_HOOK : 4.7 kg
-  - 24_FASTENERS_HARDWARE : 1.2 kg
+  - 24_FASTENERS_HARDWARE : 2.6 kg
   - 25_LOGO : 0.1 kg
+
+## Contrôles pré-simulation (PRE-01 … PRE-05)
+
+| Contrôle | Intitulé | Résultat | Détail |
+|---|---|---|---|
+| PRE-01 | Roulettes Ø200 compatibles avec 750 kg | ✅ OK | (700 + 750) kg × 1.5 / 3 appuis = 725 kg/roue ≤ CMU 800 kg (taux 91 %) ; statique 483 kg. Ancienne CMU 500 kg : taux 145 % → insuffisante. Géométrie retenue : Ø200 × 50, H 245, platine 175×140×10, 4×M16 |
+| PRE-02 | Entraxe fourreaux 900 mm PROVISOIRE | ✅ OK | entraxe modélisé 900 mm, statut PROVISOIRE — valeur de travail, non déclarée standard |
+| PRE-03 | Architecture d'attelage figée | ✅ OK | statut FIGÉ ; G : face latérale ✓, axe Y 550, chaîne crochet → platine → traverse → longeron → traverse I ✓ ; D : face latérale ✓, axe Y 550, chaîne crochet → platine → traverse → longeron → traverse I ✓ |
+| PRE-04 | Cohérence structurelle des 4 points de levage | ✅ OK | assise sur nœud cadre haut / montant ✓ ; excentricité trou / axe montant 22.4 mm ; écart plan d'oreille / direction du CdG 1.3° ; effort de calcul 837 kg/brin ; taux maxi 13 % (Cisaillement arrière du trou (2 plans)) avec γ = 1.5 |
+| PRE-05 | Dimensions principales inchangées | ✅ OK | 2200.0 × 1100.0 × 1500.0 mm |
 
 ## Exports
 
 - step/HURAVA_MASTER_ASSEMBLY.step (portes fermées, interface engin incluse)
 - step/groups/*.step (un fichier par composant 01…25)
 - glb/hurava_v1_closed.glb, hurava_v1_open90.glb, hurava_v1_exploded.glb (visualisation)
-- bom/BOM_HURAVA_V1.csv, PIECES, ACHATS, DEBIT_PROFILES, SOUDURES, PARAMETRES
+- bom/BOM_HURAVA_V1.csv, PIECES, ACHATS, DEBIT_PROFILES, SOUDURES, PARAMETRES, PROVISOIRES_AVANT_SIMSCALE

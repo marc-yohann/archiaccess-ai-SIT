@@ -1,0 +1,59 @@
+Paramètre;Valeur;Unité;Catégorie;Effet sur la simulation;Note
+CASTER_AXIS_INSET;165.0;mm;Bloquant SimScale;Position des appuis (conditions aux limites);axe de pivot à 165 des bords (balayage dans l'enveloppe)
+CASTER_BOLT_PITCH;(140.0, 105.0);mm;Bloquant SimScale;Zone d'appui et perçages de la platine porte-roue;entraxe perçages platine (4×M16) — à caler sur la référence
+CASTER_CMU;800.0;kg;Bloquant SimScale;Critère de vérification des roues (référence catalogue à choisir);charge admissible par roue ≥ (tare + 750) × 1,5 / 3 ≈ 720 kg — était 500 kg (insuffisant)
+CASTER_DESIGN_SUPPORTS;3;u;Bloquant SimScale;Hypothèse d'appui (3 roues porteuses) des cas de charge roulage;nombre de roues porteuses retenu pour le dimensionnement (sol irrégulier)
+CASTER_H;245.0;mm;Bloquant SimScale;"Chaîne de cotes cale / platine ; à figer avec la référence";hauteur hors tout roulette (catalogue)
+CASTER_PLATE;(175.0, 140.0, 10.0);mm;Bloquant SimScale;Zone d'appui des roues sur la platine porte-roue;platine de roulette série renforcée L×l×ép. (était 140×110×8 en CMU 500)
+CHASSIS_CROSS_X;(290.0, 1100.0, 1910.0);mm;Bloquant SimScale;Portées du plancher et appuis du châssis;axes X des traverses intermédiaires de châssis (portée plancher ≤ 330)
+FLOOR_T;4.0;mm;Bloquant SimScale;Plancher porteur de la charge utile;tôle de plancher structurelle (larmée 4/6 envisageable)
+FORK_POCKET_H;80.0;mm;Bloquant SimScale;Section des fourreaux;hauteur extérieure (intérieur 70)
+FORK_POCKET_PITCH;900.0;mm;Bloquant SimScale;Appuis du cas de charge « levage par fourches » — pas une norme;"entraxe PROVISOIRE — valeur de travail, pas une norme ni un standard ; à confirmer selon les engins ciblés"
+FORK_POCKET_T;5.0;mm;Bloquant SimScale;Section des fourreaux;épaisseur (tube 230×80×5 ou tôle pliée)
+FORK_POCKET_W;230.0;mm;Bloquant SimScale;Section des fourreaux;largeur extérieure (intérieur 220)
+HANDLING_BAR_STANDOFF;75.0;mm;Bloquant SimScale;Bras de levier de l'effort de poussée sur les supports;axe de barre / face extérieure du panneau (passage de main ≈ 58)
+HANDLING_BAR_SUPPORT;(10.0, 60.0);mm;Bloquant SimScale;Section des supports de barre;plat support ép. × hauteur
+HANDLING_BAR_SUPPORT_PITCH;760.0;mm;Bloquant SimScale;Portée de la barre entre supports;entraxe des 2 supports
+HANDLING_BAR_Z;1000.0;mm;Bloquant SimScale;Point d'application de l'effort de poussée manuelle;hauteur d'axe (ergonomie 900–1100)
+HOOK_T;25.0;mm;Bloquant SimScale;Section du crochet;crochet oxycoupé ép. 25 (pièce forgée à étudier)
+HOOK_THROAT_Z;300.0;mm;Bloquant SimScale;Hauteur d'application de la traction;Z du fond de gorge (hauteur d'attelage à confirmer)
+HOOK_TIP_W;32.0;mm;Bloquant SimScale;Section du bec (effort de traction);épaisseur du bec selon Y
+LUG_BASE;(80.0, 12.0);mm;Bloquant SimScale;Assise sur le cadre haut;platine d'oreille carré × ép.
+LUG_HOLE_D;32.0;mm;Bloquant SimScale;Oreille / manille;perçage manille
+LUG_HOLE_Z;30.0;mm;Bloquant SimScale;Bras de levier sur la platine;axe du perçage au-dessus de la platine
+LUG_T;15.0;mm;Bloquant SimScale;Oreille de levage;oreille de levage épaisseur
+LUG_W;80.0;mm;Bloquant SimScale;Oreille de levage;oreille largeur
+PANEL_T;2.0;mm;Bloquant SimScale;Rigidité des parois, contreventement de la caisse;tôle parois latérales et arrière
+RACK_DEPTH;450.0;mm;Bloquant SimScale;Géométrie et masse des racks, position des charges de tablettes;profondeur de rack selon X
+RACK_SHELF_T;2.0;mm;Bloquant SimScale;Tablettes porteuses;tôle de tablette
+RACK_SHELF_Z;(700.0, 1100.0, 1500.0);mm;Bloquant SimScale;Hauteur des charges de tablettes (CdG chargé);Z du dessus des 3 tablettes
+RACK_Y_RANGE;(70.0, 1030.0);mm;Bloquant SimScale;Portée des tablettes;emprise Y du rack
+REAR_MID_POST_X;1100.0;mm;Bloquant SimScale;Raidissage de la paroi arrière;axe X du montant arrière intermédiaire 40×40
+REAR_RAIL_Z;1000.0;mm;Bloquant SimScale;Raidissage de la paroi arrière;axe Z de la lisse arrière 40×40
+ROOF_BOW_X;(733.0, 1467.0);mm;Bloquant SimScale;Raidissage du toit;axes X des traverses de toit 40×40
+ROOF_T;2.0;mm;Bloquant SimScale;Rigidité du toit, diaphragme horizontal;tôle de toit
+SIDE_RAIL_Z;1000.0;mm;Bloquant SimScale;Position de la reprise des barres de manutention;axe Z de la lisse latérale 40×40 (reprise des barres)
+WHEEL_SPACER_T;15.0;mm;Bloquant SimScale;Dépend de CASTER_H;cale soudée : Z dessous châssis − platine porte-roue − CASTER_H
+WHEEL_SUPPORT_PLATE_T;10.0;mm;Bloquant SimScale;Rigidité de la platine porte-roue;platine porte-roue soudée sous châssis
+CASTER_BOLT_D;16.0;mm;Non bloquant;Assemblage démontable;vis de fixation roulette M16 cl. 8.8 (était M12)
+CASTER_D;200.0;mm;Non bloquant;Appui ponctuel en simulation;roue Ø200, bandage caoutchouc plein sur jante acier
+CASTER_MASS;13.5;kg;Non bloquant;Masse ajoutée;masse catalogue d'une roulette Ø200 série renforcée
+CASTER_OFFSET;55.0;mm;Non bloquant;Cinématique de pivot;déport de chape pivotante
+CASTER_W;50.0;mm;Non bloquant;Appui ponctuel en simulation;largeur de bandage
+DOOR_GAP_BOTTOM;6.0;mm;Non bloquant;Jeux de fonctionnement;jeu vantail / plancher
+DOOR_GAP_CENTER;6.0;mm;Non bloquant;Jeux de fonctionnement;jeu entre vantaux
+DOOR_GAP_SIDE;5.0;mm;Non bloquant;Jeux de fonctionnement;jeu vantail / montant
+DOOR_GAP_TOP;5.0;mm;Non bloquant;Jeux de fonctionnement;jeu vantail / traverse haute
+DOOR_SKIN_T;2.0;mm;Non bloquant;"Masse des vantaux ; hors chemin de charge principal";tôle de parement des vantaux
+DOOR_STOP_Z;0.75;;Non bloquant;Position de butée;position relative de la butée 90° sur la hauteur du vantail
+HINGE_AXIS_X;30.0;mm;Non bloquant;Cinématique de porte;position X de l'axe de charnière depuis le bord d'enveloppe
+HINGE_AXIS_Y;-20.0;mm;Non bloquant;Cinématique de porte;position Y de l'axe (devant la face avant)
+HINGE_KNUCKLE_LEN;55.0;mm;Non bloquant;Détail de charnière;longueur d'un nœud
+HINGE_KNUCKLE_OD;30.0;mm;Non bloquant;Détail de charnière;nœud de charnière Ø30, alésage Ø17
+HINGE_Z_MARGIN;150.0;mm;Non bloquant;Détail de charnière;charnières haute/basse à 150 des bords du vantail
+HOOK_THROAT_W;60.0;mm;Non bloquant;Forme de gorge;largeur de gorge
+HOOK_TIP_H;55.0;mm;Non bloquant;Retenue géométrique de l'anneau;hauteur du bec au-dessus du fond de gorge
+RING_PIN_D;20.0;mm;Non bloquant;Interface engin, hors modèle de calcul;axe d'articulation de l'anneau côté engin
+RING_R;47.0;mm;Non bloquant;Interface engin, hors modèle de calcul;anneau : rayon moyen (Ø int. 70)
+RING_r;12.0;mm;Non bloquant;Interface engin, hors modèle de calcul;anneau : rayon de section (Ø24)
+ROOF_NOTCH;86.0;mm;Non bloquant;Découpe de toit aux angles;dégagement de toit aux angles
