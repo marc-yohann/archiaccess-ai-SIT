@@ -26,7 +26,7 @@
 
 ## PHASE 2 — CHÂSSIS
 
-- Corps créés : 23 — géométrie valide : ✅ OK 
+- Corps créés : 25 — géométrie valide : ✅ OK 
 - Collisions (volume commun > 1.0 mm³) : ✅ OK
 - Emprise : X 2.0…2198.0 | Y 2.0…1098.0 | Z 270.0…1828.0
 - Châssis dans l'enveloppe X/Y : ✅ OK X 2.0…2198.0 | Y 2.0…1098.0 | Z 270.0…1828.0
@@ -35,7 +35,7 @@
 
 ## PHASE 3 — STRUCTURE
 
-- Corps créés : 9 — géométrie valide : ✅ OK 
+- Corps créés : 11 — géométrie valide : ✅ OK 
 - Collisions (volume commun > 1.0 mm³) : ✅ OK
 - Emprise : X 2.0…2198.0 | Y 42.0…1098.0 | Z 270.0…1828.0
 - **Phase validée** (0 s)
@@ -46,7 +46,7 @@
 - Collisions (volume commun > 1.0 mm³) : ✅ OK
 - Emprise : X 0.0…2200.0 | Y 0.0…1100.0 | Z 330.0…1830.0
 - Enveloppe 2200 × 1100 × 1500 : ✅ OK 2200.0 × 1100.0 × 1500.0
-- **Phase validée** (0 s)
+- **Phase validée** (1 s)
 
 ## PHASE 5 — PORTES
 
@@ -63,7 +63,7 @@
 - Collisions (volume commun > 1.0 mm³) : ✅ OK
 - Emprise : X 42.0…2158.0 | Y 70.0…1030.0 | Z 334.0…1828.0
 - Passage central libre : ✅ OK zone X 493…1707 (largeur 1214 mm) []
-- **Phase validée** (1 s)
+- **Phase validée** (2 s)
 
 ## PHASE 7 — ROUES
 
@@ -71,7 +71,7 @@
 - Collisions (volume commun > 1.0 mm³) : ✅ OK
 - Emprise : X 2.0…2198.0 | Y 2.0…1098.0 | Z 0.0…282.0
 - 4 roues au sol (Z min = 0) : ✅ OK 4 roues, Z min 0.00
-- **Phase validée** (2 s)
+- **Phase validée** (3 s)
 
 ## PHASE 8 — BARRES DE MANUTENTION
 
@@ -80,7 +80,7 @@
 - Emprise : X -91.8…2291.8 | Y 100.0…1000.0 | Z 970.0…1030.0
 - 14-BAR horizontale, L = 900 : ✅ OK X -91.8…-58.1 | Y 100.0…1000.0 | Z 983.1…1016.9
 - 15-BAR horizontale, L = 900 : ✅ OK X 2258.2…2291.8 | Y 100.0…1000.0 | Z 983.1…1016.9
-- **Phase validée** (2 s)
+- **Phase validée** (3 s)
 
 ## PHASE 9 — FOURREAUX
 
@@ -100,22 +100,23 @@
 
 ## PHASE 11 — ATTELAGE
 
-- Corps créés : 7 — géométrie valide : ✅ OK 
+- Corps créés : 14 — géométrie valide : ✅ OK 
 - Collisions (volume commun > 1.0 mm³) : ✅ OK
-- Emprise : X 1030.0…1170.0 | Y 1098.0…1521.0 | Z 262.0…355.0
-- Crochet sur la face arrière : ✅ OK X 1087.5…1112.5 | Y 1113.0…1235.0 | Z 262.0…355.0
-- **Phase validée** (3 s)
+- Emprise : X -421.0…2621.0 | Y 480.0…620.0 | Z 262.0…355.0
+- Crochet G sur la face latérale 1100 : ✅ OK X -135.0…-13.0 | Y 537.5…562.5 | Z 262.0…355.0
+- Crochet D sur la face latérale 1100 : ✅ OK X 2213.0…2335.0 | Y 537.5…562.5 | Z 262.0…355.0
+- **Phase validée** (4 s)
 
 ## PHASE 12 — ASSEMBLY
 
-- 185 corps répartis en 24 composants
+- 196 corps répartis en 24 composants
 
 ## PHASE 13 — DÉTAILS ESTHÉTIQUES
 
 - Corps créés : 2 — géométrie valide : ✅ OK 
 - Collisions (volume commun > 1.0 mm³) : ✅ OK
 - Emprise : X 393.1…1398.2 | Y -0.3…1100.3 | Z 1416.6…1646.1
-- **Phase validée** (4 s)
+- **Phase validée** (5 s)
 
 ## PHASE 14 — VALIDATION AUTOMATIQUE
 
@@ -131,8 +132,8 @@
 | CHECK 05 | 4 roues | ✅ OK | 4 roulettes Ø200 |
 | CHECK 06 | 2 fourreaux sous le châssis | ✅ OK | entraxe 900 mm, Z 250…330 |
 | CHECK 07 | 4 points de levage au-dessus | ✅ OK | Z max 1910 mm |
-| CHECK 08 | Attelage sur la face arrière | ✅ OK | X 1087.5…1112.5 | Y 1113.0…1235.0 | Z 262.0…355.0 |
-| CHECK 09 | Crochet vers le haut + anneau articulé | ✅ OK | bec +55 mm ; anneau libre au repos ✅ OK ; traction +40 mm bloquée ✅ OK ; soulevé 30 mm toujours retenu ✅ OK ; dégagement seulement si levé > bec ✅ OK |
+| CHECK 08 | Attelage sur les faces latérales 1100 | ✅ OK | G : X -135…-13, axe Y 550 ; D : X 2213…2335, axe Y 550 ; aucun crochet en face arrière |
+| CHECK 09 | Crochet vers le haut + anneau articulé | ✅ OK | bec +55 mm — G : libre au repos ✅ OK, traction 40 mm bloquée ✅ OK, soulevé 30 mm retenu ✅ OK, dégagé seulement au-dessus du bec ✅ OK | D : libre au repos ✅ OK, traction 40 mm bloquée ✅ OK, soulevé 30 mm retenu ✅ OK, dégagé seulement au-dessus du bec ✅ OK |
 | CHECK 10 | 2 racks internes | ✅ OK | 19 + 19 corps |
 | CHECK 11 | 3 niveaux par rack | ✅ OK | niveaux [3, 3] |
 | CHECK 12 | Passage central libre | ✅ OK | largeur libre 1216 mm × hauteur 1434 mm [] |
@@ -140,17 +141,17 @@
 | CHECK 14 | Aucune barre sur la face avant | ✅ OK | barres et supports compris dans Y 0…1100, hors faces avant/arrière |
 | CHECK 15 | Aucun attelage à boule | ✅ OK | aucune surface sphérique dans 22/23 |
 | CHECK 16 | Aucune troisième porte | ✅ OK |  |
-| CHECK 17 | Symétrie gauche / droite | ✅ OK | Racks ✅ OK; Barres ✅ OK; Fourreaux ✅ OK; Levage AV ✅ OK; Levage AR ✅ OK |
-| CHECK 18 | Absence d'interférences | ✅ OK | 187 corps, 0 interférence(s) [] (1 s) |
+| CHECK 17 | Symétrie gauche / droite | ✅ OK | Racks ✅ OK; Barres ✅ OK; Fourreaux ✅ OK; Levage AV ✅ OK; Levage AR ✅ OK; Attelage ✅ OK |
+| CHECK 18 | Absence d'interférences | ✅ OK | 198 corps, 0 interférence(s) [] (1 s) |
 | CHECK 19 | Portes ouvrables 0 → 90° | ✅ OK | balayage 0°, 15°, 30°, 45°, 60°, 75°, 85°, 90° sans collision ✅ OK ; jeu butée à 90° = 0.50 mm ; dépassement 92° bloqué par la butée ✅ OK |
-| CHECK 20 | Modèle assemblable | ✅ OK | 187 corps valides ✅ OK ; chaque corps soudé, boulonné ou guidé (jeu ≤ 1 mm) sur un autre ; corps isolés : aucun |
+| CHECK 20 | Modèle assemblable | ✅ OK | 198 corps valides ✅ OK ; chaque corps soudé, boulonné ou guidé (jeu ≤ 1 mm) sur un autre ; corps isolés : aucun |
 
 ## Masse estimative
 
-- Masse à vide estimée : **673.2 kg**
-- Centre de gravité à vide : X 1100 · Y 521 · Z 861 mm
-  - 01_CHASSIS : 92.6 kg
-  - 02_SECONDARY_STRUCTURE : 26.5 kg
+- Masse à vide estimée : **677.9 kg**
+- Centre de gravité à vide : X 1100 · Y 519 · Z 857 mm
+  - 01_CHASSIS : 94.6 kg
+  - 02_SECONDARY_STRUCTURE : 26.9 kg
   - 03_FLOOR : 75.3 kg
   - 04_ROOF : 37.5 kg
   - 05_SIDE_PANELS : 51.7 kg
@@ -170,7 +171,7 @@
   - 19_LIFTING_POINT_FR : 1.1 kg
   - 20_LIFTING_POINT_RL : 1.1 kg
   - 21_LIFTING_POINT_RR : 1.1 kg
-  - 22_HITCH_HOOK : 2.4 kg
+  - 22_HITCH_HOOK : 4.7 kg
   - 24_FASTENERS_HARDWARE : 1.2 kg
   - 25_LOGO : 0.1 kg
 

@@ -10,6 +10,8 @@ Identifiant;Composant;Nom;Matériau;Qté;Fonction;Type;Section;Longueur (mm);Mas
 01-TRA-I1;01_CHASSIS;Traverse de châssis intermédiaire;S235JR galvanisé à chaud;1;Traverse de châssis, appui plancher / reprise roues et attelage;profilé;Tube rect. 60×40×3;1016;4.498;;A — caisse mécano-soudée;;oui
 01-TRA-I2;01_CHASSIS;Traverse de châssis intermédiaire;S235JR galvanisé à chaud;1;Traverse de châssis, appui plancher / reprise roues et attelage;profilé;Tube rect. 60×40×3;1016;4.498;;A — caisse mécano-soudée;;oui
 01-TRA-I3;01_CHASSIS;Traverse de châssis intermédiaire;S235JR galvanisé à chaud;1;Traverse de châssis, appui plancher / reprise roues et attelage;profilé;Tube rect. 60×40×3;1016;4.498;;A — caisse mécano-soudée;;oui
+01-LAT-G;01_CHASSIS;Longeron d'attelage;S235JR galvanisé à chaud;1;Reprise de l'effort de traction du crochet latéral vers le châssis;profilé;Tube rect. 60×40×3;228;1.009;;A — caisse mécano-soudée;;oui
+01-LAT-D;01_CHASSIS;Longeron d'attelage;S235JR galvanisé à chaud;1;Reprise de l'effort de traction du crochet latéral vers le châssis;profilé;Tube rect. 60×40×3;228;1.009;;A — caisse mécano-soudée;;oui
 01-GOU-AVG;01_CHASSIS;Gousset d'angle de châssis;S235JR galvanisé à chaud;1;Rigidification des nœuds d'angle du châssis;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
 01-GOU-AVD;01_CHASSIS;Gousset d'angle de châssis;S235JR galvanisé à chaud;1;Rigidification des nœuds d'angle du châssis;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
 01-GOU-ARG;01_CHASSIS;Gousset d'angle de châssis;S235JR galvanisé à chaud;1;Rigidification des nœuds d'angle du châssis;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
@@ -29,13 +31,15 @@ Identifiant;Composant;Nom;Matériau;Qté;Fonction;Type;Section;Longueur (mm);Mas
 02-LIS-AR-2;02_SECONDARY_STRUCTURE;Lisse arrière;S235JR galvanisé à chaud;1;Raidisseur panneau arrière;profilé;Tube carré 40×40×3;1038;3.618;;A — caisse mécano-soudée;;oui
 02-TT-1;02_SECONDARY_STRUCTURE;Traverse de toit;S235JR galvanisé à chaud;1;Raidisseur de toit;profilé;Tube carré 40×40×3;1016;3.541;;A — caisse mécano-soudée;;oui
 02-TT-2;02_SECONDARY_STRUCTURE;Traverse de toit;S235JR galvanisé à chaud;1;Raidisseur de toit;profilé;Tube carré 40×40×3;1016;3.541;;A — caisse mécano-soudée;;oui
-02-GOU-ATT-G;02_SECONDARY_STRUCTURE;Gousset de reprise d'attelage;S235JR galvanisé à chaud;1;Transfert de l'effort de traction du longeron AR vers la traverse centrale;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
-02-GOU-ATT-D;02_SECONDARY_STRUCTURE;Gousset de reprise d'attelage;S235JR galvanisé à chaud;1;Transfert de l'effort de traction du longeron AR vers la traverse centrale;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+02-GOU-ATT-G1;02_SECONDARY_STRUCTURE;Gousset de reprise d'attelage;S235JR galvanisé à chaud;1;Transfert de l'effort de traction de la traverse d'extrémité vers le longeron d'attelage;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+02-GOU-ATT-G2;02_SECONDARY_STRUCTURE;Gousset de reprise d'attelage;S235JR galvanisé à chaud;1;Transfert de l'effort de traction de la traverse d'extrémité vers le longeron d'attelage;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+02-GOU-ATT-D1;02_SECONDARY_STRUCTURE;Gousset de reprise d'attelage;S235JR galvanisé à chaud;1;Transfert de l'effort de traction de la traverse d'extrémité vers le longeron d'attelage;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
+02-GOU-ATT-D2;02_SECONDARY_STRUCTURE;Gousset de reprise d'attelage;S235JR galvanisé à chaud;1;Transfert de l'effort de traction de la traverse d'extrémité vers le longeron d'attelage;plat;Gousset 100×100×5;;0.196;;A — caisse mécano-soudée;;oui
 03-PLA;03_FLOOR;Plancher;S235JR galvanisé à chaud;1;Plancher structurel, reprise charge utile;tôle;Tôle ép. 4;;75.273;;A — caisse mécano-soudée;PROVISOIRE (ép. 4, larmée à valider);oui
 04-TOI;04_ROOF;Tôle de toit;S235JR galvanisé à chaud;1;Couverture, étanchéité;tôle;Tôle ép. 2;;37.530;;A — caisse mécano-soudée;PROVISOIRE (ép.);oui
 05-PAN-G;05_SIDE_PANELS;Panneau latéral gauche;S235JR galvanisé à chaud;1;Paroi latérale (face 1100) porteuse de la barre de manutention;tôle;Tôle ép. 2;;25.847;;A — caisse mécano-soudée;PROVISOIRE (ép.);oui
 05-PAN-D;05_SIDE_PANELS;Panneau latéral droit;S235JR galvanisé à chaud;1;Paroi latérale (face 1100) porteuse de la barre de manutention;tôle;Tôle ép. 2;;25.847;;A — caisse mécano-soudée;PROVISOIRE (ép.);oui
-06-PAN-AR;06_REAR_PANEL;Panneau arrière;S235JR galvanisé à chaud;1;Paroi arrière (face attelage);tôle;Tôle ép. 2;;51.647;;A — caisse mécano-soudée;PROVISOIRE (ép.);oui
+06-PAN-AR;06_REAR_PANEL;Panneau arrière;S235JR galvanisé à chaud;1;Paroi arrière;tôle;Tôle ép. 2;;51.647;;A — caisse mécano-soudée;PROVISOIRE (ép.);oui
 07-VG-1;07_FRONT_DOORS;Vantail G — Tôle de parement;S235JR galvanisé à chaud;1;Vantail de porte avant (face 2200);tôle;Tôle ép. 2;;23.458;DOOR_L;B — vantail mécano-soudé gauche;;oui
 07-VG-2;07_FRONT_DOORS;Vantail G — Montant côté charnières;S235JR galvanisé à chaud;1;Vantail de porte avant (face 2200);profilé;Tube carré 40×40×3;1423;4.960;DOOR_L;B — vantail mécano-soudé gauche;;oui
 07-VG-3;07_FRONT_DOORS;Vantail G — Montant côté battement;S235JR galvanisé à chaud;1;Vantail de porte avant (face 2200);profilé;Tube carré 40×40×3;1423;4.960;DOOR_L;B — vantail mécano-soudé gauche;;oui
@@ -127,14 +131,14 @@ Identifiant;Composant;Nom;Matériau;Qté;Fonction;Type;Section;Longueur (mm);Mas
 11-RD-N3-TB;11_RACK_RIGHT;Tablette tôle;S235JR galvanisé à chaud;1;Rack intérieur droit — 3 niveaux;tôle;Tôle ép. 2;;6.724;;A — caisse mécano-soudée;PROVISOIRE (profondeur, cotes de niveaux);oui
 13-PLA-AVG;13_WHEEL_SUPPORTS;Platine porte-roue;S235JR galvanisé à chaud;1;Support de roulette soudé sous longeron, traverse d'extrémité et traverse intermédiaire;plat;Tôle ép. 10;;7.840;;A — caisse mécano-soudée;;oui
 13-CAL-AVG;13_WHEEL_SUPPORTS;Cale de roulette;S235JR galvanisé à chaud;1;Rattrapage de hauteur roulette;plat;Plat ép. 15;;2.057;;A — caisse mécano-soudée;PROVISOIRE (dépend de la roulette retenue);oui
-12-ROU-AVG;12_WHEELS;Roulette pivotante Ø200 à frein total;Acier zingué / caoutchouc plein (achat);1;Roulage chantier, orientation, immobilisation;acheté;Ø200×50 H245 CMU 500 kg;;9.500;;;PROVISOIRE (référence catalogue);oui
+12-ROU-AVG;12_WHEELS;Roulette pivotante Ø200 à frein total + blocage directionnel;Acier zingué / caoutchouc plein (achat);1;Roulage chantier, orientation, immobilisation;acheté;Ø200×50 H245 CMU 500 kg;;9.500;;;PROVISOIRE (référence catalogue);oui
 24-VIS-AVG1;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
 24-VIS-AVG2;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
 24-VIS-AVG3;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
 24-VIS-AVG4;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
 13-PLA-AVD;13_WHEEL_SUPPORTS;Platine porte-roue;S235JR galvanisé à chaud;1;Support de roulette soudé sous longeron, traverse d'extrémité et traverse intermédiaire;plat;Tôle ép. 10;;7.840;;A — caisse mécano-soudée;;oui
 13-CAL-AVD;13_WHEEL_SUPPORTS;Cale de roulette;S235JR galvanisé à chaud;1;Rattrapage de hauteur roulette;plat;Plat ép. 15;;2.057;;A — caisse mécano-soudée;PROVISOIRE (dépend de la roulette retenue);oui
-12-ROU-AVD;12_WHEELS;Roulette pivotante Ø200 à frein total;Acier zingué / caoutchouc plein (achat);1;Roulage chantier, orientation, immobilisation;acheté;Ø200×50 H245 CMU 500 kg;;9.500;;;PROVISOIRE (référence catalogue);oui
+12-ROU-AVD;12_WHEELS;Roulette pivotante Ø200 à frein total + blocage directionnel;Acier zingué / caoutchouc plein (achat);1;Roulage chantier, orientation, immobilisation;acheté;Ø200×50 H245 CMU 500 kg;;9.500;;;PROVISOIRE (référence catalogue);oui
 24-VIS-AVD1;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
 24-VIS-AVD2;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
 24-VIS-AVD3;24_FASTENERS_HARDWARE;Vis H M12×50 cl. 8.8 + écrou frein + rondelle;Acier cl. 8.8 zingué;1;Fixation démontable de roulette;quincaillerie;M12×50;;0.075;;;;oui
@@ -177,12 +181,19 @@ Identifiant;Composant;Nom;Matériau;Qté;Fonction;Type;Section;Longueur (mm);Mas
 20-ORE;20_LIFTING_POINT_RL;Oreille de levage;S235JR galvanisé à chaud;1;Point d'élingage (manille);pièce découpée;Tôle ép. 15 oxycoupée;;0.484;;A — caisse mécano-soudée;PROVISOIRE (CMU à calculer);oui
 21-PLT;21_LIFTING_POINT_RR;Platine d'oreille de levage;S235JR galvanisé à chaud;1;Répartition de l'effort de levage sur le nœud cadre haut / montant;plat;Plat 80×80×12;;0.603;;A — caisse mécano-soudée;;oui
 21-ORE;21_LIFTING_POINT_RR;Oreille de levage;S235JR galvanisé à chaud;1;Point d'élingage (manille);pièce découpée;Tôle ép. 15 oxycoupée;;0.484;;A — caisse mécano-soudée;PROVISOIRE (CMU à calculer);oui
-22-PLT;22_HITCH_HOOK;Platine d'attelage;S235JR galvanisé à chaud;1;Liaison crochet / longeron arrière, dans l'axe de la traverse centrale;plat;Plat 140×59×15;;0.973;;A — caisse mécano-soudée;;oui
-22-CRO;22_HITCH_HOOK;Crochet d'attelage ouvert vers le haut (sans ressort);S235JR galvanisé à chaud;1;Réception de l'anneau articulé de l'engin tracteur — retenue par gravité (bec de 55);pièce découpée;Tôle ép. 25 oxycoupée;;1.383;;A — caisse mécano-soudée;PROVISOIRE (nuance S355 ou pièce forgée à étudier, hauteur d'attelage);oui
-23-ANN;23_ARTICULATED_TOWING_RING;Anneau de traction articulé (côté engin);Acier forgé (interface engin);1;"Entre dans le crochet HURAVA ; articulation autour de l'axe transversal";interface;Anneau Ø70 int., section Ø24;;1.406;;;Interface engin — hors périmètre HURAVA;non (interface)
-23-CHA-G;23_ARTICULATED_TOWING_RING;Flasque de chape (côté engin);Interface engin;1;Chape d'articulation de l'anneau;interface;;;0.391;;;;non (interface)
-23-CHA-D;23_ARTICULATED_TOWING_RING;Flasque de chape (côté engin);Interface engin;1;Chape d'articulation de l'anneau;interface;;;0.391;;;;non (interface)
-23-AXE;23_ARTICULATED_TOWING_RING;Axe d'articulation Ø20 (côté engin);Interface engin;1;Articulation de l'anneau;interface;;;0.133;;;;non (interface)
-23-TIM;23_ARTICULATED_TOWING_RING;Timon / traverse de l'engin (représentation);Interface engin;1;Repère de position de l'engin tracteur;interface;;;2.089;;;;non (interface)
+22-PLT-G;22_HITCH_HOOK;Platine d'attelage;S235JR galvanisé à chaud;1;Liaison crochet / traverse d'extrémité gauche, dans l'axe du longeron d'attelage;plat;Plat 140×59×15;;0.973;;A — caisse mécano-soudée;;oui
+22-CRO-G;22_HITCH_HOOK;Crochet d'attelage ouvert vers le haut (sans ressort);S235JR galvanisé à chaud;1;Face latérale gauche : réception de l'anneau articulé de l'engin — retenue par gravité (bec de 55);pièce découpée;Tôle ép. 25 oxycoupée;;1.383;;A — caisse mécano-soudée;PROVISOIRE (nuance S355 ou pièce forgée à étudier, hauteur d'attelage);oui
+23-ANN-G;23_ARTICULATED_TOWING_RING;Anneau de traction articulé (côté engin);Acier forgé (interface engin);1;"Entre dans le crochet HURAVA ; articulation autour de l'axe transversal";interface;Anneau Ø70 int., section Ø24;;1.406;;;Interface engin — hors périmètre HURAVA;non (interface)
+23-CHA1-G;23_ARTICULATED_TOWING_RING;Flasque de chape (côté engin);Interface engin;1;Chape d'articulation de l'anneau;interface;;;0.391;;;;non (interface)
+23-CHA2-G;23_ARTICULATED_TOWING_RING;Flasque de chape (côté engin);Interface engin;1;Chape d'articulation de l'anneau;interface;;;0.391;;;;non (interface)
+23-AXE-G;23_ARTICULATED_TOWING_RING;Axe d'articulation Ø20 (côté engin);Interface engin;1;Articulation de l'anneau;interface;;;0.133;;;;non (interface)
+23-TIM-G;23_ARTICULATED_TOWING_RING;Timon / traverse de l'engin (représentation);Interface engin;1;Repère de position de l'engin tracteur;interface;;;2.089;;;;non (interface)
+22-PLT-D;22_HITCH_HOOK;Platine d'attelage;S235JR galvanisé à chaud;1;Liaison crochet / traverse d'extrémité droite, dans l'axe du longeron d'attelage;plat;Plat 140×59×15;;0.973;;A — caisse mécano-soudée;;oui
+22-CRO-D;22_HITCH_HOOK;Crochet d'attelage ouvert vers le haut (sans ressort);S235JR galvanisé à chaud;1;Face latérale droite : réception de l'anneau articulé de l'engin — retenue par gravité (bec de 55);pièce découpée;Tôle ép. 25 oxycoupée;;1.383;;A — caisse mécano-soudée;PROVISOIRE (nuance S355 ou pièce forgée à étudier, hauteur d'attelage);oui
+23-ANN-D;23_ARTICULATED_TOWING_RING;Anneau de traction articulé (côté engin);Acier forgé (interface engin);1;"Entre dans le crochet HURAVA ; articulation autour de l'axe transversal";interface;Anneau Ø70 int., section Ø24;;1.406;;;Interface engin — hors périmètre HURAVA;non (interface)
+23-CHA1-D;23_ARTICULATED_TOWING_RING;Flasque de chape (côté engin);Interface engin;1;Chape d'articulation de l'anneau;interface;;;0.391;;;;non (interface)
+23-CHA2-D;23_ARTICULATED_TOWING_RING;Flasque de chape (côté engin);Interface engin;1;Chape d'articulation de l'anneau;interface;;;0.391;;;;non (interface)
+23-AXE-D;23_ARTICULATED_TOWING_RING;Axe d'articulation Ø20 (côté engin);Interface engin;1;Articulation de l'anneau;interface;;;0.133;;;;non (interface)
+23-TIM-D;23_ARTICULATED_TOWING_RING;Timon / traverse de l'engin (représentation);Interface engin;1;Repère de position de l'engin tracteur;interface;;;2.089;;;;non (interface)
 25-LOG-AR;25_LOGO;Marquage HURAVA by ARCHIACCESS — face arrière;Adhésif polymère 0,3;1;Identification produit;marquage;Film adhésif découpé;;0.050;;;;oui
 25-LOG-AV;25_LOGO;Marquage HURAVA — vantail gauche;Adhésif polymère 0,3;1;Identification produit;marquage;Film adhésif découpé;;0.020;DOOR_L;;;oui

@@ -65,6 +65,16 @@ def phase_chassis(reg):
     for i in range(2):
         for side in ("AV", "AR"):
             reg.weld(f"01-LON-{side}", f"16/17 fourreau {i + 1}", "angle a4 périphérique ×2 faces", 2 * 2 * (s.mh + s.mw))
+    # Longerons d'attelage : de la traverse d'extrémité à la 1re traverse intermédiaire, dans l'axe Y_MID
+    xi = P["CHASSIS_CROSS_X"]
+    for side in P["HITCH_SIDES"]:
+        a, b = ((s.XS0 + s.mw, xi[0] - s.mw / 2) if side == "G" else (xi[-1] + s.mw / 2, s.XS1 - s.mw))
+        reg.add(Part(f"01-LAT-{side}", G, "Longeron d'attelage", S235_GALVA,
+                     "Reprise de l'effort de traction du crochet latéral vers le châssis",
+                     rhs("x", a, b, s.Y_MID - s.mw / 2, s.Y_MID + s.mw / 2, z0, z1, s.mt), "profilé", MAIN, b - a,
+                     weldment=CAISSE))
+        reg.weld(f"01-LAT-{side}", f"01-TRA-{side} + 01-TRA-I", "angle a4 périphérique ×2 extrémités",
+                 2 * 2 * (s.mh + s.mw))
     # Goussets d'angle de châssis (sous plancher, plan XY)
     zg = z0
     for tag, corner, dx, dy in (("AVG", (s.XS0 + s.mw, s.YS0 + s.mw), 1, 1),
@@ -136,13 +146,14 @@ def phase_structure(reg):
                      rhs("y", xb - h, xb + h, s.YS0 + s.mw, s.YS1 - s.mw, s.Z_ROOF_BOT - s.sw, s.Z_ROOF_BOT, s.st),
                      "profilé", SEC, s.YS1 - s.YS0 - 2 * s.mw, weldment=CAISSE))
         reg.weld(f"02-TT-{i}", "01-CH-AV / 01-CH-AR", "angle a3 ×2 extrémités", 2 * 4 * s.sw)
-    # Goussets de reprise d'attelage (traverse centrale / longeron arrière)
-    xm = s.X_MID
-    for tag, corner, dx in (("G", (xm - s.mw / 2, s.YS1 - s.mw), -1), ("D", (xm + s.mw / 2, s.YS1 - s.mw), 1)):
-        reg.add(Part(f"02-GOU-ATT-{tag}", G, "Gousset de reprise d'attelage", S235_GALVA,
-                     "Transfert de l'effort de traction du longeron AR vers la traverse centrale",
-                     gusset_xy(corner, dx, -1, s.Z_CH_BOT), "plat", GUS, 0, weldment=CAISSE))
-        reg.weld(f"02-GOU-ATT-{tag}", "01-LON-AR-2 + 01-TRA-I2", "angle a3", 2 * P["GUSSET_SIZE"])
+    # Goussets de reprise d'attelage (longeron d'attelage / traverse d'extrémité)
+    for side in P["HITCH_SIDES"]:
+        xt, dx = (s.XS0 + s.mw, 1) if side == "G" else (s.XS1 - s.mw, -1)
+        for tag, y, dy in (("1", s.Y_MID - s.mw / 2, -1), ("2", s.Y_MID + s.mw / 2, 1)):
+            reg.add(Part(f"02-GOU-ATT-{side}{tag}", G, "Gousset de reprise d'attelage", S235_GALVA,
+                         "Transfert de l'effort de traction de la traverse d'extrémité vers le longeron d'attelage",
+                         gusset_xy((xt, y), dx, dy, s.Z_CH_BOT), "plat", GUS, 0, weldment=CAISSE))
+            reg.weld(f"02-GOU-ATT-{side}{tag}", f"01-TRA-{side} + 01-LAT-{side}", "angle a3", 2 * P["GUSSET_SIZE"])
 
 
 # =====================================================================================
@@ -186,7 +197,7 @@ def phase_envelope(reg):
         reg.weld(f"05-PAN-{tag}", "montants + lisse + châssis", "bouchons Ø8 pas 150 + cordon périphérique",
                  2 * (1100 + 1500))
     # Panneau arrière
-    reg.add(Part("06-PAN-AR", "06_REAR_PANEL", "Panneau arrière", S235_GALVA, "Paroi arrière (face attelage)",
+    reg.add(Part("06-PAN-AR", "06_REAR_PANEL", "Panneau arrière", S235_GALVA, "Paroi arrière",
                  box(s.XS0, s.XS1, s.YS1, s.Y_REAR, s.Z_CH_TOP, s.Z_ROOF_BOT), "tôle", f"Tôle ép. {s.t_panel:.0f}",
                  0, C_SHEET, weldment=CAISSE, status="PROVISOIRE (ép.)"))
     reg.weld("06-PAN-AR", "montants + lisses + châssis", "bouchons Ø8 pas 150 + cordon périphérique", 2 * (2196 + 1500))
@@ -466,7 +477,7 @@ def phase_wheels(reg):
                      status="PROVISOIRE (dépend de la roulette retenue)"))
         reg.weld(f"13-PLA-{tag}", "longeron + traverses", "angle a4 3 côtés", (px1 - px0) + 2 * (py1 - py0))
         reg.weld(f"13-CAL-{tag}", f"13-PLA-{tag}", "angle a4 périphérique", 2 * (150 + 120))
-        nm = "Roulette pivotante Ø200 à frein total" if braked else "Roulette pivotante Ø200 à blocage directionnel"
+        nm = "Roulette pivotante Ø200 à frein total + blocage directionnel" if braked else "Roulette pivotante Ø200 à blocage directionnel"
         reg.add(Part(f"12-ROU-{tag}", Gw, nm, "Acier zingué / caoutchouc plein (achat)",
                      "Roulage chantier, orientation" + (", immobilisation" if braked else ", marche en ligne"),
                      _caster(ax, ay, trail, braked), "acheté",
@@ -589,52 +600,77 @@ def hook_profile():
     return pts, dict(yb=yb, y_back=y_back, y_tip0=y_tip0, y_tip1=y_tip1, zf=zf, zt=zt, zb=zb)
 
 
-def phase_hitch(reg):
-    G, GR = "22_HITCH_HOOK", "23_ARTICULATED_TOWING_RING"
+def hitch_transform(side):
+    """Passe du repère local de construction (face Y = W, centrée X_MID) à la face latérale `side`.
+
+    Local : sortie de face vers +Y, centre en (X_MID, Y_REAR). Monde : face latérale gauche
+    (X = 0, sortie vers -X) ou droite (X = L, sortie vers +X), centrée en Y_MID.
+    """
+    def f(sh):
+        if side == "D":
+            return sh.rotate(V(0, 0, 0), V(0, 0, 1), -90).translate(V(s.X_RIGHT - s.Y_REAR, s.Y_MID + s.X_MID, 0))
+        return sh.rotate(V(0, 0, 0), V(0, 0, 1), 90).translate(V(s.X_LEFT + s.Y_REAR, s.Y_MID - s.X_MID, 0))
+    return f
+
+
+def _hitch_local():
+    """Crochet + anneau construits dans le repère local (face Y = W)."""
     xm = s.X_MID
     pts, h = hook_profile()
     ht = P["HOOK_T"]
-    plat = box(xm - 70, xm + 70, s.YS1, h["yb"], s.Z_CH_BOT, s.Z_CH_TOP - 1)
-    reg.add(Part("22-PLT", G, "Platine d'attelage", S235_GALVA,
-                 "Liaison crochet / longeron arrière, dans l'axe de la traverse centrale", plat, "plat",
-                 "Plat 140×59×15", 0, C_GALVA, weldment=CAISSE))
-    hook = prism_yz(pts, xm - ht / 2, xm + ht / 2)
-    reg.add(Part("22-CRO", G, "Crochet d'attelage ouvert vers le haut (sans ressort)", S235_GALVA,
-                 "Réception de l'anneau articulé de l'engin tracteur — retenue par gravité (bec de 55)",
-                 hook, "pièce découpée", f"Tôle ép. {ht:.0f} oxycoupée", 0, C_RED, weldment=CAISSE,
-                 status="PROVISOIRE (nuance S355 ou pièce forgée à étudier, hauteur d'attelage)"))
-    reg.weld("22-PLT", "01-LON-AR-2", "angle a6 périphérique", 2 * (140 + 59))
-    reg.weld("22-CRO", "22-PLT", "angle a8 double + chanfrein (pleine pénétration à étudier)", 2 * 63 + 2 * ht)
-    # --- Anneau articulé (côté engin — composant d'interface, hors nomenclature HURAVA)
+    out = {}
+    out["PLT"] = box(xm - 70, xm + 70, s.YS1, h["yb"], s.Z_CH_BOT, s.Z_CH_TOP - 1)
+    out["CRO"] = prism_yz(pts, xm - ht / 2, xm + ht / 2)
     R, r = P["RING_R"], P["RING_r"]
     zc = h["zf"] + r                                   # l'anneau repose sur le fond de gorge
-    # centre de l'anneau : brin arrière dans la gorge, bec dans l'œil
-    yc = h["y_back"] + 5 + r + R
+    yc = h["y_back"] + 5 + r + R                       # brin intérieur dans la gorge, bec dans l'œil
     ring = cq.Solid.makeTorus(R, r, V(xm, yc, zc), V(0, 0, 1))
     y_out = yc + R + r
     shank = box(xm - 10, xm + 10, yc + R, y_out + 40, zc - 10, zc + 10)
     ye = y_out + 40 + 15
     eye = cyl(25, (xm - 10, ye, zc), (xm + 10, ye, zc)).fuse(box(xm - 10, xm + 10, y_out + 30, ye, zc - 12, zc + 12))
     rp = P["RING_PIN_D"] / 2
-    eye = eye.cut(cyl(rp + 0.5, (xm - 11, ye, zc), (xm + 11, ye, zc)))
-    ring_body = ring.fuse(shank).fuse(eye)
-    reg.add(Part("23-ANN", GR, "Anneau de traction articulé (côté engin)", "Acier forgé (interface engin)",
-                 "Entre dans le crochet HURAVA ; articulation autour de l'axe transversal", ring_body, "interface",
-                 f"Anneau Ø{2 * (R - r):.0f} int., section Ø{2 * r:.0f}", 0, C_IFACE, in_bom=False,
-                 status="Interface engin — hors périmètre HURAVA"))
+    out["ANN"] = ring.fuse(shank).fuse(eye.cut(cyl(rp + 0.5, (xm - 11, ye, zc), (xm + 11, ye, zc))))
     for sx in (-1, 1):
-        cp = box(xm + sx * 11, xm + sx * 23, ye - 30, ye + 45, zc - 30, zc + 30).cut(
+        out[f"CHA{'1' if sx < 0 else '2'}"] = box(xm + sx * 11, xm + sx * 23, ye - 30, ye + 45, zc - 30, zc + 30).cut(
             cyl(rp + 0.5, (xm + sx * 10, ye, zc), (xm + sx * 24, ye, zc)))
-        reg.add(Part(f"23-CHA-{'G' if sx < 0 else 'D'}", GR, "Flasque de chape (côté engin)", "Interface engin",
-                     "Chape d'articulation de l'anneau", cp, "interface", "", 0, C_DARK, in_bom=False))
-    reg.add(Part("23-AXE", GR, "Axe d'articulation Ø20 (côté engin)", "Interface engin",
-                 "Articulation de l'anneau", cyl(rp, (xm - 27, ye, zc), (xm + 27, ye, zc)), "interface", "", 0,
-                 C_ZINC, in_bom=False))
-    reg.add(Part("23-TIM", GR, "Timon / traverse de l'engin (représentation)", "Interface engin",
-                 "Repère de position de l'engin tracteur", rhs("y", xm - 40, xm + 40, ye + 61, ye + 200, zc - 40,
-                                                                   zc + 40, 5).fuse(
-                     box(xm - 30, xm + 30, ye + 45, ye + 61, zc - 30, zc + 30)),
-                 "interface", "", 0, C_DARK, in_bom=False))
+    out["AXE"] = cyl(rp, (xm - 27, ye, zc), (xm + 27, ye, zc))
+    out["TIM"] = rhs("y", xm - 40, xm + 40, ye + 61, ye + 200, zc - 40, zc + 40, 5).fuse(
+        box(xm - 30, xm + 30, ye + 45, ye + 61, zc - 30, zc + 30))
+    return out
+
+
+def phase_hitch(reg):
+    """Attelage sur les faces latérales de 1100 (traction selon X, dans l'axe de la longueur)."""
+    G, GR = "22_HITCH_HOOK", "23_ARTICULATED_TOWING_RING"
+    ht = P["HOOK_T"]
+    loc = _hitch_local()
+    for side in P["HITCH_SIDES"]:
+        tr = hitch_transform(side)
+        cote = "gauche" if side == "G" else "droite"
+        reg.add(Part(f"22-PLT-{side}", G, "Platine d'attelage", S235_GALVA,
+                     f"Liaison crochet / traverse d'extrémité {cote}, dans l'axe du longeron d'attelage",
+                     tr(loc["PLT"]), "plat", "Plat 140×59×15", 0, C_GALVA, weldment=CAISSE))
+        reg.add(Part(f"22-CRO-{side}", G, "Crochet d'attelage ouvert vers le haut (sans ressort)", S235_GALVA,
+                     f"Face latérale {cote} : réception de l'anneau articulé de l'engin — retenue par gravité (bec de 55)",
+                     tr(loc["CRO"]), "pièce découpée", f"Tôle ép. {ht:.0f} oxycoupée", 0, C_RED, weldment=CAISSE,
+                     status="PROVISOIRE (nuance S355 ou pièce forgée à étudier, hauteur d'attelage)"))
+        reg.weld(f"22-PLT-{side}", f"01-TRA-{side} + 01-LAT-{side}", "angle a6 périphérique", 2 * (140 + 59))
+        reg.weld(f"22-CRO-{side}", f"22-PLT-{side}", "angle a8 double + chanfrein (pleine pénétration à étudier)",
+                 2 * 63 + 2 * ht)
+        # Anneau articulé côté engin — interface, hors nomenclature HURAVA
+        reg.add(Part(f"23-ANN-{side}", GR, "Anneau de traction articulé (côté engin)", "Acier forgé (interface engin)",
+                     "Entre dans le crochet HURAVA ; articulation autour de l'axe transversal", tr(loc["ANN"]),
+                     "interface", f"Anneau Ø{2 * (P['RING_R'] - P['RING_r']):.0f} int., section Ø{2 * P['RING_r']:.0f}",
+                     0, C_IFACE, in_bom=False, status="Interface engin — hors périmètre HURAVA"))
+        for k in ("CHA1", "CHA2"):
+            reg.add(Part(f"23-{k}-{side}", GR, "Flasque de chape (côté engin)", "Interface engin",
+                         "Chape d'articulation de l'anneau", tr(loc[k]), "interface", "", 0, C_DARK, in_bom=False))
+        reg.add(Part(f"23-AXE-{side}", GR, "Axe d'articulation Ø20 (côté engin)", "Interface engin",
+                     "Articulation de l'anneau", tr(loc["AXE"]), "interface", "", 0, C_ZINC, in_bom=False))
+        reg.add(Part(f"23-TIM-{side}", GR, "Timon / traverse de l'engin (représentation)", "Interface engin",
+                     "Repère de position de l'engin tracteur", tr(loc["TIM"]), "interface", "", 0, C_DARK,
+                     in_bom=False))
 
 
 # =====================================================================================

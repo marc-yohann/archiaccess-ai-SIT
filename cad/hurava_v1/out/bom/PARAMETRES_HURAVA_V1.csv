@@ -75,6 +75,7 @@ LUG_HOLE_D;32.0;mm;PROVISOIRE — À VALIDER;perçage manille
 LUG_HOLE_Z;30.0;mm;PROVISOIRE — À VALIDER;axe du perçage au-dessus de la platine
 LUG_BASE;(80.0, 12.0);mm;PROVISOIRE — À VALIDER;platine d'oreille carré × ép.
 ROOF_NOTCH;86.0;mm;PROVISOIRE — À VALIDER;dégagement de toit aux angles
+HITCH_SIDES;('G', 'D');;PROVISOIRE — À VALIDER;"attelage sur les faces latérales 1100 (décision utilisateur) — un crochet de chaque côté ; ('D',) pour un seul"
 HOOK_T;25.0;mm;PROVISOIRE — À VALIDER;crochet oxycoupé ép. 25 (pièce forgée à étudier)
 HOOK_THROAT_Z;300.0;mm;PROVISOIRE — À VALIDER;Z du fond de gorge (hauteur d'attelage à confirmer)
 HOOK_THROAT_W;60.0;mm;PROVISOIRE — À VALIDER;largeur de gorge

@@ -1,13 +1,13 @@
 {
- "total_mass": 673.1783381891665,
+ "total_mass": 677.9458119641666,
  "cog": [
-  1100.2617477765664,
-  520.9366738771625,
-  860.6133090633252
+  1100.2599071048808,
+  518.7843872065641,
+  856.6440960996136
  ],
  "mass_by_group": {
-  "01_CHASSIS": 92.55614719999998,
-  "02_SECONDARY_STRUCTURE": 26.512087599999987,
+  "01_CHASSIS": 94.57504159999998,
+  "02_SECONDARY_STRUCTURE": 26.904587599999985,
   "03_FLOOR": 75.27258239999999,
   "04_ROOF": 37.529531199999994,
   "05_SIDE_PANELS": 51.694196799999986,
@@ -28,13 +28,13 @@
   "19_LIFTING_POINT_FR": 1.0867178590183455,
   "20_LIFTING_POINT_RL": 1.0867178590183468,
   "21_LIFTING_POINT_RR": 1.0867178590183464,
-  "22_HITCH_HOOK": 2.3560793749999998,
+  "22_HITCH_HOOK": 4.7121587499999995,
   "25_LOGO": 0.07
  },
- "n_parts": 187,
- "n_bom": 82,
- "welds": 105,
- "weld_length": 91517.0,
+ "n_parts": 198,
+ "n_bom": 83,
+ "welds": 111,
+ "weld_length": 93291.0,
  "checks": {
   "CHECK 01": [
    "Dimensions principales 2200 × 1100 × 1500",
@@ -72,14 +72,14 @@
    "Z max 1910 mm"
   ],
   "CHECK 08": [
-   "Attelage sur la face arrière",
+   "Attelage sur les faces latérales 1100",
    true,
-   "X 1087.5…1112.5 | Y 1113.0…1235.0 | Z 262.0…355.0"
+   "G : X -135…-13, axe Y 550 ; D : X 2213…2335, axe Y 550 ; aucun crochet en face arrière"
   ],
   "CHECK 09": [
    "Crochet vers le haut + anneau articulé",
    true,
-   "bec +55 mm ; anneau libre au repos ✅ OK ; traction +40 mm bloquée ✅ OK ; soulevé 30 mm toujours retenu ✅ OK ; dégagement seulement si levé > bec ✅ OK"
+   "bec +55 mm — G : libre au repos ✅ OK, traction 40 mm bloquée ✅ OK, soulevé 30 mm retenu ✅ OK, dégagé seulement au-dessus du bec ✅ OK | D : libre au repos ✅ OK, traction 40 mm bloquée ✅ OK, soulevé 30 mm retenu ✅ OK, dégagé seulement au-dessus du bec ✅ OK"
   ],
   "CHECK 10": [
    "2 racks internes",
@@ -119,12 +119,12 @@
   "CHECK 17": [
    "Symétrie gauche / droite",
    true,
-   "Racks ✅ OK; Barres ✅ OK; Fourreaux ✅ OK; Levage AV ✅ OK; Levage AR ✅ OK"
+   "Racks ✅ OK; Barres ✅ OK; Fourreaux ✅ OK; Levage AV ✅ OK; Levage AR ✅ OK; Attelage ✅ OK"
   ],
   "CHECK 18": [
    "Absence d'interférences",
    true,
-   "187 corps, 0 interférence(s) [] (1 s)"
+   "198 corps, 0 interférence(s) [] (1 s)"
   ],
   "CHECK 19": [
    "Portes ouvrables 0 → 90°",
@@ -134,7 +134,7 @@
   "CHECK 20": [
    "Modèle assemblable",
    true,
-   "187 corps valides ✅ OK ; chaque corps soudé, boulonné ou guidé (jeu ≤ 1 mm) sur un autre ; corps isolés : aucun"
+   "198 corps valides ✅ OK ; chaque corps soudé, boulonné ou guidé (jeu ≤ 1 mm) sur un autre ; corps isolés : aucun"
   ]
  },
  "phases": {
@@ -153,12 +153,12 @@
   "PHASE 13": true
  },
  "all_ok": true,
- "build_s": 11.661716222763062,
+ "build_s": 14.37567400932312,
  "overall_bb": [
-  -91.87396738795108,
-  2291.8739673879513,
+  -135.0000000999998,
+  2335.0000001,
   -60.00000010000001,
-  1235.0000001,
+  1101.050081481312,
   -0.09519294659144101,
   1910.0729779310677
  ],
@@ -294,6 +294,22 @@
   {
    "Rep": "009",
    "Composant": "01_CHASSIS",
+   "Désignation": "Longeron d'attelage",
+   "Section / référence": "Tube rect. 60×40×3",
+   "Longueur débit (mm)": "228",
+   "Matériau": "S235JR galvanisé à chaud",
+   "Type": "profilé",
+   "Qté": 2,
+   "Masse unit. (kg)": "1.01",
+   "Masse totale (kg)": "2.02",
+   "Fonction": "Reprise de l'effort de traction du crochet latéral vers le châssis",
+   "Sous-ensemble soudé": "A — caisse mécano-soudée",
+   "Statut": "",
+   "Corps": "01-LAT-G 01-LAT-D"
+  },
+  {
+   "Rep": "010",
+   "Composant": "01_CHASSIS",
    "Désignation": "Gousset d'angle de châssis",
    "Section / référence": "Gousset 100×100×5",
    "Longueur débit (mm)": "",
@@ -308,7 +324,7 @@
    "Corps": "01-GOU-AVG 01-GOU-AVD 01-GOU-ARG 01-GOU-ARD"
   },
   {
-   "Rep": "010",
+   "Rep": "011",
    "Composant": "01_CHASSIS",
    "Désignation": "Montant d'angle",
    "Section / référence": "Tube rect. 60×40×3",
@@ -324,7 +340,7 @@
    "Corps": "01-MON-AVG 01-MON-AVD 01-MON-ARG 01-MON-ARD"
   },
   {
-   "Rep": "011",
+   "Rep": "012",
    "Composant": "01_CHASSIS",
    "Désignation": "Traverse haute avant",
    "Section / référence": "Tube rect. 60×40×3",
@@ -340,7 +356,7 @@
    "Corps": "01-CH-AV"
   },
   {
-   "Rep": "012",
+   "Rep": "013",
    "Composant": "01_CHASSIS",
    "Désignation": "Traverse haute arrière",
    "Section / référence": "Tube rect. 60×40×3",
@@ -356,7 +372,7 @@
    "Corps": "01-CH-AR"
   },
   {
-   "Rep": "013",
+   "Rep": "014",
    "Composant": "01_CHASSIS",
    "Désignation": "Traverse haute latérale",
    "Section / référence": "Tube rect. 60×40×3",
@@ -372,7 +388,7 @@
    "Corps": "01-CH-G 01-CH-D"
   },
   {
-   "Rep": "014",
+   "Rep": "015",
    "Composant": "02_SECONDARY_STRUCTURE",
    "Désignation": "Lisse latérale",
    "Section / référence": "Tube carré 40×40×3",
@@ -388,7 +404,7 @@
    "Corps": "02-LIS-G 02-LIS-D"
   },
   {
-   "Rep": "015",
+   "Rep": "016",
    "Composant": "02_SECONDARY_STRUCTURE",
    "Désignation": "Montant arrière intermédiaire",
    "Section / référence": "Tube carré 40×40×3",
@@ -404,7 +420,7 @@
    "Corps": "02-MON-AR"
   },
   {
-   "Rep": "016",
+   "Rep": "017",
    "Composant": "02_SECONDARY_STRUCTURE",
    "Désignation": "Lisse arrière",
    "Section / référence": "Tube carré 40×40×3",
@@ -420,7 +436,7 @@
    "Corps": "02-LIS-AR-1 02-LIS-AR-2"
   },
   {
-   "Rep": "017",
+   "Rep": "018",
    "Composant": "02_SECONDARY_STRUCTURE",
    "Désignation": "Traverse de toit",
    "Section / référence": "Tube carré 40×40×3",
@@ -436,23 +452,23 @@
    "Corps": "02-TT-1 02-TT-2"
   },
   {
-   "Rep": "018",
+   "Rep": "019",
    "Composant": "02_SECONDARY_STRUCTURE",
    "Désignation": "Gousset de reprise d'attelage",
    "Section / référence": "Gousset 100×100×5",
    "Longueur débit (mm)": "",
    "Matériau": "S235JR galvanisé à chaud",
    "Type": "plat",
-   "Qté": 2,
+   "Qté": 4,
    "Masse unit. (kg)": "0.20",
-   "Masse totale (kg)": "0.39",
-   "Fonction": "Transfert de l'effort de traction du longeron AR vers la traverse centrale",
+   "Masse totale (kg)": "0.78",
+   "Fonction": "Transfert de l'effort de traction de la traverse d'extrémité vers le longeron d'attelage",
    "Sous-ensemble soudé": "A — caisse mécano-soudée",
    "Statut": "",
-   "Corps": "02-GOU-ATT-G 02-GOU-ATT-D"
+   "Corps": "02-GOU-ATT-G1 02-GOU-ATT-G2 02-GOU-ATT-D1 02-GOU-ATT-D2"
   },
   {
-   "Rep": "019",
+   "Rep": "020",
    "Composant": "03_FLOOR",
    "Désignation": "Plancher",
    "Section / référence": "Tôle ép. 4",
@@ -468,7 +484,7 @@
    "Corps": "03-PLA"
   },
   {
-   "Rep": "020",
+   "Rep": "021",
    "Composant": "04_ROOF",
    "Désignation": "Tôle de toit",
    "Section / référence": "Tôle ép. 2",
@@ -484,7 +500,7 @@
    "Corps": "04-TOI"
   },
   {
-   "Rep": "021",
+   "Rep": "022",
    "Composant": "05_SIDE_PANELS",
    "Désignation": "Panneau latéral gauche",
    "Section / référence": "Tôle ép. 2",
@@ -500,7 +516,7 @@
    "Corps": "05-PAN-G"
   },
   {
-   "Rep": "022",
+   "Rep": "023",
    "Composant": "05_SIDE_PANELS",
    "Désignation": "Panneau latéral droit",
    "Section / référence": "Tôle ép. 2",
@@ -516,7 +532,7 @@
    "Corps": "05-PAN-D"
   },
   {
-   "Rep": "023",
+   "Rep": "024",
    "Composant": "06_REAR_PANEL",
    "Désignation": "Panneau arrière",
    "Section / référence": "Tôle ép. 2",
@@ -526,13 +542,13 @@
    "Qté": 1,
    "Masse unit. (kg)": "51.65",
    "Masse totale (kg)": "51.65",
-   "Fonction": "Paroi arrière (face attelage)",
+   "Fonction": "Paroi arrière",
    "Sous-ensemble soudé": "A — caisse mécano-soudée",
    "Statut": "PROVISOIRE (ép.)",
    "Corps": "06-PAN-AR"
   },
   {
-   "Rep": "024",
+   "Rep": "025",
    "Composant": "07_FRONT_DOORS",
    "Désignation": "Vantail G — Tôle de parement",
    "Section / référence": "Tôle ép. 2",
@@ -548,7 +564,7 @@
    "Corps": "07-VG-1"
   },
   {
-   "Rep": "025",
+   "Rep": "026",
    "Composant": "07_FRONT_DOORS",
    "Désignation": "Vantail G — Montant côté charnières",
    "Section / référence": "Tube carré 40×40×3",
@@ -564,7 +580,7 @@
    "Corps": "07-VG-2"
   },
   {
-   "Rep": "026",
+   "Rep": "027",
    "Composant": "07_FRONT_DOORS",
    "Désignation": "Vantail G — Montant côté battement",
    "Section / référence": "Tube carré 40×40×3",
@@ -580,7 +596,7 @@
    "Corps": "07-VG-3"
   },
   {
-   "Rep": "027",
+   "Rep": "028",
    "Composant": "07_FRONT_DOORS",
    "Désignation": "Vantail G — Traverse basse",
    "Section / référence": "Tube carré 40×40×3",
@@ -596,7 +612,7 @@
    "Corps": "07-VG-4"
   },
   {
-   "Rep": "028",
+   "Rep": "029",
    "Composant": "07_FRONT_DOORS",
    "Désignation": "Vantail G — Traverse haute",
    "Section / référence": "Tube carré 40×40×3",
@@ -612,7 +628,7 @@
    "Corps": "07-VG-5"
   },
   {
-   "Rep": "029",
+   "Rep": "030",
    "Composant": "07_FRONT_DOORS",
    "Désignation": "Vantail G — Traverse intermédiaire",
    "Section / référence": "Tube carré 40×40×3",
@@ -628,7 +644,7 @@
    "Corps": "07-VG-6"
   },
   {
-   "Rep": "030",
+   "Rep": "031",
    "Composant": "08_DOOR_HINGES",
    "Désignation": "Charnière — nœud fixe + patte",
    "Section / référence": "Nœud Ø30 + patte 20",
@@ -644,7 +660,7 @@
    "Corps": "08-CHG1-F 08-CHG2-F 08-CHG3-F 08-CHD1-F 08-CHD2-F 08-CHD3-F"
   },
   {
-   "Rep": "031",
+   "Rep": "032",
    "Composant": "08_DOOR_HINGES",
    "Désignation": "Charnière — nœud mobile + penture",
    "Section / référence": "Nœud Ø30 + penture 6",
@@ -660,7 +676,7 @@
    "Corps": "08-CHG1-M 08-CHG2-M 08-CHG3-M 08-CHD1-M 08-CHD2-M 08-CHD3-M"
   },
   {
-   "Rep": "032",
+   "Rep": "033",
    "Composant": "08_DOOR_HINGES",
    "Désignation": "Axe de charnière Ø16",
    "Section / référence": "Ø16 × 118",
@@ -676,7 +692,7 @@
    "Corps": "08-AXG1 08-AXG2 08-AXG3 08-AXD1 08-AXD2 08-AXD3"
   },
   {
-   "Rep": "033",
+   "Rep": "034",
    "Composant": "08_DOOR_HINGES",
    "Désignation": "Butée d'ouverture 90°",
    "Section / référence": "Plat 40 découpé",
@@ -692,7 +708,7 @@
    "Corps": "08-BUTG 08-BUTD"
   },
   {
-   "Rep": "034",
+   "Rep": "035",
    "Composant": "07_FRONT_DOORS",
    "Désignation": "Vantail D — Tôle de parement",
    "Section / référence": "Tôle ép. 2",
@@ -708,7 +724,7 @@
    "Corps": "07-VD-1"
   },
   {
-   "Rep": "035",
+   "Rep": "036",
    "Composant": "07_FRONT_DOORS",
    "Désignation": "Vantail D — Montant côté charnières",
    "Section / référence": "Tube carré 40×40×3",
@@ -724,7 +740,7 @@
    "Corps": "07-VD-2"
   },
   {
-   "Rep": "036",
+   "Rep": "037",
    "Composant": "07_FRONT_DOORS",
    "Désignation": "Vantail D — Montant côté battement",
    "Section / référence": "Tube carré 40×40×3",
@@ -740,7 +756,7 @@
    "Corps": "07-VD-3"
   },
   {
-   "Rep": "037",
+   "Rep": "038",
    "Composant": "07_FRONT_DOORS",
    "Désignation": "Vantail D — Traverse basse",
    "Section / référence": "Tube carré 40×40×3",
@@ -756,7 +772,7 @@
    "Corps": "07-VD-4"
   },
   {
-   "Rep": "038",
+   "Rep": "039",
    "Composant": "07_FRONT_DOORS",
    "Désignation": "Vantail D — Traverse haute",
    "Section / référence": "Tube carré 40×40×3",
@@ -772,7 +788,7 @@
    "Corps": "07-VD-5"
   },
   {
-   "Rep": "039",
+   "Rep": "040",
    "Composant": "07_FRONT_DOORS",
    "Désignation": "Vantail D — Traverse intermédiaire",
    "Section / référence": "Tube carré 40×40×3",
@@ -788,7 +804,7 @@
    "Corps": "07-VD-6"
   },
   {
-   "Rep": "040",
+   "Rep": "041",
    "Composant": "09_LOCKING_SYSTEM",
    "Désignation": "Tringle haute Ø14",
    "Section / référence": "Rond Ø14",
@@ -804,7 +820,7 @@
    "Corps": "09-TRH-G"
   },
   {
-   "Rep": "041",
+   "Rep": "042",
    "Composant": "09_LOCKING_SYSTEM",
    "Désignation": "Tringle basse Ø14",
    "Section / référence": "Rond Ø14",
@@ -820,7 +836,7 @@
    "Corps": "09-TRB-G"
   },
   {
-   "Rep": "042",
+   "Rep": "043",
    "Composant": "09_LOCKING_SYSTEM",
    "Désignation": "Guide de tringle",
    "Section / référence": "Bloc 30×24 percé Ø15.5",
@@ -836,7 +852,7 @@
    "Corps": "09-GUI-G1 09-GUI-G2 09-GUI-G3 09-GUI-G4 09-GUI-D1 09-GUI-D2 09-GUI-D3 09-GUI-D4"
   },
   {
-   "Rep": "043",
+   "Rep": "044",
    "Composant": "09_LOCKING_SYSTEM",
    "Désignation": "Gâche haute renforcée",
    "Section / référence": "Bloc 24 percé Ø16",
@@ -852,7 +868,7 @@
    "Corps": "09-GAH-G 09-GAH-D"
   },
   {
-   "Rep": "044",
+   "Rep": "045",
    "Composant": "09_LOCKING_SYSTEM",
    "Désignation": "Gâche basse renforcée",
    "Section / référence": "Bloc 24 percé Ø16",
@@ -868,7 +884,7 @@
    "Corps": "09-GAB-G 09-GAB-D"
   },
   {
-   "Rep": "045",
+   "Rep": "046",
    "Composant": "09_LOCKING_SYSTEM",
    "Désignation": "Tringle haute Ø14",
    "Section / référence": "Rond Ø14",
@@ -884,7 +900,7 @@
    "Corps": "09-TRH-D"
   },
   {
-   "Rep": "046",
+   "Rep": "047",
    "Composant": "09_LOCKING_SYSTEM",
    "Désignation": "Tringle basse Ø14",
    "Section / référence": "Rond Ø14",
@@ -900,7 +916,7 @@
    "Corps": "09-TRB-D"
   },
   {
-   "Rep": "047",
+   "Rep": "048",
    "Composant": "09_LOCKING_SYSTEM",
    "Désignation": "Boîtier de crémone-serrure",
    "Section / référence": "Crémone 3 points à cylindre",
@@ -916,7 +932,7 @@
    "Corps": "09-SER"
   },
   {
-   "Rep": "048",
+   "Rep": "049",
    "Composant": "09_LOCKING_SYSTEM",
    "Désignation": "Poignée palette extérieure cadenassable",
    "Section / référence": "Poignée palette + rosace",
@@ -932,7 +948,7 @@
    "Corps": "09-POI"
   },
   {
-   "Rep": "049",
+   "Rep": "050",
    "Composant": "09_LOCKING_SYSTEM",
    "Désignation": "Couvre-joint anti-pince / anti-arrachement",
    "Section / référence": "Plat 65×3",
@@ -948,7 +964,7 @@
    "Corps": "09-CJ"
   },
   {
-   "Rep": "050",
+   "Rep": "051",
    "Composant": "10_RACK_LEFT",
    "Désignation": "Montant de rack",
    "Section / référence": "Tube carré 30×30×2",
@@ -964,7 +980,7 @@
    "Corps": "10-RG-MT1 10-RG-MT2 10-RG-MT3 10-RG-MT4"
   },
   {
-   "Rep": "051",
+   "Rep": "052",
    "Composant": "10_RACK_LEFT",
    "Désignation": "Longeron de tablette",
    "Section / référence": "Tube carré 30×30×2",
@@ -980,7 +996,7 @@
    "Corps": "10-RG-N1-L1 10-RG-N1-L2 10-RG-N2-L1 10-RG-N2-L2 10-RG-N3-L1 10-RG-N3-L2"
   },
   {
-   "Rep": "052",
+   "Rep": "053",
    "Composant": "10_RACK_LEFT",
    "Désignation": "Traverse de tablette",
    "Section / référence": "Tube carré 30×30×2",
@@ -996,7 +1012,7 @@
    "Corps": "10-RG-N1-T1 10-RG-N1-T2 10-RG-N2-T1 10-RG-N2-T2 10-RG-N3-T1 10-RG-N3-T2"
   },
   {
-   "Rep": "053",
+   "Rep": "054",
    "Composant": "10_RACK_LEFT",
    "Désignation": "Tablette tôle",
    "Section / référence": "Tôle ép. 2",
@@ -1012,7 +1028,7 @@
    "Corps": "10-RG-N1-TB 10-RG-N2-TB 10-RG-N3-TB"
   },
   {
-   "Rep": "054",
+   "Rep": "055",
    "Composant": "11_RACK_RIGHT",
    "Désignation": "Montant de rack",
    "Section / référence": "Tube carré 30×30×2",
@@ -1028,7 +1044,7 @@
    "Corps": "11-RD-MT1 11-RD-MT2 11-RD-MT3 11-RD-MT4"
   },
   {
-   "Rep": "055",
+   "Rep": "056",
    "Composant": "11_RACK_RIGHT",
    "Désignation": "Longeron de tablette",
    "Section / référence": "Tube carré 30×30×2",
@@ -1044,7 +1060,7 @@
    "Corps": "11-RD-N1-L1 11-RD-N1-L2 11-RD-N2-L1 11-RD-N2-L2 11-RD-N3-L1 11-RD-N3-L2"
   },
   {
-   "Rep": "056",
+   "Rep": "057",
    "Composant": "11_RACK_RIGHT",
    "Désignation": "Traverse de tablette",
    "Section / référence": "Tube carré 30×30×2",
@@ -1060,7 +1076,7 @@
    "Corps": "11-RD-N1-T1 11-RD-N1-T2 11-RD-N2-T1 11-RD-N2-T2 11-RD-N3-T1 11-RD-N3-T2"
   },
   {
-   "Rep": "057",
+   "Rep": "058",
    "Composant": "11_RACK_RIGHT",
    "Désignation": "Tablette tôle",
    "Section / référence": "Tôle ép. 2",
@@ -1076,7 +1092,7 @@
    "Corps": "11-RD-N1-TB 11-RD-N2-TB 11-RD-N3-TB"
   },
   {
-   "Rep": "058",
+   "Rep": "059",
    "Composant": "13_WHEEL_SUPPORTS",
    "Désignation": "Platine porte-roue",
    "Section / référence": "Tôle ép. 10",
@@ -1092,7 +1108,7 @@
    "Corps": "13-PLA-AVG 13-PLA-AVD 13-PLA-ARG 13-PLA-ARD"
   },
   {
-   "Rep": "059",
+   "Rep": "060",
    "Composant": "13_WHEEL_SUPPORTS",
    "Désignation": "Cale de roulette",
    "Section / référence": "Plat ép. 15",
@@ -1108,9 +1124,9 @@
    "Corps": "13-CAL-AVG 13-CAL-AVD 13-CAL-ARG 13-CAL-ARD"
   },
   {
-   "Rep": "060",
+   "Rep": "061",
    "Composant": "12_WHEELS",
-   "Désignation": "Roulette pivotante Ø200 à frein total",
+   "Désignation": "Roulette pivotante Ø200 à frein total + blocage directionnel",
    "Section / référence": "Ø200×50 H245 CMU 500 kg",
    "Longueur débit (mm)": "",
    "Matériau": "Acier zingué / caoutchouc plein (achat)",
@@ -1124,7 +1140,7 @@
    "Corps": "12-ROU-AVG 12-ROU-AVD"
   },
   {
-   "Rep": "061",
+   "Rep": "062",
    "Composant": "24_FASTENERS_HARDWARE",
    "Désignation": "Vis H M12×50 cl. 8.8 + écrou frein + rondelle",
    "Section / référence": "M12×50",
@@ -1140,7 +1156,7 @@
    "Corps": "24-VIS-AVG1 24-VIS-AVG2 24-VIS-AVG3 24-VIS-AVG4 24-VIS-AVD1 24-VIS-AVD2 24-VIS-AVD3 24-VIS-AVD4 24-VIS-ARG1 24-VIS-ARG2 24-VIS-ARG3 24-VIS-ARG4 24-VIS-ARD1 24-VIS-ARD2 24-VIS-ARD3 24-VIS-ARD4"
   },
   {
-   "Rep": "062",
+   "Rep": "063",
    "Composant": "12_WHEELS",
    "Désignation": "Roulette pivotante Ø200 à blocage directionnel",
    "Section / référence": "Ø200×50 H245 CMU 500 kg",
@@ -1156,7 +1172,7 @@
    "Corps": "12-ROU-ARG 12-ROU-ARD"
   },
   {
-   "Rep": "063",
+   "Rep": "064",
    "Composant": "14_HANDLING_BAR_LEFT",
    "Désignation": "Barre de manutention",
    "Section / référence": "Tube rond Ø33.7×4.0",
@@ -1172,7 +1188,7 @@
    "Corps": "14-BAR"
   },
   {
-   "Rep": "064",
+   "Rep": "065",
    "Composant": "14_HANDLING_BAR_LEFT",
    "Désignation": "Support de barre",
    "Section / référence": "Plat 60×10",
@@ -1188,7 +1204,7 @@
    "Corps": "14-SUP1 14-SUP2"
   },
   {
-   "Rep": "065",
+   "Rep": "066",
    "Composant": "15_HANDLING_BAR_RIGHT",
    "Désignation": "Barre de manutention",
    "Section / référence": "Tube rond Ø33.7×4.0",
@@ -1204,7 +1220,7 @@
    "Corps": "15-BAR"
   },
   {
-   "Rep": "066",
+   "Rep": "067",
    "Composant": "15_HANDLING_BAR_RIGHT",
    "Désignation": "Support de barre",
    "Section / référence": "Plat 60×10",
@@ -1220,7 +1236,7 @@
    "Corps": "15-SUP1 15-SUP2"
   },
   {
-   "Rep": "067",
+   "Rep": "068",
    "Composant": "16_FORK_POCKET_LEFT",
    "Désignation": "Fourreau de fourches",
    "Section / référence": "Tube rect. 230×80×5",
@@ -1236,7 +1252,7 @@
    "Corps": "16-FOU"
   },
   {
-   "Rep": "068",
+   "Rep": "069",
    "Composant": "16_FORK_POCKET_LEFT",
    "Désignation": "Gousset fourreau / longeron",
    "Section / référence": "Gousset 100×100×5",
@@ -1252,7 +1268,7 @@
    "Corps": "16-GOU-AVG 16-GOU-AVD 16-GOU-ARG 16-GOU-ARD"
   },
   {
-   "Rep": "069",
+   "Rep": "070",
    "Composant": "17_FORK_POCKET_RIGHT",
    "Désignation": "Fourreau de fourches",
    "Section / référence": "Tube rect. 230×80×5",
@@ -1268,7 +1284,7 @@
    "Corps": "17-FOU"
   },
   {
-   "Rep": "070",
+   "Rep": "071",
    "Composant": "17_FORK_POCKET_RIGHT",
    "Désignation": "Gousset fourreau / longeron",
    "Section / référence": "Gousset 100×100×5",
@@ -1284,7 +1300,7 @@
    "Corps": "17-GOU-AVG 17-GOU-AVD 17-GOU-ARG 17-GOU-ARD"
   },
   {
-   "Rep": "071",
+   "Rep": "072",
    "Composant": "18_LIFTING_POINT_FL",
    "Désignation": "Platine d'oreille de levage",
    "Section / référence": "Plat 80×80×12",
@@ -1300,7 +1316,7 @@
    "Corps": "18-PLT"
   },
   {
-   "Rep": "072",
+   "Rep": "073",
    "Composant": "18_LIFTING_POINT_FL",
    "Désignation": "Oreille de levage",
    "Section / référence": "Tôle ép. 15 oxycoupée",
@@ -1316,7 +1332,7 @@
    "Corps": "18-ORE"
   },
   {
-   "Rep": "073",
+   "Rep": "074",
    "Composant": "19_LIFTING_POINT_FR",
    "Désignation": "Platine d'oreille de levage",
    "Section / référence": "Plat 80×80×12",
@@ -1332,7 +1348,7 @@
    "Corps": "19-PLT"
   },
   {
-   "Rep": "074",
+   "Rep": "075",
    "Composant": "19_LIFTING_POINT_FR",
    "Désignation": "Oreille de levage",
    "Section / référence": "Tôle ép. 15 oxycoupée",
@@ -1348,7 +1364,7 @@
    "Corps": "19-ORE"
   },
   {
-   "Rep": "075",
+   "Rep": "076",
    "Composant": "20_LIFTING_POINT_RL",
    "Désignation": "Platine d'oreille de levage",
    "Section / référence": "Plat 80×80×12",
@@ -1364,7 +1380,7 @@
    "Corps": "20-PLT"
   },
   {
-   "Rep": "076",
+   "Rep": "077",
    "Composant": "20_LIFTING_POINT_RL",
    "Désignation": "Oreille de levage",
    "Section / référence": "Tôle ép. 15 oxycoupée",
@@ -1380,7 +1396,7 @@
    "Corps": "20-ORE"
   },
   {
-   "Rep": "077",
+   "Rep": "078",
    "Composant": "21_LIFTING_POINT_RR",
    "Désignation": "Platine d'oreille de levage",
    "Section / référence": "Plat 80×80×12",
@@ -1396,7 +1412,7 @@
    "Corps": "21-PLT"
   },
   {
-   "Rep": "078",
+   "Rep": "079",
    "Composant": "21_LIFTING_POINT_RR",
    "Désignation": "Oreille de levage",
    "Section / référence": "Tôle ép. 15 oxycoupée",
@@ -1412,39 +1428,39 @@
    "Corps": "21-ORE"
   },
   {
-   "Rep": "079",
+   "Rep": "080",
    "Composant": "22_HITCH_HOOK",
    "Désignation": "Platine d'attelage",
    "Section / référence": "Plat 140×59×15",
    "Longueur débit (mm)": "",
    "Matériau": "S235JR galvanisé à chaud",
    "Type": "plat",
-   "Qté": 1,
+   "Qté": 2,
    "Masse unit. (kg)": "0.97",
-   "Masse totale (kg)": "0.97",
-   "Fonction": "Liaison crochet / longeron arrière, dans l'axe de la traverse centrale",
+   "Masse totale (kg)": "1.95",
+   "Fonction": "Liaison crochet / traverse d'extrémité gauche, dans l'axe du longeron d'attelage",
    "Sous-ensemble soudé": "A — caisse mécano-soudée",
    "Statut": "",
-   "Corps": "22-PLT"
+   "Corps": "22-PLT-G 22-PLT-D"
   },
   {
-   "Rep": "080",
+   "Rep": "081",
    "Composant": "22_HITCH_HOOK",
    "Désignation": "Crochet d'attelage ouvert vers le haut (sans ressort)",
    "Section / référence": "Tôle ép. 25 oxycoupée",
    "Longueur débit (mm)": "",
    "Matériau": "S235JR galvanisé à chaud",
    "Type": "pièce découpée",
-   "Qté": 1,
+   "Qté": 2,
    "Masse unit. (kg)": "1.38",
-   "Masse totale (kg)": "1.38",
-   "Fonction": "Réception de l'anneau articulé de l'engin tracteur — retenue par gravité (bec de 55)",
+   "Masse totale (kg)": "2.77",
+   "Fonction": "Face latérale gauche : réception de l'anneau articulé de l'engin — retenue par gravité (bec de 55)",
    "Sous-ensemble soudé": "A — caisse mécano-soudée",
    "Statut": "PROVISOIRE (nuance S355 ou pièce forgée à étudier, hauteur d'attelage)",
-   "Corps": "22-CRO"
+   "Corps": "22-CRO-G 22-CRO-D"
   },
   {
-   "Rep": "081",
+   "Rep": "082",
    "Composant": "25_LOGO",
    "Désignation": "Marquage HURAVA by ARCHIACCESS — face arrière",
    "Section / référence": "Film adhésif découpé",
@@ -1460,7 +1476,7 @@
    "Corps": "25-LOG-AR"
   },
   {
-   "Rep": "082",
+   "Rep": "083",
    "Composant": "25_LOGO",
    "Désignation": "Marquage HURAVA — vantail gauche",
    "Section / référence": "Film adhésif découpé",
@@ -1477,7 +1493,7 @@
   }
  ],
  "profiles": {
-  "Tube rect. 60×40×3": 20728.0,
+  "Tube rect. 60×40×3": 21184.0,
   "Tube carré 40×40×3": 19006.0,
   "Rond Ø14": 2596.0,
   "Tube carré 30×30×2": 27432.0,

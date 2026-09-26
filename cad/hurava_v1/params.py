@@ -12,9 +12,10 @@ Statuts :
 
 Convention d'axes (cahier des charges §2) :
 - X = longueur (0 → 2200, de gauche à droite vu de la face avant)
-- Y = largeur  (0 = face AVANT portes, 1100 = face ARRIÈRE attelage)
+- Y = largeur  (0 = face AVANT portes, 1100 = face ARRIÈRE)
 - Z = hauteur  (0 = sol)
-Face latérale GAUCHE = plan X = 0 ; face latérale DROITE = plan X = 2200.
+Face latérale GAUCHE = plan X = 0 ; face latérale DROITE = plan X = 2200
+(faces de 1100 : barres de manutention + attelage).
 """
 from dataclasses import dataclass
 
@@ -120,6 +121,8 @@ _P = [
     Param("LUG_BASE", (80.0, 12.0), "mm", PROV, "platine d'oreille carré × ép."),
     Param("ROOF_NOTCH", 86.0, "mm", PROV, "dégagement de toit aux angles"),
     # --- Attelage (§11) ------------------------------------------------------------
+    Param("HITCH_SIDES", ("G", "D"), "", PROV,
+          "attelage sur les faces latérales 1100 (décision utilisateur) — un crochet de chaque côté ; ('D',) pour un seul"),
     Param("HOOK_T", 25.0, "mm", PROV, "crochet oxycoupé ép. 25 (pièce forgée à étudier)"),
     Param("HOOK_THROAT_Z", 300.0, "mm", PROV, "Z du fond de gorge (hauteur d'attelage à confirmer)"),
     Param("HOOK_THROAT_W", 60.0, "mm", PROV, "largeur de gorge"),

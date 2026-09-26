@@ -109,6 +109,17 @@ def symmetry(parts, left_prefix, right_prefix, x_mid=s.X_MID, tol=0.5):
     return ok, vl, vr
 
 
+def symmetry_refs(parts, refs_l, refs_r, x_mid=s.X_MID, tol=0.5):
+    L = [p for p in parts if p.ref in refs_l]
+    R = [p for p in parts if p.ref in refs_r]
+    vl, vr = sum(p.volume for p in L), sum(p.volume for p in R)
+    bl = _union_bb([bbox(p.shape) for p in L])
+    br = _union_bb([bbox(p.shape) for p in R])
+    bl_m = (2 * x_mid - bl[1], 2 * x_mid - bl[0], *bl[2:])
+    ok = len(L) == len(refs_l) and abs(vl - vr) / max(vl, 1) < 1e-3 and all(abs(a - b) < tol for a, b in zip(bl_m, br))
+    return ok, vl, vr
+
+
 def _union_bb(bbs):
     return (min(b[0] for b in bbs), max(b[1] for b in bbs), min(b[2] for b in bbs), max(b[3] for b in bbs),
             min(b[4] for b in bbs), max(b[5] for b in bbs))

@@ -45,7 +45,7 @@ EXPLODE = {  # décalages de vue éclatée (mm)
     "05_D": (450, 0, 0), "06": (0, 450, 0), "07": (0, -700, 0), "08": (0, -500, 0), "09": (0, -850, 0),
     "10": (-120, 0, 320), "11": (120, 0, 320), "12": (0, 0, -520), "13": (0, 0, -260), "14": (-750, 0, 0),
     "15": (750, 0, 0), "16": (0, 0, -380), "17": (0, 0, -380), "18": (0, 0, 900), "19": (0, 0, 900),
-    "20": (0, 0, 900), "21": (0, 0, 900), "22": (0, 500, -120), "23": (0, 850, -120), "24": (0, 0, -520),
+    "20": (0, 0, 900), "21": (0, 0, 900), "22_G": (-450, 0, -120), "22_D": (450, 0, -120), "23_G": (-800, 0, -120), "23_D": (800, 0, -120), "24": (0, 0, -520),
     "25": (0, 0, 0),
 }
 
@@ -56,6 +56,8 @@ def explode_offset(p):
         return EXPLODE["05_G" if p.ref.endswith("G") else "05_D"]
     if g == "25":
         return EXPLODE["07"] if p.moving else EXPLODE["06"]
+    if g in ("22", "23"):
+        return EXPLODE[f"{g}_{p.ref[-1]}"]
     if g == "24":
         return EXPLODE["12"]
     return EXPLODE[g]
@@ -129,9 +131,10 @@ def phase_specific(reg, tag, log):
         o = [p for p in parts if p.ref.endswith("-ORE")]
         res.append(("4 oreilles au-dessus du toit", len(o) == 4 and all(bbox(p.shape)[4] >= s.Z_ROOF_BOT for p in o), ""))
     if tag == "PHASE 11":
-        h = reg.get("22-CRO")
-        b = bbox(h.shape)
-        res.append(("Crochet sur la face arrière", b[2] >= s.Y_REAR - 0.01 and abs((b[0] + b[1]) / 2 - s.X_MID) < 0.01, fmt_bb(b)))
+        for sd in P["HITCH_SIDES"]:
+            b = bbox(reg.get(f"22-CRO-{sd}").shape)
+            on_face = b[1] <= s.X_LEFT + 0.01 if sd == "G" else b[0] >= s.X_RIGHT - 0.01
+            res.append((f"Crochet {sd} sur la face latérale 1100", on_face and abs((b[2] + b[3]) / 2 - s.Y_MID) < 0.01, fmt_bb(b)))
     for n, r, d in res:
         log(f"- {n} : {ok(r)} {d}")
     return all(r for _, r, _ in res)
@@ -174,22 +177,33 @@ def final_validation(reg, log):
     lug = [p for p in parts if p.ref.endswith("-ORE")]
     R["CHECK 07"] = ("4 points de levage au-dessus", len(lug) == 4 and all(bbox(p.shape)[4] >= s.Z_ROOF_BOT for p in lug),
                      f"Z max {max(bbox(p.shape)[5] for p in lug):.0f} mm")
-    # CHECK 08
-    hk = reg.get("22-CRO")
-    hb = bbox(hk.shape)
-    R["CHECK 08"] = ("Attelage sur la face arrière", hb[2] >= s.Y_REAR - 0.01, fmt_bb(hb))
-    # CHECK 09 — crochet ouvert vers le haut + anneau articulé, retenue géométrique
+    # CHECK 08 — attelage sur les faces latérales 1100 (décision utilisateur, remplace la face arrière du CdC §11)
+    sides = P["HITCH_SIDES"]
+    hks = {sd: reg.get(f"22-CRO-{sd}") for sd in sides}
+    c8, d8 = True, []
+    for sd, hk in hks.items():
+        hb = bbox(hk.shape)
+        on = hb[1] <= s.X_LEFT + 0.01 if sd == "G" else hb[0] >= s.X_RIGHT - 0.01
+        c8 &= on and abs((hb[2] + hb[3]) / 2 - s.Y_MID) < 0.01
+        d8.append(f"{sd} : X {hb[0]:.0f}…{hb[1]:.0f}, axe Y {(hb[2] + hb[3]) / 2:.0f}")
+    rear_hooks = [p.ref for p in g("22") if bbox(p.shape)[3] > s.Y_REAR + 0.01]
+    R["CHECK 08"] = ("Attelage sur les faces latérales 1100", c8 and not rear_hooks, " ; ".join(d8) + " ; aucun crochet en face arrière")
+    # CHECK 09 — crochet ouvert vers le haut + anneau articulé, retenue géométrique (chaque côté)
     pts, h = C.hook_profile()
-    ring = reg.get("23-ANN")
-    no_clash = K.common_volume(ring.shape, hk.shape) <= K.VOL_TOL
-    pulled = K.common_volume(ring.shape.translate(V(0, 40, 0)), hk.shape) > K.VOL_TOL      # traction horizontale
-    lifted_small = K.common_volume(ring.shape.translate(V(0, 40, 30)), hk.shape) > K.VOL_TOL
-    lifted_big = K.common_volume(ring.shape.translate(V(0, 0, P["HOOK_TIP_H"] + 5)).translate(V(0, 40, 0)), hk.shape) <= K.VOL_TOL
     tip_up = h["zt"] > h["zf"]
     spheres = [p.ref for p in g("22") + g("23") for f in p.shape.Faces() if f.geomType() == "SPHERE"]
-    R["CHECK 09"] = ("Crochet vers le haut + anneau articulé", tip_up and no_clash and pulled and lifted_small and lifted_big and not spheres,
-                     f"bec +{P['HOOK_TIP_H']:.0f} mm ; anneau libre au repos {ok(no_clash)} ; traction +40 mm bloquée {ok(pulled)} ; "
-                     f"soulevé 30 mm toujours retenu {ok(lifted_small)} ; dégagement seulement si levé > bec {ok(lifted_big)}")
+    c9, d9 = tip_up and not spheres, []
+    for sd, hk in hks.items():
+        ring = reg.get(f"23-ANN-{sd}")
+        n = -1 if sd == "G" else 1                               # direction de traction (vers l'engin)
+        no_clash = K.common_volume(ring.shape, hk.shape) <= K.VOL_TOL
+        pulled = K.common_volume(ring.shape.translate(V(n * 40, 0, 0)), hk.shape) > K.VOL_TOL
+        lifted_small = K.common_volume(ring.shape.translate(V(n * 40, 0, 30)), hk.shape) > K.VOL_TOL
+        lifted_big = K.common_volume(ring.shape.translate(V(n * 40, 0, P["HOOK_TIP_H"] + 5)), hk.shape) <= K.VOL_TOL
+        c9 &= no_clash and pulled and lifted_small and lifted_big
+        d9.append(f"{sd} : libre au repos {ok(no_clash)}, traction 40 mm bloquée {ok(pulled)}, soulevé 30 mm retenu {ok(lifted_small)}, "
+                  f"dégagé seulement au-dessus du bec {ok(lifted_big)}")
+    R["CHECK 09"] = ("Crochet vers le haut + anneau articulé", c9, f"bec +{P['HOOK_TIP_H']:.0f} mm — " + " | ".join(d9))
     # CHECK 10 / 11
     R["CHECK 10"] = ("2 racks internes", bool(g("10")) and bool(g("11")), f"{len(g('10'))} + {len(g('11'))} corps")
     nl = [sum(1 for p in g(x) if p.name == "Tablette tôle") for x in ("10", "11")]
@@ -212,6 +226,8 @@ def final_validation(reg, log):
     # CHECK 17
     sym = [("Racks", "10", "11"), ("Barres", "14", "15"), ("Fourreaux", "16", "17"), ("Levage AV", "18", "19"), ("Levage AR", "20", "21")]
     sr = [(n, K.symmetry(parts, a, b)) for n, a, b in sym]
+    if set(P["HITCH_SIDES"]) == {"G", "D"}:
+        sr.append(("Attelage", K.symmetry_refs(parts, ["22-PLT-G", "22-CRO-G", "01-LAT-G"], ["22-PLT-D", "22-CRO-D", "01-LAT-D"])))
     vg = sum(p.volume for p in g("07") if p.moving == "DOOR_L")
     R["CHECK 17"] = ("Symétrie gauche / droite", all(r[0] for _, r in sr), "; ".join(f"{n} {ok(r[0])}" for n, r in sr))
     # CHECK 18

@@ -36,8 +36,9 @@ qu'une phase n'est pas géométriquement cohérente.
 | `tools/` | Rendu des vues depuis les GLB |
 
 Convention d'axes : **X** = longueur (0 → 2200, de gauche à droite vu de l'avant),
-**Y** = largeur (0 = face avant avec les portes, 1100 = face arrière avec l'attelage),
-**Z** = hauteur (0 = sol). La caisse va de Z 330 à Z 1830.
+**Y** = largeur (0 = face avant avec les portes, 1100 = face arrière),
+**Z** = hauteur (0 = sol). La caisse va de Z 330 à Z 1830. Les faces latérales de 1100 (X = 0 et X = 2200) portent
+les barres de manutention et l'attelage (un crochet de chaque côté, paramètre `HITCH_SIDES`).
 
 ## Sorties (`out/`)
 

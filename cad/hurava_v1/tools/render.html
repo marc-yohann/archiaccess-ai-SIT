@@ -15,19 +15,19 @@ const W=1600,H=1100;const r=new THREE.WebGLRenderer({antialias:true,preserveDraw
 r.outputEncoding=THREE.sRGBEncoding;
 const sc=new THREE.Scene();sc.background=new THREE.Color(0xf3f5f6);
 sc.add(new THREE.HemisphereLight(0xffffff,0x8a8a8a,0.85));const d1=new THREE.DirectionalLight(0xffffff,0.75);sc.add(d1);const d2=new THREE.DirectionalLight(0xffffff,0.3);sc.add(d2);
-const V={front:{d:[0,0,1],up:[0,1,0],t:'VUE AVANT',s:'face 2200 — portes'},rear:{d:[0,0,-1],up:[0,1,0],t:'VUE ARRIÈRE',s:'face 2200 — attelage'},
-left:{d:[-1,0,0],up:[0,1,0],t:'VUE LATÉRALE GAUCHE',s:'face 1100 — barre de manutention'},right:{d:[1,0,0],up:[0,1,0],t:'VUE LATÉRALE DROITE',s:'face 1100 — barre de manutention'},
+const V={front:{d:[0,0,1],up:[0,1,0],t:'VUE AVANT',s:'face 2200 — portes'},rear:{d:[0,0,-1],up:[0,1,0],t:'VUE ARRIÈRE',s:'face 2200'},
+left:{d:[-1,0,0],up:[0,1,0],t:'VUE LATÉRALE GAUCHE',s:'face 1100 — barre de manutention + attelage'},right:{d:[1,0,0],up:[0,1,0],t:'VUE LATÉRALE DROITE',s:'face 1100 — barre de manutention + attelage'},
 top:{d:[0,1,0],up:[0,0,-1],t:'VUE SUPÉRIEURE',s:'points de levage — avant en bas'},bottom:{d:[0,-1,0],up:[0,0,-1],t:'VUE INFÉRIEURE',s:'fourreaux, roues, attelage — avant en bas'},
 iso:{d:[-1,0.75,1.15],up:[0,1,0],t:'VUE ISOMÉTRIQUE',s:'avant-gauche',p:1},iso_open:{d:[-1,0.75,1.15],up:[0,1,0],t:'VUE ISOMÉTRIQUE — PORTES À 90°',s:'avant-gauche, butées au contact',p:1},
-iso_rear:{d:[1,0.7,-1.2],up:[0,1,0],t:'VUE ISOMÉTRIQUE ARRIÈRE',s:'arrière-droite — crochet + anneau articulé',p:1},
+iso_rear:{d:[1,0.7,-1.2],up:[0,1,0],t:'VUE ISOMÉTRIQUE ARRIÈRE',s:'arrière-droite — attelage latéral',p:1},
 exploded:{d:[-1,0.8,1.1],up:[0,1,0],t:'VUE ÉCLATÉE',s:'composants 01 → 25',p:1},
-hitch:{d:[0.75,0.95,-1],up:[0,1,0],t:'DÉTAIL ATTELAGE',s:'crochet ouvert vers le haut + anneau articulé (engin)',p:1,zoom:'hitch'}};
+hitch:{d:[1,0.8,0.75],up:[0,1,0],t:'DÉTAIL ATTELAGE LATÉRAL',s:'face droite — crochet ouvert vers le haut + anneau articulé (engin)',p:1,zoom:'hitch'}};
 const v=V[view];
 new THREE.GLTFLoader().load(file,g=>{const m=g.scene;sc.add(m);
  m.traverse(o=>{if(o.isMesh){o.material.side=THREE.DoubleSide;o.material.metalness=Math.min(o.material.metalness,0.2);o.material.roughness=0.6;
   const e=new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry,28),new THREE.LineBasicMaterial({color:0x1a1a1a}));o.add(e);}});
  let bb=new THREE.Box3().setFromObject(m);let c=bb.getCenter(new THREE.Vector3()),sz=bb.getSize(new THREE.Vector3());
- if(v.zoom==='hitch'){c=new THREE.Vector3(1100,320,-1230);sz=new THREE.Vector3(650,420,650);}
+ if(v.zoom==='hitch'){c=new THREE.Vector3(2300,330,-550);sz=new THREE.Vector3(650,420,650);}
  const dir=new THREE.Vector3(...v.d).normalize();const R=sz.length()*0.62;
  let cam;if(v.p){cam=new THREE.PerspectiveCamera(v.zoom?30:26,W/H,1,50000);cam.position.copy(c).addScaledVector(dir,R/Math.tan(THREE.MathUtils.degToRad(cam.fov/2))*(v.zoom?0.75:0.9));}
  else{const a=W/H;let w,h;const ax=Math.abs(v.d[0])>0.5?'x':Math.abs(v.d[1])>0.5?'y':'z';

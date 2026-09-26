@@ -23,7 +23,7 @@
 
 ## 2. Validation automatique (phase 14)
 
-Build : 187 corps, 20 contrôles — **20 / 20 validés**. Chaque phase 1 → 13 a été validée (géométrie valide, aucune collision, emprise, contrôles propres à la phase) avant de passer à la suivante — voir `out/report/BUILD_LOG.md`.
+Build : 198 corps, 20 contrôles — **20 / 20 validés**. Chaque phase 1 → 13 a été validée (géométrie valide, aucune collision, emprise, contrôles propres à la phase) avant de passer à la suivante — voir `out/report/BUILD_LOG.md`.
 
 | Contrôle | Intitulé | Résultat | Détail |
 |---|---|---|---|
@@ -34,8 +34,8 @@ Build : 187 corps, 20 contrôles — **20 / 20 validés**. Chaque phase 1 → 13
 | CHECK 05 | 4 roues | ✅ | 4 roulettes Ø200 |
 | CHECK 06 | 2 fourreaux sous le châssis | ✅ | entraxe 900 mm, Z 250…330 |
 | CHECK 07 | 4 points de levage au-dessus | ✅ | Z max 1910 mm |
-| CHECK 08 | Attelage sur la face arrière | ✅ | X 1087.5…1112.5 | Y 1113.0…1235.0 | Z 262.0…355.0 |
-| CHECK 09 | Crochet vers le haut + anneau articulé | ✅ | bec +55 mm ; anneau libre au repos ✅ OK ; traction +40 mm bloquée ✅ OK ; soulevé 30 mm toujours retenu ✅ OK ; dégagement seulement si levé > bec ✅ OK |
+| CHECK 08 | Attelage sur les faces latérales 1100 | ✅ | G : X -135…-13, axe Y 550 ; D : X 2213…2335, axe Y 550 ; aucun crochet en face arrière |
+| CHECK 09 | Crochet vers le haut + anneau articulé | ✅ | bec +55 mm — G : libre au repos ✅ OK, traction 40 mm bloquée ✅ OK, soulevé 30 mm retenu ✅ OK, dégagé seulement au-dessus du bec ✅ OK | D : libre au repos ✅ OK, traction 40 mm bloquée ✅ OK, soulevé 30 mm retenu ✅ OK, dégagé seulement au-dessus du bec ✅ OK |
 | CHECK 10 | 2 racks internes | ✅ | 19 + 19 corps |
 | CHECK 11 | 3 niveaux par rack | ✅ | niveaux [3, 3] |
 | CHECK 12 | Passage central libre | ✅ | largeur libre 1216 mm × hauteur 1434 mm [] |
@@ -43,10 +43,10 @@ Build : 187 corps, 20 contrôles — **20 / 20 validés**. Chaque phase 1 → 13
 | CHECK 14 | Aucune barre sur la face avant | ✅ | barres et supports compris dans Y 0…1100, hors faces avant/arrière |
 | CHECK 15 | Aucun attelage à boule | ✅ | aucune surface sphérique dans 22/23 |
 | CHECK 16 | Aucune troisième porte | ✅ |  |
-| CHECK 17 | Symétrie gauche / droite | ✅ | Racks ✅ OK; Barres ✅ OK; Fourreaux ✅ OK; Levage AV ✅ OK; Levage AR ✅ OK |
-| CHECK 18 | Absence d'interférences | ✅ | 187 corps, 0 interférence(s) [] (1 s) |
+| CHECK 17 | Symétrie gauche / droite | ✅ | Racks ✅ OK; Barres ✅ OK; Fourreaux ✅ OK; Levage AV ✅ OK; Levage AR ✅ OK; Attelage ✅ OK |
+| CHECK 18 | Absence d'interférences | ✅ | 198 corps, 0 interférence(s) [] (1 s) |
 | CHECK 19 | Portes ouvrables 0 → 90° | ✅ | balayage 0°, 15°, 30°, 45°, 60°, 75°, 85°, 90° sans collision ✅ OK ; jeu butée à 90° = 0.50 mm ; dépassement 92° bloqué par la butée ✅ OK |
-| CHECK 20 | Modèle assemblable | ✅ | 187 corps valides ✅ OK ; chaque corps soudé, boulonné ou guidé (jeu ≤ 1 mm) sur un autre ; corps isolés : aucun |
+| CHECK 20 | Modèle assemblable | ✅ | 198 corps valides ✅ OK ; chaque corps soudé, boulonné ou guidé (jeu ≤ 1 mm) sur un autre ; corps isolés : aucun |
 
 ## 3. Paramètres
 
@@ -128,6 +128,7 @@ Build : 187 corps, 20 contrôles — **20 / 20 validés**. Chaque phase 1 → 13
 | `LUG_HOLE_Z` | 30.0 | mm | **PROVISOIRE — À VALIDER** | axe du perçage au-dessus de la platine |
 | `LUG_BASE` | (80.0, 12.0) | mm | **PROVISOIRE — À VALIDER** | platine d'oreille carré × ép. |
 | `ROOF_NOTCH` | 86.0 | mm | **PROVISOIRE — À VALIDER** | dégagement de toit aux angles |
+| `HITCH_SIDES` | ('G', 'D') |  | **PROVISOIRE — À VALIDER** | attelage sur les faces latérales 1100 (décision utilisateur) — un crochet de chaque côté ; ('D',) pour un seul |
 | `HOOK_T` | 25.0 | mm | **PROVISOIRE — À VALIDER** | crochet oxycoupé ép. 25 (pièce forgée à étudier) |
 | `HOOK_THROAT_Z` | 300.0 | mm | **PROVISOIRE — À VALIDER** | Z du fond de gorge (hauteur d'attelage à confirmer) |
 | `HOOK_THROAT_W` | 60.0 | mm | **PROVISOIRE — À VALIDER** | largeur de gorge |
@@ -147,22 +148,22 @@ Build : 187 corps, 20 contrôles — **20 / 20 validés**. Chaque phase 1 → 13
 | Référence | Valeur |
 |---|---|
 | Enveloppe principale de caisse (CHECK 01) | 2200 × 1100 × 1500 mm, de Z 330 à Z 1830 |
-| Hors tout avec barres de manutention (X) | 2384 mm |
-| Hors tout avec charnières et crochet (Y) | 1295 mm (hors anneau côté engin) |
+| Hors tout avec crochets d'attelage latéraux (X) | 2470 mm (barres seules : 2384 mm) |
+| Hors tout avec charnières et butées (Y) | 1161 mm |
 | Hors tout avec oreilles de levage (Z) | 1910 mm |
 | Garde au sol (dessous fourreaux) | 250 mm |
 | Passage central entre racks | 1216 mm |
 
 ## 5. Masse estimative
 
-- Masse à vide calculée (volumes B-rep × 7850 kg/m³, masses catalogue pour les achats) : **673 kg**
-- Centre de gravité à vide : X 1100 · Y 521 · Z 861 mm
-- Masse en charge de dimensionnement (750 kg) : **1423 kg** ; avec facteur dynamique 1,5 : 2135 kg
+- Masse à vide calculée (volumes B-rep × 7850 kg/m³, masses catalogue pour les achats) : **678 kg**
+- Centre de gravité à vide : X 1100 · Y 519 · Z 857 mm
+- Masse en charge de dimensionnement (750 kg) : **1428 kg** ; avec facteur dynamique 1,5 : 2142 kg
 
 | Composant | Masse (kg) |
 |---|---|
-| 01_CHASSIS | 92.6 |
-| 02_SECONDARY_STRUCTURE | 26.5 |
+| 01_CHASSIS | 94.6 |
+| 02_SECONDARY_STRUCTURE | 26.9 |
 | 03_FLOOR | 75.3 |
 | 04_ROOF | 37.5 |
 | 05_SIDE_PANELS | 51.7 |
@@ -183,7 +184,7 @@ Build : 187 corps, 20 contrôles — **20 / 20 validés**. Chaque phase 1 → 13
 | 19_LIFTING_POINT_FR | 1.1 |
 | 20_LIFTING_POINT_RL | 1.1 |
 | 21_LIFTING_POINT_RR | 1.1 |
-| 22_HITCH_HOOK | 2.4 |
+| 22_HITCH_HOOK | 4.7 |
 | 25_LOGO | 0.1 |
 
 ## 6. Composants achetés
@@ -193,7 +194,7 @@ Build : 187 corps, 20 contrôles — **20 / 20 validés**. Chaque phase 1 → 13
 | Axe de charnière Ø16 | Ø16 × 118 | 6 | 1.18 | PROVISOIRE (matière) |
 | Boîtier de crémone-serrure | Crémone 3 points à cylindre | 1 | 2.20 | PROVISOIRE (référence) |
 | Poignée palette extérieure cadenassable | Poignée palette + rosace | 1 | 1.10 | PROVISOIRE (référence) |
-| Roulette pivotante Ø200 à frein total | Ø200×50 H245 CMU 500 kg | 2 | 19.00 | PROVISOIRE (référence catalogue) |
+| Roulette pivotante Ø200 à frein total + blocage directionnel | Ø200×50 H245 CMU 500 kg | 2 | 19.00 | PROVISOIRE (référence catalogue) |
 | Vis H M12×50 cl. 8.8 + écrou frein + rondelle | M12×50 | 16 | 1.20 |  |
 | Roulette pivotante Ø200 à blocage directionnel | Ø200×50 H245 CMU 500 kg | 2 | 19.00 | PROVISOIRE (référence catalogue) |
 | Marquage HURAVA by ARCHIACCESS — face arrière | Film adhésif découpé | 1 | 0.05 |  |
@@ -207,7 +208,7 @@ Débit des profilés (barres de 6 m, +10 % de chutes) :
 | Tube carré 30×30×2 | 27.43 | 6 |
 | Tube carré 40×40×3 | 19.01 | 4 |
 | Tube rect. 230×80×5 | 2.20 | 1 |
-| Tube rect. 60×40×3 | 20.73 | 4 |
+| Tube rect. 60×40×3 | 21.18 | 4 |
 | Tube rond Ø33.7×4.0 | 1.80 | 1 |
 
 ## 7. Soudures principales
@@ -220,19 +221,20 @@ Procédé envisagé : MAG 135, gorges indicatives a3 à a8 — **PROVISOIRE — 
 | angle a3 cadre ; bouchons Ø8 pas 150 parement | 2 | 23.0 |
 | angle a3 discontinue 50/150 | 1 | 9.9 |
 | angle a4 3 côtés | 20 | 6.9 |
+| angle a3 | 18 | 4.6 |
 | angle a4 périphérique | 18 | 4.6 |
 | angle a4 discontinue 50/100 ×2 | 2 | 4.4 |
-| angle a3 | 16 | 4.2 |
 | angle a2,5 | 2 | 2.9 |
 | angle a3 périphérique | 14 | 2.8 |
 | angle a3 ×2 extrémités | 7 | 2.2 |
 | angle a4 périphérique ×2 faces | 4 | 1.6 |
 | bouchons Ø8 pas 150 | 1 | 1.4 |
 | angle a5 périphérique | 4 | 1.3 |
+| angle a4 périphérique ×2 extrémités | 2 | 0.8 |
+| angle a6 périphérique | 2 | 0.8 |
 | angle a6 double (pleine pénétration à étudier) | 4 | 0.8 |
 | angle a4 périphérique (gueule de loup) | 4 | 0.6 |
-| angle a6 périphérique | 1 | 0.4 |
-| angle a8 double + chanfrein (pleine pénétration à étudier) | 1 | 0.2 |
+| angle a8 double + chanfrein (pleine pénétration à étudier) | 2 | 0.4 |
 
 Joints critiques (chemin de charge) : oreilles de levage / platines / montants ; crochet / platine / longeron arrière ; fourreaux / longerons (traversée) ; platines porte-roues / châssis ; supports de barres / lisses.
 
@@ -240,20 +242,20 @@ Joints critiques (chemin de charge) : oreilles de levage / platines / montants ;
 
 | Élément | Hypothèse | Valeur | Commentaire |
 |---|---|---|---|
-| Roulette | 3 appuis sur 4, charge statique | 474 kg / roue | 95 % de la CMU 500 kg |
-| Roulette | idem × facteur dynamique 1,5 | 712 kg / roue | **dépasse la CMU 500 kg → prévoir roulettes CMU ≥ 750 kg** |
-| Oreille de levage | élingue 4 brins, 3 brins porteurs, 60°, × 1,5 | 822 kg / oreille | manille et oreille CMU ≥ 1 t minimum ; oreille ép. 15 à vérifier (arrachement, pression diamétrale, soudure) |
-| Attelage | roulement chantier 10 % + rampe 10 %, × 1,5 | 4.2 kN | effort horizontal sur crochet et longeron AR |
+| Roulette | 3 appuis sur 4, charge statique | 476 kg / roue | 95 % de la CMU 500 kg |
+| Roulette | idem × facteur dynamique 1,5 | 714 kg / roue | **dépasse la CMU 500 kg → prévoir roulettes CMU ≥ 750 kg** |
+| Oreille de levage | élingue 4 brins, 3 brins porteurs, 60°, × 1,5 | 824 kg / oreille | manille et oreille CMU ≥ 1 t minimum ; oreille ép. 15 à vérifier (arrachement, pression diamétrale, soudure) |
+| Attelage | roulement chantier 10 % + rampe 10 %, × 1,5 | 4.2 kN | effort horizontal (selon X) sur crochet latéral, traverse d'extrémité et longeron d'attelage |
 | Facteur de sécurité | cible ≥ 1.5 | non évalué | simulation SimScale à réaliser (§10) |
 
 ## 9. Points nécessitant validation
 
 1. **Hauteur** — Le cahier des charges donne 1500 mm d'enveloppe et un dessus de caisse à Z ≈ 1830. Le modèle place la caisse de Z 330 à Z 1830 (1500 mm de caisse posée sur le châssis). Hauteur hors tout 1910 mm avec les oreilles. La visualisation 5D précédente avait 1500 mm hors tout : **l'interprétation retenue ici est à confirmer.**
 2. **Portes** — « 2 portes à deux vantaux » interprété comme **une porte double de 2 vantaux** (DOOR_COUNT = 2, 3 charnières par vantail). Vantail gauche semi-fixe (verrous haut/bas), vantail droit actif (crémone 3 points, poignée cadenassable, couvre-joint anti-arrachement).
-3. **Roues** — Architecture PROVISOIRE : 4 roulettes pivotantes Ø200, 2 à frein total côté portes, 2 à blocage directionnel côté attelage. **CMU 500 kg insuffisante avec le facteur dynamique** (712 kg/roue) → choisir une référence ≥ 750 kg de même hauteur (245 mm) ou reprendre la cale.
-4. **Masse** — Tare calculée 673 kg, élevée par rapport à la charge utile. Leviers : tôles 1,5 mm, cadres de vantaux 30×30, racks, plancher 3 mm raidi.
+3. **Roues** — Architecture PROVISOIRE : 4 roulettes pivotantes Ø200, toutes à blocage directionnel (marche en ligne selon X pour la traction), 2 avec frein total côté portes. **CMU 500 kg insuffisante avec le facteur dynamique** (714 kg/roue) → choisir une référence ≥ 750 kg de même hauteur (245 mm) ou reprendre la cale.
+4. **Masse** — Tare calculée 678 kg, élevée par rapport à la charge utile. Leviers : tôles 1,5 mm, cadres de vantaux 30×30, racks, plancher 3 mm raidi.
 5. **Fourreaux** — Entraxe 900 et section intérieure 220 × 70 **à confirmer selon les engins ciblés** (pas une norme). Fourreaux traversants : les longerons AV/AR sont interrompus et soudés sur les flancs des fourreaux.
-6. **Attelage** — Crochet oxycoupé ép. 25 en S235 : nuance S355 ou pièce forgée à étudier. Hauteur de gorge Z 300 à caler sur les engins tracteurs. Retenue de l'anneau par la seule géométrie (bec de 55 mm, pas de ressort) : ajouter ou non une goupille de sécurité est **une décision à prendre**. L'anneau articulé, la chape et le timon sont côté engin, hors nomenclature HURAVA.
+6. **Attelage** — **Déplacé sur les faces latérales de 1100 mm (décision du 26/09)** au lieu de la face arrière du cahier des charges §11 : un crochet de chaque côté (paramètre HITCH_SIDES), à Y 550, sous la barre de manutention ; traction selon la longueur, reprise par un longeron d'attelage 60×40 jusqu'à la 1re traverse intermédiaire. Hors tout avec crochets 2470 mm. Un seul côté suffit-il ? Crochet oxycoupé ép. 25 en S235 : nuance S355 ou pièce forgée à étudier. Hauteur de gorge Z 300 à caler sur les engins tracteurs. Retenue de l'anneau par la seule géométrie (bec de 55 mm, pas de ressort) : ajouter ou non une goupille de sécurité est **une décision à prendre**. L'anneau articulé, la chape et le timon sont côté engin, hors nomenclature HURAVA.
 7. **Levage** — Oreilles orientées vers le centre de gravité, décalées d'environ 20 mm de l'axe des montants : à recentrer après calcul. CMU à calculer.
 8. **Galvanisation** — Trous d'évent et d'écoulement (Ø10–12 à chaque extrémité de profil creux) **non modélisés**. Tôles de 2 mm soudées sur cadre : risque de déformation dans le bain ; alternative : tôles pré-galvanisées rivetées après galvanisation de l'ossature. Compatibilité du bain (≈ 2,4 × 1,3 × 1,95 m) à vérifier avec le galvaniseur.
 9. **Butée à 90°** — Bloc soudé sur le montant avant, jeu 0,5 mm pour un tampon élastomère. Saillie de 60 mm devant la face avant : à arrondir, ou remplacer par un arrêt de porte.
@@ -270,7 +272,7 @@ Joints critiques (chemin de charge) : oreilles de levage / platines / montants ;
 - Appuis : faces inférieures des 4 platines porte-roues `13-PLA-*` (ou contact sol des roues `12-ROU-*`).
 - Charge utile : pression sur la face supérieure de `03-PLA` et des tablettes `10/11-*-TB`.
 - Levage : alésages Ø32 des oreilles `18…21-ORE`. Fourches : faces intérieures basses des fourreaux `16/17-FOU`.
-- Traction : flanc arrière du bec du crochet `22-CRO`.
+- Traction : flanc intérieur du bec des crochets latéraux `22-CRO-G` / `22-CRO-D` (effort selon X).
 - Pièces à exclure : 23 (interface engin), 24 (boulonnerie), 25 (marquage).
 
 ## 11. Vues
@@ -307,17 +309,17 @@ Joints critiques (chemin de charge) : oreilles de levage / platines / montants ;
 
 ![Isométrique, portes à 90°](../views/iso_open.png)
 
-### Isométrique arrière
+### Isométrique arrière-droite
 
-![Isométrique arrière](../views/iso_rear.png)
+![Isométrique arrière-droite](../views/iso_rear.png)
 
 ### Vue éclatée
 
 ![Vue éclatée](../views/exploded.png)
 
-### Détail attelage
+### Détail attelage latéral droit
 
-![Détail attelage](../views/hitch.png)
+![Détail attelage latéral droit](../views/hitch.png)
 
 
 ## 12. Nomenclature initiale
@@ -332,77 +334,78 @@ Joints critiques (chemin de charge) : oreilles de levage / platines / montants ;
 | 006 | 01_CHASSIS | Longeron AR tronçon 3 | Tube rect. 60×40×3 | 533 | 1 | 2.36 |  |
 | 007 | 01_CHASSIS | Traverse de châssis d'extrémité | Tube rect. 60×40×3 | 1016 | 2 | 9.00 |  |
 | 008 | 01_CHASSIS | Traverse de châssis intermédiaire | Tube rect. 60×40×3 | 1016 | 3 | 13.49 |  |
-| 009 | 01_CHASSIS | Gousset d'angle de châssis | Gousset 100×100×5 |  | 4 | 0.78 |  |
-| 010 | 01_CHASSIS | Montant d'angle | Tube rect. 60×40×3 | 1438 | 4 | 25.47 |  |
-| 011 | 01_CHASSIS | Traverse haute avant | Tube rect. 60×40×3 | 2196 | 1 | 9.72 |  |
-| 012 | 01_CHASSIS | Traverse haute arrière | Tube rect. 60×40×3 | 2196 | 1 | 9.72 |  |
-| 013 | 01_CHASSIS | Traverse haute latérale | Tube rect. 60×40×3 | 1016 | 2 | 9.00 |  |
-| 014 | 02_SECONDARY_STRUCTURE | Lisse latérale | Tube carré 40×40×3 | 976 | 2 | 6.80 |  |
-| 015 | 02_SECONDARY_STRUCTURE | Montant arrière intermédiaire | Tube carré 40×40×3 | 1434 | 1 | 5.00 |  |
-| 016 | 02_SECONDARY_STRUCTURE | Lisse arrière | Tube carré 40×40×3 | 1038 | 2 | 7.24 |  |
-| 017 | 02_SECONDARY_STRUCTURE | Traverse de toit | Tube carré 40×40×3 | 1016 | 2 | 7.08 |  |
-| 018 | 02_SECONDARY_STRUCTURE | Gousset de reprise d'attelage | Gousset 100×100×5 |  | 2 | 0.39 |  |
-| 019 | 03_FLOOR | Plancher | Tôle ép. 4 |  | 1 | 75.27 | PROVISOIRE (ép. 4, larmée à valider) |
-| 020 | 04_ROOF | Tôle de toit | Tôle ép. 2 |  | 1 | 37.53 | PROVISOIRE (ép.) |
-| 021 | 05_SIDE_PANELS | Panneau latéral gauche | Tôle ép. 2 |  | 1 | 25.85 | PROVISOIRE (ép.) |
-| 022 | 05_SIDE_PANELS | Panneau latéral droit | Tôle ép. 2 |  | 1 | 25.85 | PROVISOIRE (ép.) |
-| 023 | 06_REAR_PANEL | Panneau arrière | Tôle ép. 2 |  | 1 | 51.65 | PROVISOIRE (ép.) |
-| 024 | 07_FRONT_DOORS | Vantail G — Tôle de parement | Tôle ép. 2 |  | 1 | 23.46 |  |
-| 025 | 07_FRONT_DOORS | Vantail G — Montant côté charnières | Tube carré 40×40×3 | 1423 | 1 | 4.96 |  |
-| 026 | 07_FRONT_DOORS | Vantail G — Montant côté battement | Tube carré 40×40×3 | 1423 | 1 | 4.96 |  |
-| 027 | 07_FRONT_DOORS | Vantail G — Traverse basse | Tube carré 40×40×3 | 970 | 1 | 3.38 |  |
-| 028 | 07_FRONT_DOORS | Vantail G — Traverse haute | Tube carré 40×40×3 | 970 | 1 | 3.38 |  |
-| 029 | 07_FRONT_DOORS | Vantail G — Traverse intermédiaire | Tube carré 40×40×3 | 970 | 1 | 3.38 |  |
-| 030 | 08_DOOR_HINGES | Charnière — nœud fixe + patte | Nœud Ø30 + patte 20 |  | 6 | 1.67 |  |
-| 031 | 08_DOOR_HINGES | Charnière — nœud mobile + penture | Nœud Ø30 + penture 6 |  | 6 | 3.36 |  |
-| 032 | 08_DOOR_HINGES | Axe de charnière Ø16 | Ø16 × 118 | 118 | 6 | 1.18 | PROVISOIRE (matière) |
-| 033 | 08_DOOR_HINGES | Butée d'ouverture 90° | Plat 40 découpé |  | 2 | 1.09 |  |
-| 034 | 07_FRONT_DOORS | Vantail D — Tôle de parement | Tôle ép. 2 |  | 1 | 23.46 |  |
-| 035 | 07_FRONT_DOORS | Vantail D — Montant côté charnières | Tube carré 40×40×3 | 1423 | 1 | 4.96 |  |
-| 036 | 07_FRONT_DOORS | Vantail D — Montant côté battement | Tube carré 40×40×3 | 1423 | 1 | 4.96 |  |
-| 037 | 07_FRONT_DOORS | Vantail D — Traverse basse | Tube carré 40×40×3 | 970 | 1 | 3.38 |  |
-| 038 | 07_FRONT_DOORS | Vantail D — Traverse haute | Tube carré 40×40×3 | 970 | 1 | 3.38 |  |
-| 039 | 07_FRONT_DOORS | Vantail D — Traverse intermédiaire | Tube carré 40×40×3 | 970 | 1 | 3.38 |  |
-| 040 | 09_LOCKING_SYSTEM | Tringle haute Ø14 | Rond Ø14 | 676 | 1 | 0.82 |  |
-| 041 | 09_LOCKING_SYSTEM | Tringle basse Ø14 | Rond Ø14 | 652 | 1 | 0.79 |  |
-| 042 | 09_LOCKING_SYSTEM | Guide de tringle | Bloc 30×24 percé Ø15.5 |  | 8 | 0.67 |  |
-| 043 | 09_LOCKING_SYSTEM | Gâche haute renforcée | Bloc 24 percé Ø16 |  | 2 | 0.18 |  |
-| 044 | 09_LOCKING_SYSTEM | Gâche basse renforcée | Bloc 24 percé Ø16 |  | 2 | 0.13 |  |
-| 045 | 09_LOCKING_SYSTEM | Tringle haute Ø14 | Rond Ø14 | 598 | 1 | 0.72 |  |
-| 046 | 09_LOCKING_SYSTEM | Tringle basse Ø14 | Rond Ø14 | 670 | 1 | 0.81 |  |
-| 047 | 09_LOCKING_SYSTEM | Boîtier de crémone-serrure | Crémone 3 points à cylindre |  | 1 | 2.20 | PROVISOIRE (référence) |
-| 048 | 09_LOCKING_SYSTEM | Poignée palette extérieure cadenassable | Poignée palette + rosace |  | 1 | 1.10 | PROVISOIRE (référence) |
-| 049 | 09_LOCKING_SYSTEM | Couvre-joint anti-pince / anti-arrachement | Plat 65×3 | 1383 | 1 | 2.12 |  |
-| 050 | 10_RACK_LEFT | Montant de rack | Tube carré 30×30×2 | 1494 | 4 | 10.51 | PROVISOIRE (profondeur, cotes de niveaux) |
-| 051 | 10_RACK_LEFT | Longeron de tablette | Tube carré 30×30×2 | 900 | 6 | 9.50 | PROVISOIRE (profondeur, cotes de niveaux) |
-| 052 | 10_RACK_LEFT | Traverse de tablette | Tube carré 30×30×2 | 390 | 6 | 4.11 | PROVISOIRE (profondeur, cotes de niveaux) |
-| 053 | 10_RACK_LEFT | Tablette tôle | Tôle ép. 2 |  | 3 | 20.17 | PROVISOIRE (profondeur, cotes de niveaux) |
-| 054 | 11_RACK_RIGHT | Montant de rack | Tube carré 30×30×2 | 1494 | 4 | 10.51 | PROVISOIRE (profondeur, cotes de niveaux) |
-| 055 | 11_RACK_RIGHT | Longeron de tablette | Tube carré 30×30×2 | 900 | 6 | 9.50 | PROVISOIRE (profondeur, cotes de niveaux) |
-| 056 | 11_RACK_RIGHT | Traverse de tablette | Tube carré 30×30×2 | 390 | 6 | 4.11 | PROVISOIRE (profondeur, cotes de niveaux) |
-| 057 | 11_RACK_RIGHT | Tablette tôle | Tôle ép. 2 |  | 3 | 20.17 | PROVISOIRE (profondeur, cotes de niveaux) |
-| 058 | 13_WHEEL_SUPPORTS | Platine porte-roue | Tôle ép. 10 |  | 4 | 31.36 |  |
-| 059 | 13_WHEEL_SUPPORTS | Cale de roulette | Plat ép. 15 |  | 4 | 8.23 | PROVISOIRE (dépend de la roulette retenue) |
-| 060 | 12_WHEELS | Roulette pivotante Ø200 à frein total | Ø200×50 H245 CMU 500 kg |  | 2 | 19.00 | PROVISOIRE (référence catalogue) |
-| 061 | 24_FASTENERS_HARDWARE | Vis H M12×50 cl. 8.8 + écrou frein + rondelle | M12×50 |  | 16 | 1.20 |  |
-| 062 | 12_WHEELS | Roulette pivotante Ø200 à blocage directionnel | Ø200×50 H245 CMU 500 kg |  | 2 | 19.00 | PROVISOIRE (référence catalogue) |
-| 063 | 14_HANDLING_BAR_LEFT | Barre de manutention | Tube rond Ø33.7×4.0 | 900 | 1 | 2.64 |  |
-| 064 | 14_HANDLING_BAR_LEFT | Support de barre | Plat 60×10 | 77 | 2 | 0.66 |  |
-| 065 | 15_HANDLING_BAR_RIGHT | Barre de manutention | Tube rond Ø33.7×4.0 | 900 | 1 | 2.64 |  |
-| 066 | 15_HANDLING_BAR_RIGHT | Support de barre | Plat 60×10 | 77 | 2 | 0.66 |  |
-| 067 | 16_FORK_POCKET_LEFT | Fourreau de fourches | Tube rect. 230×80×5 | 1100 | 1 | 25.90 | PROVISOIRE (section, entraxe) |
-| 068 | 16_FORK_POCKET_LEFT | Gousset fourreau / longeron | Gousset 100×100×5 |  | 4 | 0.78 |  |
-| 069 | 17_FORK_POCKET_RIGHT | Fourreau de fourches | Tube rect. 230×80×5 | 1100 | 1 | 25.90 | PROVISOIRE (section, entraxe) |
-| 070 | 17_FORK_POCKET_RIGHT | Gousset fourreau / longeron | Gousset 100×100×5 |  | 4 | 0.78 |  |
-| 071 | 18_LIFTING_POINT_FL | Platine d'oreille de levage | Plat 80×80×12 |  | 1 | 0.60 |  |
-| 072 | 18_LIFTING_POINT_FL | Oreille de levage | Tôle ép. 15 oxycoupée |  | 1 | 0.48 | PROVISOIRE (CMU à calculer) |
-| 073 | 19_LIFTING_POINT_FR | Platine d'oreille de levage | Plat 80×80×12 |  | 1 | 0.60 |  |
-| 074 | 19_LIFTING_POINT_FR | Oreille de levage | Tôle ép. 15 oxycoupée |  | 1 | 0.48 | PROVISOIRE (CMU à calculer) |
-| 075 | 20_LIFTING_POINT_RL | Platine d'oreille de levage | Plat 80×80×12 |  | 1 | 0.60 |  |
-| 076 | 20_LIFTING_POINT_RL | Oreille de levage | Tôle ép. 15 oxycoupée |  | 1 | 0.48 | PROVISOIRE (CMU à calculer) |
-| 077 | 21_LIFTING_POINT_RR | Platine d'oreille de levage | Plat 80×80×12 |  | 1 | 0.60 |  |
-| 078 | 21_LIFTING_POINT_RR | Oreille de levage | Tôle ép. 15 oxycoupée |  | 1 | 0.48 | PROVISOIRE (CMU à calculer) |
-| 079 | 22_HITCH_HOOK | Platine d'attelage | Plat 140×59×15 |  | 1 | 0.97 |  |
-| 080 | 22_HITCH_HOOK | Crochet d'attelage ouvert vers le haut (sans ressort) | Tôle ép. 25 oxycoupée |  | 1 | 1.38 | PROVISOIRE (nuance S355 ou pièce forgée à étudier, hauteur d'attelage) |
-| 081 | 25_LOGO | Marquage HURAVA by ARCHIACCESS — face arrière | Film adhésif découpé |  | 1 | 0.05 |  |
-| 082 | 25_LOGO | Marquage HURAVA — vantail gauche | Film adhésif découpé |  | 1 | 0.02 |  |
+| 009 | 01_CHASSIS | Longeron d'attelage | Tube rect. 60×40×3 | 228 | 2 | 2.02 |  |
+| 010 | 01_CHASSIS | Gousset d'angle de châssis | Gousset 100×100×5 |  | 4 | 0.78 |  |
+| 011 | 01_CHASSIS | Montant d'angle | Tube rect. 60×40×3 | 1438 | 4 | 25.47 |  |
+| 012 | 01_CHASSIS | Traverse haute avant | Tube rect. 60×40×3 | 2196 | 1 | 9.72 |  |
+| 013 | 01_CHASSIS | Traverse haute arrière | Tube rect. 60×40×3 | 2196 | 1 | 9.72 |  |
+| 014 | 01_CHASSIS | Traverse haute latérale | Tube rect. 60×40×3 | 1016 | 2 | 9.00 |  |
+| 015 | 02_SECONDARY_STRUCTURE | Lisse latérale | Tube carré 40×40×3 | 976 | 2 | 6.80 |  |
+| 016 | 02_SECONDARY_STRUCTURE | Montant arrière intermédiaire | Tube carré 40×40×3 | 1434 | 1 | 5.00 |  |
+| 017 | 02_SECONDARY_STRUCTURE | Lisse arrière | Tube carré 40×40×3 | 1038 | 2 | 7.24 |  |
+| 018 | 02_SECONDARY_STRUCTURE | Traverse de toit | Tube carré 40×40×3 | 1016 | 2 | 7.08 |  |
+| 019 | 02_SECONDARY_STRUCTURE | Gousset de reprise d'attelage | Gousset 100×100×5 |  | 4 | 0.78 |  |
+| 020 | 03_FLOOR | Plancher | Tôle ép. 4 |  | 1 | 75.27 | PROVISOIRE (ép. 4, larmée à valider) |
+| 021 | 04_ROOF | Tôle de toit | Tôle ép. 2 |  | 1 | 37.53 | PROVISOIRE (ép.) |
+| 022 | 05_SIDE_PANELS | Panneau latéral gauche | Tôle ép. 2 |  | 1 | 25.85 | PROVISOIRE (ép.) |
+| 023 | 05_SIDE_PANELS | Panneau latéral droit | Tôle ép. 2 |  | 1 | 25.85 | PROVISOIRE (ép.) |
+| 024 | 06_REAR_PANEL | Panneau arrière | Tôle ép. 2 |  | 1 | 51.65 | PROVISOIRE (ép.) |
+| 025 | 07_FRONT_DOORS | Vantail G — Tôle de parement | Tôle ép. 2 |  | 1 | 23.46 |  |
+| 026 | 07_FRONT_DOORS | Vantail G — Montant côté charnières | Tube carré 40×40×3 | 1423 | 1 | 4.96 |  |
+| 027 | 07_FRONT_DOORS | Vantail G — Montant côté battement | Tube carré 40×40×3 | 1423 | 1 | 4.96 |  |
+| 028 | 07_FRONT_DOORS | Vantail G — Traverse basse | Tube carré 40×40×3 | 970 | 1 | 3.38 |  |
+| 029 | 07_FRONT_DOORS | Vantail G — Traverse haute | Tube carré 40×40×3 | 970 | 1 | 3.38 |  |
+| 030 | 07_FRONT_DOORS | Vantail G — Traverse intermédiaire | Tube carré 40×40×3 | 970 | 1 | 3.38 |  |
+| 031 | 08_DOOR_HINGES | Charnière — nœud fixe + patte | Nœud Ø30 + patte 20 |  | 6 | 1.67 |  |
+| 032 | 08_DOOR_HINGES | Charnière — nœud mobile + penture | Nœud Ø30 + penture 6 |  | 6 | 3.36 |  |
+| 033 | 08_DOOR_HINGES | Axe de charnière Ø16 | Ø16 × 118 | 118 | 6 | 1.18 | PROVISOIRE (matière) |
+| 034 | 08_DOOR_HINGES | Butée d'ouverture 90° | Plat 40 découpé |  | 2 | 1.09 |  |
+| 035 | 07_FRONT_DOORS | Vantail D — Tôle de parement | Tôle ép. 2 |  | 1 | 23.46 |  |
+| 036 | 07_FRONT_DOORS | Vantail D — Montant côté charnières | Tube carré 40×40×3 | 1423 | 1 | 4.96 |  |
+| 037 | 07_FRONT_DOORS | Vantail D — Montant côté battement | Tube carré 40×40×3 | 1423 | 1 | 4.96 |  |
+| 038 | 07_FRONT_DOORS | Vantail D — Traverse basse | Tube carré 40×40×3 | 970 | 1 | 3.38 |  |
+| 039 | 07_FRONT_DOORS | Vantail D — Traverse haute | Tube carré 40×40×3 | 970 | 1 | 3.38 |  |
+| 040 | 07_FRONT_DOORS | Vantail D — Traverse intermédiaire | Tube carré 40×40×3 | 970 | 1 | 3.38 |  |
+| 041 | 09_LOCKING_SYSTEM | Tringle haute Ø14 | Rond Ø14 | 676 | 1 | 0.82 |  |
+| 042 | 09_LOCKING_SYSTEM | Tringle basse Ø14 | Rond Ø14 | 652 | 1 | 0.79 |  |
+| 043 | 09_LOCKING_SYSTEM | Guide de tringle | Bloc 30×24 percé Ø15.5 |  | 8 | 0.67 |  |
+| 044 | 09_LOCKING_SYSTEM | Gâche haute renforcée | Bloc 24 percé Ø16 |  | 2 | 0.18 |  |
+| 045 | 09_LOCKING_SYSTEM | Gâche basse renforcée | Bloc 24 percé Ø16 |  | 2 | 0.13 |  |
+| 046 | 09_LOCKING_SYSTEM | Tringle haute Ø14 | Rond Ø14 | 598 | 1 | 0.72 |  |
+| 047 | 09_LOCKING_SYSTEM | Tringle basse Ø14 | Rond Ø14 | 670 | 1 | 0.81 |  |
+| 048 | 09_LOCKING_SYSTEM | Boîtier de crémone-serrure | Crémone 3 points à cylindre |  | 1 | 2.20 | PROVISOIRE (référence) |
+| 049 | 09_LOCKING_SYSTEM | Poignée palette extérieure cadenassable | Poignée palette + rosace |  | 1 | 1.10 | PROVISOIRE (référence) |
+| 050 | 09_LOCKING_SYSTEM | Couvre-joint anti-pince / anti-arrachement | Plat 65×3 | 1383 | 1 | 2.12 |  |
+| 051 | 10_RACK_LEFT | Montant de rack | Tube carré 30×30×2 | 1494 | 4 | 10.51 | PROVISOIRE (profondeur, cotes de niveaux) |
+| 052 | 10_RACK_LEFT | Longeron de tablette | Tube carré 30×30×2 | 900 | 6 | 9.50 | PROVISOIRE (profondeur, cotes de niveaux) |
+| 053 | 10_RACK_LEFT | Traverse de tablette | Tube carré 30×30×2 | 390 | 6 | 4.11 | PROVISOIRE (profondeur, cotes de niveaux) |
+| 054 | 10_RACK_LEFT | Tablette tôle | Tôle ép. 2 |  | 3 | 20.17 | PROVISOIRE (profondeur, cotes de niveaux) |
+| 055 | 11_RACK_RIGHT | Montant de rack | Tube carré 30×30×2 | 1494 | 4 | 10.51 | PROVISOIRE (profondeur, cotes de niveaux) |
+| 056 | 11_RACK_RIGHT | Longeron de tablette | Tube carré 30×30×2 | 900 | 6 | 9.50 | PROVISOIRE (profondeur, cotes de niveaux) |
+| 057 | 11_RACK_RIGHT | Traverse de tablette | Tube carré 30×30×2 | 390 | 6 | 4.11 | PROVISOIRE (profondeur, cotes de niveaux) |
+| 058 | 11_RACK_RIGHT | Tablette tôle | Tôle ép. 2 |  | 3 | 20.17 | PROVISOIRE (profondeur, cotes de niveaux) |
+| 059 | 13_WHEEL_SUPPORTS | Platine porte-roue | Tôle ép. 10 |  | 4 | 31.36 |  |
+| 060 | 13_WHEEL_SUPPORTS | Cale de roulette | Plat ép. 15 |  | 4 | 8.23 | PROVISOIRE (dépend de la roulette retenue) |
+| 061 | 12_WHEELS | Roulette pivotante Ø200 à frein total + blocage directionnel | Ø200×50 H245 CMU 500 kg |  | 2 | 19.00 | PROVISOIRE (référence catalogue) |
+| 062 | 24_FASTENERS_HARDWARE | Vis H M12×50 cl. 8.8 + écrou frein + rondelle | M12×50 |  | 16 | 1.20 |  |
+| 063 | 12_WHEELS | Roulette pivotante Ø200 à blocage directionnel | Ø200×50 H245 CMU 500 kg |  | 2 | 19.00 | PROVISOIRE (référence catalogue) |
+| 064 | 14_HANDLING_BAR_LEFT | Barre de manutention | Tube rond Ø33.7×4.0 | 900 | 1 | 2.64 |  |
+| 065 | 14_HANDLING_BAR_LEFT | Support de barre | Plat 60×10 | 77 | 2 | 0.66 |  |
+| 066 | 15_HANDLING_BAR_RIGHT | Barre de manutention | Tube rond Ø33.7×4.0 | 900 | 1 | 2.64 |  |
+| 067 | 15_HANDLING_BAR_RIGHT | Support de barre | Plat 60×10 | 77 | 2 | 0.66 |  |
+| 068 | 16_FORK_POCKET_LEFT | Fourreau de fourches | Tube rect. 230×80×5 | 1100 | 1 | 25.90 | PROVISOIRE (section, entraxe) |
+| 069 | 16_FORK_POCKET_LEFT | Gousset fourreau / longeron | Gousset 100×100×5 |  | 4 | 0.78 |  |
+| 070 | 17_FORK_POCKET_RIGHT | Fourreau de fourches | Tube rect. 230×80×5 | 1100 | 1 | 25.90 | PROVISOIRE (section, entraxe) |
+| 071 | 17_FORK_POCKET_RIGHT | Gousset fourreau / longeron | Gousset 100×100×5 |  | 4 | 0.78 |  |
+| 072 | 18_LIFTING_POINT_FL | Platine d'oreille de levage | Plat 80×80×12 |  | 1 | 0.60 |  |
+| 073 | 18_LIFTING_POINT_FL | Oreille de levage | Tôle ép. 15 oxycoupée |  | 1 | 0.48 | PROVISOIRE (CMU à calculer) |
+| 074 | 19_LIFTING_POINT_FR | Platine d'oreille de levage | Plat 80×80×12 |  | 1 | 0.60 |  |
+| 075 | 19_LIFTING_POINT_FR | Oreille de levage | Tôle ép. 15 oxycoupée |  | 1 | 0.48 | PROVISOIRE (CMU à calculer) |
+| 076 | 20_LIFTING_POINT_RL | Platine d'oreille de levage | Plat 80×80×12 |  | 1 | 0.60 |  |
+| 077 | 20_LIFTING_POINT_RL | Oreille de levage | Tôle ép. 15 oxycoupée |  | 1 | 0.48 | PROVISOIRE (CMU à calculer) |
+| 078 | 21_LIFTING_POINT_RR | Platine d'oreille de levage | Plat 80×80×12 |  | 1 | 0.60 |  |
+| 079 | 21_LIFTING_POINT_RR | Oreille de levage | Tôle ép. 15 oxycoupée |  | 1 | 0.48 | PROVISOIRE (CMU à calculer) |
+| 080 | 22_HITCH_HOOK | Platine d'attelage | Plat 140×59×15 |  | 2 | 1.95 |  |
+| 081 | 22_HITCH_HOOK | Crochet d'attelage ouvert vers le haut (sans ressort) | Tôle ép. 25 oxycoupée |  | 2 | 2.77 | PROVISOIRE (nuance S355 ou pièce forgée à étudier, hauteur d'attelage) |
+| 082 | 25_LOGO | Marquage HURAVA by ARCHIACCESS — face arrière | Film adhésif découpé |  | 1 | 0.05 |  |
+| 083 | 25_LOGO | Marquage HURAVA — vantail gauche | Film adhésif découpé |  | 1 | 0.02 |  |

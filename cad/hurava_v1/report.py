@@ -81,8 +81,8 @@ def main(out):
     w("\n## 4. Encombrements\n")
     w("| Référence | Valeur |\n|---|---|")
     w("| Enveloppe principale de caisse (CHECK 01) | 2200 × 1100 × 1500 mm, de Z 330 à Z 1830 |")
-    w(f"| Hors tout avec barres de manutention (X) | {bb[1] - bb[0]:.0f} mm |")
-    w(f"| Hors tout avec charnières et crochet (Y) | {bb[3] - bb[2]:.0f} mm (hors anneau côté engin) |")
+    w(f"| Hors tout avec crochets d'attelage latéraux (X) | {bb[1] - bb[0]:.0f} mm (barres seules : 2384 mm) |")
+    w(f"| Hors tout avec charnières et butées (Y) | {bb[3] - bb[2]:.0f} mm |")
     w(f"| Hors tout avec oreilles de levage (Z) | {bb[5]:.0f} mm |")
     w(f"| Garde au sol (dessous fourreaux) | {P['GROUND_CLEARANCE']:.0f} mm |")
     w(f"| Passage central entre racks | 1216 mm |")
@@ -121,17 +121,17 @@ def main(out):
       f"**{'dépasse' if per_wheel_dyn > P['CASTER_CMU'] else 'sous'} la CMU {P['CASTER_CMU']:.0f} kg → prévoir roulettes CMU ≥ 750 kg** |")
     w(f"| Oreille de levage | élingue 4 brins, 3 brins porteurs, 60°, × 1,5 | {leg:.0f} kg / oreille | "
       "manille et oreille CMU ≥ 1 t minimum ; oreille ép. 15 à vérifier (arrachement, pression diamétrale, soudure) |")
-    w(f"| Attelage | roulement chantier 10 % + rampe 10 %, × 1,5 | {tow:.1f} kN | effort horizontal sur crochet et longeron AR |")
+    w(f"| Attelage | roulement chantier 10 % + rampe 10 %, × 1,5 | {tow:.1f} kN | effort horizontal (selon X) sur crochet latéral, traverse d'extrémité et longeron d'attelage |")
     w(f"| Facteur de sécurité | cible ≥ {P['SAFETY_FACTOR_MIN']} | non évalué | simulation SimScale à réaliser (§10) |")
 
     w("\n## 9. Points nécessitant validation\n")
     pts = [
         ("Hauteur", "Le cahier des charges donne 1500 mm d'enveloppe et un dessus de caisse à Z ≈ 1830. Le modèle place la caisse de Z 330 à Z 1830 (1500 mm de caisse posée sur le châssis). Hauteur hors tout 1910 mm avec les oreilles. La visualisation 5D précédente avait 1500 mm hors tout : **l'interprétation retenue ici est à confirmer.**"),
         ("Portes", "« 2 portes à deux vantaux » interprété comme **une porte double de 2 vantaux** (DOOR_COUNT = 2, 3 charnières par vantail). Vantail gauche semi-fixe (verrous haut/bas), vantail droit actif (crémone 3 points, poignée cadenassable, couvre-joint anti-arrachement)."),
-        ("Roues", f"Architecture PROVISOIRE : 4 roulettes pivotantes Ø200, 2 à frein total côté portes, 2 à blocage directionnel côté attelage. **CMU {P['CASTER_CMU']:.0f} kg insuffisante avec le facteur dynamique** ({per_wheel_dyn:.0f} kg/roue) → choisir une référence ≥ 750 kg de même hauteur (245 mm) ou reprendre la cale."),
+        ("Roues", f"Architecture PROVISOIRE : 4 roulettes pivotantes Ø200, toutes à blocage directionnel (marche en ligne selon X pour la traction), 2 avec frein total côté portes. **CMU {P['CASTER_CMU']:.0f} kg insuffisante avec le facteur dynamique** ({per_wheel_dyn:.0f} kg/roue) → choisir une référence ≥ 750 kg de même hauteur (245 mm) ou reprendre la cale."),
         ("Masse", f"Tare calculée {tare:.0f} kg, élevée par rapport à la charge utile. Leviers : tôles 1,5 mm, cadres de vantaux 30×30, racks, plancher 3 mm raidi."),
         ("Fourreaux", "Entraxe 900 et section intérieure 220 × 70 **à confirmer selon les engins ciblés** (pas une norme). Fourreaux traversants : les longerons AV/AR sont interrompus et soudés sur les flancs des fourreaux."),
-        ("Attelage", "Crochet oxycoupé ép. 25 en S235 : nuance S355 ou pièce forgée à étudier. Hauteur de gorge Z 300 à caler sur les engins tracteurs. Retenue de l'anneau par la seule géométrie (bec de 55 mm, pas de ressort) : ajouter ou non une goupille de sécurité est **une décision à prendre**. L'anneau articulé, la chape et le timon sont côté engin, hors nomenclature HURAVA."),
+        ("Attelage", "**Déplacé sur les faces latérales de 1100 mm (décision du 26/09)** au lieu de la face arrière du cahier des charges §11 : un crochet de chaque côté (paramètre HITCH_SIDES), à Y 550, sous la barre de manutention ; traction selon la longueur, reprise par un longeron d'attelage 60×40 jusqu'à la 1re traverse intermédiaire. Hors tout avec crochets 2470 mm. Un seul côté suffit-il ? Crochet oxycoupé ép. 25 en S235 : nuance S355 ou pièce forgée à étudier. Hauteur de gorge Z 300 à caler sur les engins tracteurs. Retenue de l'anneau par la seule géométrie (bec de 55 mm, pas de ressort) : ajouter ou non une goupille de sécurité est **une décision à prendre**. L'anneau articulé, la chape et le timon sont côté engin, hors nomenclature HURAVA."),
         ("Levage", "Oreilles orientées vers le centre de gravité, décalées d'environ 20 mm de l'axe des montants : à recentrer après calcul. CMU à calculer."),
         ("Galvanisation", "Trous d'évent et d'écoulement (Ø10–12 à chaque extrémité de profil creux) **non modélisés**. Tôles de 2 mm soudées sur cadre : risque de déformation dans le bain ; alternative : tôles pré-galvanisées rivetées après galvanisation de l'ossature. Compatibilité du bain (≈ 2,4 × 1,3 × 1,95 m) à vérifier avec le galvaniseur."),
         ("Butée à 90°", "Bloc soudé sur le montant avant, jeu 0,5 mm pour un tampon élastomère. Saillie de 60 mm devant la face avant : à arrondir, ou remplacer par un arrêt de porte."),
@@ -151,14 +151,14 @@ def main(out):
     w("- Appuis : faces inférieures des 4 platines porte-roues `13-PLA-*` (ou contact sol des roues `12-ROU-*`).")
     w("- Charge utile : pression sur la face supérieure de `03-PLA` et des tablettes `10/11-*-TB`.")
     w("- Levage : alésages Ø32 des oreilles `18…21-ORE`. Fourches : faces intérieures basses des fourreaux `16/17-FOU`.")
-    w("- Traction : flanc arrière du bec du crochet `22-CRO`.")
+    w("- Traction : flanc intérieur du bec des crochets latéraux `22-CRO-G` / `22-CRO-D` (effort selon X).")
     w("- Pièces à exclure : 23 (interface engin), 24 (boulonnerie), 25 (marquage).")
 
     w("\n## 11. Vues\n")
     for v, t in [("front", "Vue avant"), ("rear", "Vue arrière"), ("left", "Vue latérale gauche"),
                  ("right", "Vue latérale droite"), ("top", "Vue supérieure"), ("bottom", "Vue inférieure"),
                  ("iso", "Vue isométrique"), ("iso_open", "Isométrique, portes à 90°"),
-                 ("iso_rear", "Isométrique arrière"), ("exploded", "Vue éclatée"), ("hitch", "Détail attelage")]:
+                 ("iso_rear", "Isométrique arrière-droite"), ("exploded", "Vue éclatée"), ("hitch", "Détail attelage latéral droit")]:
         w(f"### {t}\n\n![{t}](../views/{v}.png)\n")
 
     w("\n## 12. Nomenclature initiale\n")
