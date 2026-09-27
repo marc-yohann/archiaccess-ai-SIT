@@ -274,6 +274,20 @@ expiration.
   jamais de promesse de fonctionnalité non implémentée (export
   Excel/CSV, logging de feedback structuré... ne sont pas construits,
   ne pas les faire promettre par le prompt système du copilote).
+- **Référentiel de méthode AMO/OPC** (`docs/referentiel/`) : méthode
+  **propre à Archiaccess**, rédigée avec nos mots, sourcée uniquement
+  sur des textes publics (CCP, CCAG 2021, codes, formulaires DAJ,
+  Cerfa). Jamais de renvoi du type « voir fiche X » d'un ouvrage du
+  commerce, jamais de passage recopié ou paraphrasé. Les ouvrages des
+  éditions du Moniteur fournis par l'utilisateur (Guide pratique de
+  l'AMO, 190 séquences, Conduire son chantier en 70 fiches, 60 outils
+  pour la conduite de chantier) sont des lectures de référence pour les
+  ingénieurs, **jamais** des sources à indexer dans le corpus ni à
+  commiter : au moins l'un d'eux (Conduire son chantier, éd. 2026)
+  interdit explicitement la fouille de textes et l'entraînement d'IA
+  (art. 4(3) directive (UE) 2019/790) — appliquer la même règle à tous
+  par précaution. Chaque étape reste `brouillon` tant qu'un senior ne
+  l'a pas relue.
 
 ## État actuel
 
@@ -301,6 +315,16 @@ expiration.
   `GET /api/admin/ingestion/boamp/national/status` (Bearer ingest-token).
 
 **En cours, pas encore dans le code réel** :
+- Réorientation stratégique (2026-09-27) : le SIT doit devenir un
+  « espace projet » AMO/OPC utilisable sur tout type d'opération
+  (bâtiment, logement social, ouvrage d'art, ferroviaire, métro...),
+  qui **prépare** le travail de l'ingénieur sans jamais décider à sa
+  place. Première brique : le référentiel de méthode
+  `docs/referentiel/` (documentation seulement, aucun code). Phase 7
+  (chantier / OPC) en brouillon v0, autres phases à rédiger. L'équipe
+  n'est pas encore constituée : l'utilisateur valide en attendant des
+  seniors. Aucun développement applicatif de l'espace projet n'est
+  autorisé tant que l'utilisateur ne l'a pas demandé explicitement.
 - Refonte visuelle du tableau de bord `/sit` (panneau d'accueil avant
   recherche). Une première version (bandeau d'activité défilant +
   colonnes "Sources fédérées"/"Corpus réglementaire") a été committée
