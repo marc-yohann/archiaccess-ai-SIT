@@ -1,30 +1,20 @@
 import type { Condition, Etape, Item, Mission, Phase, ProfilOperation, Variante } from "./types"
+import { phase1 } from "./phases/phase-1"
+import { phase2 } from "./phases/phase-2"
+import { phase3 } from "./phases/phase-3"
+import { phase4 } from "./phases/phase-4"
+import { phase5 } from "./phases/phase-5"
 import { phase6 } from "./phases/phase-6"
 import { phase7 } from "./phases/phase-7"
 import { phase8 } from "./phases/phase-8"
+import { phase9 } from "./phases/phase-9"
 
 export * from "./types"
 
 // Version du référentiel, reportée sur le PDF et dans l'espace projet.
-export const REFERENTIEL_VERSION = "0.2"
+export const REFERENTIEL_VERSION = "0.3"
 
-// Phases pas encore rédigées : présentes pour que la structure complète
-// soit visible (PDF, espace projet), sans étape.
-function aRediger(numero: number, titre: string): Phase {
-  return { numero, titre, intro: "", etapes: [] }
-}
-
-export const PHASES: Phase[] = [
-  aRediger(1, "Opportunité et faisabilité"),
-  aRediger(2, "Programme et stratégie contractuelle"),
-  aRediger(3, "Désignation des intervenants"),
-  aRediger(4, "Suivi des études de conception"),
-  aRediger(5, "Autorisations"),
-  phase6,
-  phase7,
-  phase8,
-  aRediger(9, "Exploitation et maintenance"),
-]
+export const PHASES: Phase[] = [phase1, phase2, phase3, phase4, phase5, phase6, phase7, phase8, phase9]
 
 export function toutesLesEtapes(): Etape[] {
   return PHASES.flatMap((p) => p.etapes)

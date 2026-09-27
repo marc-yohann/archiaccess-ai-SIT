@@ -338,8 +338,9 @@ expiration.
   qui **prépare** le travail de l'ingénieur sans jamais décider à sa
   place. Deux livrables demandés explicitement par l'utilisateur :
   (1) construire le SIT avec ce pivot, (2) la documentation et les
-  process Archiaccess en PDF. Référentiel (`lib/referentiel/`) : phases
-  6, 7, 8 rédigées en brouillon, phases 1-5 et 9 à rédiger ; PDF
+  process Archiaccess en PDF. Référentiel (`lib/referentiel/`, v0.3) :
+  les 9 phases rédigées (53 étapes), toutes au statut brouillon en
+  attente de relecture senior ; PDF
   `docs/referentiel/Referentiel-Archiaccess-AMO-OPC.pdf` régénéré à
   chaque évolution. Espace projet (`/sit/projets`, `/sit/referentiel`)
   construit et testé en local (build, API, navigateur) mais **pas encore

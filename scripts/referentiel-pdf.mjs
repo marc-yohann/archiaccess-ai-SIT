@@ -153,9 +153,11 @@ h2 .num { display: block; font-weight: 300; font-size: 8.5pt; letter-spacing: .2
 .axe { background: var(--carte); border: 1px solid var(--bord); border-radius: 3mm; padding: 3.5mm 4mm; }
 .axe h4 { font-weight: 500; font-size: 9.5pt; margin-bottom: 1mm; }
 table { border-collapse: collapse; width: 100%; }
-.sommaire td, .sommaire th { text-align: left; padding: 2.2mm 2mm; border-bottom: 1px solid var(--bord); }
-.sommaire th { font-weight: 500; width: 18mm; }
-.sommaire .etat { color: var(--gris); text-align: right; font-weight: 300; }
+.sommaire td, .sommaire th { text-align: left; padding: 1mm 2mm; }
+.sommaire th { font-weight: 500; width: 20mm; }
+.sommaire tr.ph th, .sommaire tr.ph td { font-weight: 900; padding-top: 3.2mm; border-bottom: 1px solid var(--encre); }
+.sommaire tr.et th { font-weight: 400; color: var(--gris); }
+.sommaire tr { break-inside: avoid; }
 .etape { margin-top: 7mm; padding-top: 4mm; border-top: 2px solid var(--encre); }
 .etape-tete { display: flex; align-items: baseline; gap: 3mm; margin-bottom: 2mm; break-after: avoid; }
 .etape-tete .code { font-weight: 900; font-size: 13pt; }
@@ -205,9 +207,16 @@ h4 { font-size: 7.5pt; text-transform: uppercase; letter-spacing: .14em; font-we
   </div>
   <p class="legende">La mission confiée à Archiaccess (${Object.values(MISSIONS).join(", ").toLowerCase()}) et le caractère de réhabilitation ou de site occupé complètent le profil de l'opération.</p>
 
-  <h2 style="margin-top:12mm"><span class="num">Vue d'ensemble</span>Les phases d'une opération</h2>
+</section>
+
+<section class="chapitre">
+  <h2><span class="num">Vue d'ensemble</span>Table des phases et des étapes</h2>
   <table class="sommaire">
-    ${PHASES.map((p) => `<tr><th>Phase ${p.numero}</th><td>${esc(p.titre)}</td><td class="etat">${p.etapes.length ? `${p.etapes.length} étapes` : "en cours de rédaction"}</td></tr>`).join("")}
+    ${PHASES.map(
+      (p) =>
+        `<tr class="ph"><th>Phase ${p.numero}</th><td>${esc(p.titre)}</td></tr>` +
+        p.etapes.map((e) => `<tr class="et"><th>${esc(e.code)}</th><td>${esc(e.titre)}</td></tr>`).join(""),
+    ).join("")}
   </table>
   <p class="legende">Chaque étape suit le même gabarit : objectif, qui fait quoi, entrées, livrables Archiaccess, ce que l'outil prépare, ce que l'ingénieur fait lui-même, points de vigilance, variantes selon le profil de l'opération, textes et formulaires publics, statut de validation.</p>
 </section>
