@@ -21,7 +21,7 @@ export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.
   return (
     <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
       <div className="flex min-w-0 items-center gap-3">
-        <Image src="/logo-sit.png" alt="Archiaccess SIT" width={36} height={36} className="shrink-0 rounded-lg" />
+        <Image src="/logo-sit.png" alt="Archiaccess SIT" width={40} height={40} className="shrink-0" />
         <div className="min-w-0">
           {sousTitre && <div className="text-xs text-muted-foreground">{sousTitre}</div>}
           <h1 className="truncate text-[17px] font-medium tracking-tight">{titre}</h1>
