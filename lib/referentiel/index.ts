@@ -1,10 +1,12 @@
 import type { Condition, Etape, Item, Mission, Phase, ProfilOperation, Variante } from "./types"
+import { phase6 } from "./phases/phase-6"
 import { phase7 } from "./phases/phase-7"
+import { phase8 } from "./phases/phase-8"
 
 export * from "./types"
 
 // Version du référentiel, reportée sur le PDF et dans l'espace projet.
-export const REFERENTIEL_VERSION = "0.1"
+export const REFERENTIEL_VERSION = "0.2"
 
 // Phases pas encore rédigées : présentes pour que la structure complète
 // soit visible (PDF, espace projet), sans étape.
@@ -18,9 +20,9 @@ export const PHASES: Phase[] = [
   aRediger(3, "Désignation des intervenants"),
   aRediger(4, "Suivi des études de conception"),
   aRediger(5, "Autorisations"),
-  aRediger(6, "Consultation des entreprises"),
+  phase6,
   phase7,
-  aRediger(8, "Réception et clôture"),
+  phase8,
   aRediger(9, "Exploitation et maintenance"),
 ]
 
