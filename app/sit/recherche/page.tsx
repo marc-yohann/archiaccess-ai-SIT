@@ -861,7 +861,7 @@ function Dashboard() {
 
   // Reprise depuis /ai : une conversation démarrée ici est titrée "SIT ·
   // <adresse/entreprise>" (voir sendAiMessage) ; /ai propose un lien
-  // "Reprendre dans le SIT" vers /sit?resume=<même texte> pour relancer
+  // "Reprendre dans le SIT" vers /sit/recherche?resume=<même texte> pour relancer
   // la même recherche sans que l'employé ait à la retaper.
   const searchParams = useSearchParams()
   useEffect(() => {
@@ -1375,7 +1375,9 @@ function Dashboard() {
               jamais porté depuis l'artéfact). */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Espace projet et méthode Archiaccess (réorientation du
-                2026-09-27, voir CLAUDE.md) — mêmes pilules que Accueil. */}
+                2026-09-27, voir CLAUDE.md) : la recherche de données devient
+                un outil parmi d'autres, le tableau de bord (/sit) est
+                l'accueil. */}
             <Link
               href="/sit/projets"
               className="liquid-glass-pill flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium"
@@ -1391,11 +1393,11 @@ function Dashboard() {
               Méthode
             </Link>
             <Link
-              href="/"
+              href="/sit"
               className="liquid-glass-pill flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium"
             >
               <Home size={13} />
-              Accueil
+              Tableau de bord
             </Link>
           </div>
         </div>

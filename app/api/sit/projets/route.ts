@@ -23,7 +23,7 @@ export async function GET() {
       createdBy: { select: { id: true, name: true } },
       _count: { select: { sites: true, acteurs: true, avisMarches: true, lots: true } },
       // Espace projet : statuts d'étape pour l'avancement affiché en liste.
-      etapes: { select: { etapeCode: true, statut: true } },
+      etapes: { select: { etapeCode: true, statut: true, echeance: true, note: true } },
     },
   })
 

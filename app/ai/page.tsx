@@ -247,7 +247,7 @@ function Chat() {
                 <span className="ml-2 flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-60">
                   {sitSubject && (
                     <Link
-                      href={`/sit?resume=${encodeURIComponent(sitSubject)}`}
+                      href={`/sit/recherche?resume=${encodeURIComponent(sitSubject)}`}
                       onClick={(e) => e.stopPropagation()}
                       className="hover:!opacity-100"
                       aria-label="Reprendre dans le SIT"

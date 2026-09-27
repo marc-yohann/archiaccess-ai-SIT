@@ -961,6 +961,9 @@ model ProjetEtape {
   etapeCode   String
   statut      ProjetEtapeStatut @default(A_FAIRE)
   note        String?
+  // Échéance fixée par l'ingénieur pour l'étape (date seule, saisie
+  // libre) — alimente « À traiter » et les retards du tableau de bord.
+  echeance    DateTime?
   updatedById String?
   updatedBy   User?             @relation(fields: [updatedById], references: [id], onDelete: SetNull)
   createdAt   DateTime          @default(now())

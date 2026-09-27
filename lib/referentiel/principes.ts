@@ -3,7 +3,9 @@
 export const PRESENTATION =
   "Ce référentiel décrit la méthode de travail du cabinet Archiaccess pour conduire une mission d'assistance à maîtrise d'ouvrage (AMO), de conduite d'opération ou d'ordonnancement, pilotage et coordination (OPC), quel que soit l'ouvrage : bâtiment, logement, établissement recevant du public, ouvrage d'art, infrastructure linéaire, ferroviaire et métro, réseaux, industriel. Il sert de documentation de méthode et de support d'intégration des collaborateurs ; chacune de ses étapes structure aussi l'espace projet de l'outil Archiaccess SIT."
 
-export const PRINCIPES: { titre: string; texte: string }[] = [
+// `interne` : principe de maintenance de la méthode, montré dans le PDF et
+// aux administrateurs du SIT, pas aux collaborateurs.
+export const PRINCIPES: { titre: string; texte: string; interne?: boolean }[] = [
   {
     titre: "L'outil prépare, l'ingénieur analyse, le maître d'ouvrage décide",
     texte:
@@ -16,6 +18,7 @@ export const PRINCIPES: { titre: string; texte: string }[] = [
   },
   {
     titre: "Une méthode propre à Archiaccess",
+    interne: true,
     texte:
       "Le référentiel est rédigé par le cabinet, avec ses mots et son découpage. Il ne reproduit aucun ouvrage du commerce ni aucune norme protégée ; ces ouvrages restent des lectures de référence pour les ingénieurs.",
   },
@@ -26,6 +29,7 @@ export const PRINCIPES: { titre: string; texte: string }[] = [
   },
   {
     titre: "Rien n'est validé sans un senior",
+    interne: true,
     texte:
       "Chaque étape porte un statut : brouillon, relu par un senior, validé. Les variantes propres aux ouvrages d'art, au ferroviaire et aux infrastructures sont relues par un ingénieur ayant pratiqué ces ouvrages.",
   },

@@ -50,10 +50,17 @@ trace de ça dans le code actuel, ne pas la réintroduire.
 
 ### Code
 
-- `app/sit/page.tsx` — tableau de bord fédéré : recherche universelle
-  (adresse, entreprise, SIREN/SIRET détecté par motif), tuiles de
-  résultats par connecteur, panneau Archiaccess AI contextuel à droite.
-  État en cours de refonte visuelle — voir "État actuel".
+- `app/sit/page.tsx` — **tableau de bord** (accueil du SIT depuis la
+  réorientation du 2026-09-27, maquettes validées par l'utilisateur) :
+  cartes des projets (barre des 9 phases, prochaine étape), « À traiter »
+  (échéances réelles des étapes), points de vigilance calculés (retards,
+  profil incomplet, projet inactif), veille AMO/OPC
+  (`/api/sit/veille-amo-opc`, lue dans `AvisMarche`), panneau Archiaccess
+  AI. Rien n'y est inventé : sans donnée, un état vide explicite.
+- `app/sit/recherche/page.tsx` — l'ancienne page `/sit` (recherche
+  universelle : adresse, entreprise, SIREN/SIRET, tuiles par connecteur,
+  panneau IA contextuel), déplacée telle quelle ; `?resume=` y est
+  conservé (lien depuis `/ai` et la recherche du tableau de bord).
 - `app/ai/page.tsx` — chat avec le copilote : sidebar de conversations
   (`GET/DELETE /api/mistral/conversations`), écran d'accueil avec
   suggestions.
@@ -61,9 +68,16 @@ trace de ça dans le code actuel, ne pas la réintroduire.
   projet** AMO/OPC : liste et création des projets avec leur profil
   d'opération, puis la méthode Archiaccess appliquée au projet (phases,
   étapes, variantes filtrées selon le profil, avancement et notes par
-  étape). `app/sit/referentiel/page.tsx` — consultation de la méthode.
-  En-tête commun `components/sit-nav.tsx` ; affichage d'une étape
-  `components/referentiel/etape-vue.tsx`.
+  étape, échéance), avec Archiaccess AI à droite
+  (`components/panneau-ia.tsx`, contexte projet + étape ouverte construit
+  par `lib/referentiel/contexte-ia.ts`) ; création guidée
+  `app/sit/projets/nouveau`. `app/sit/referentiel/page.tsx` —
+  consultation de la méthode. En-tête commun `components/sit-nav.tsx`.
+  **Ce que voient les collaborateurs** : jamais la liste « ce que l'outil
+  prépare » (fonctions pas encore construites, donc jamais promises), ni
+  la maintenance de la méthode (version, statut brouillon, « à préciser
+  avec un senior », principes internes) — réservées aux administrateurs
+  (`useUser().isAdmin`) et au PDF.
 - `lib/referentiel/` — **source unique** du référentiel de méthode
   (données TS pures, importables côté client) : alimente l'espace projet
   et le PDF (`npm run referentiel:pdf`, voir `docs/referentiel/README.md`).
@@ -348,10 +362,14 @@ expiration.
   avec l'accord explicite de l'utilisateur, le garde-fou de permissions
   ayant d'abord refusé l'appel). Migration suivante
   `20260927200000_projet_etape_echeance` (échéance par étape) écrite,
-  **pas encore appliquée** : à lancer après le prochain déploiement. L'équipe n'est pas
+  **pas encore appliquée** : à lancer juste après le prochain déploiement
+  (le tableau de bord et l'espace projet la lisent ; code prêt, testé en
+  local, non déployé). L'équipe n'est pas
   encore constituée : l'utilisateur valide en attendant des seniors.
-- Refonte visuelle du tableau de bord `/sit` (panneau d'accueil avant
-  recherche). Une première version (bandeau d'activité défilant +
+- (Remplacé par le tableau de bord de l'espace projet, voir plus haut ;
+  ce qui suit est l'historique de l'ancien chantier d'accueil de la
+  recherche, désormais `/sit/recherche`.) Refonte visuelle de la page de
+  recherche (panneau d'accueil avant recherche). Une première version (bandeau d'activité défilant +
   colonnes "Sources fédérées"/"Corpus réglementaire") a été committée
   sur la branche de travail mais **pas déployée**, et est déjà
   dépassée par une exploration plus poussée faite via des artefacts

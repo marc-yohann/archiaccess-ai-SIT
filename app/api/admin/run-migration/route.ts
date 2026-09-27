@@ -933,6 +933,12 @@ WHERE b.id = sdu."batimentId" AND b."sourcePartition" IS NULL`,
       `ALTER TABLE "ProjetEtape" ADD CONSTRAINT "ProjetEtape_projetId_fkey" FOREIGN KEY ("projetId") REFERENCES "Projet"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
       `ALTER TABLE "ProjetEtape" ADD CONSTRAINT "ProjetEtape_updatedById_fkey" FOREIGN KEY ("updatedById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE`,
     ],
+  },  {
+    // prisma/migrations/20260927200000_projet_etape_echeance/migration.sql :
+    // une colonne nullable "echeance" sur "ProjetEtape" (tableau de bord).
+    name: "20260927200000_projet_etape_echeance",
+    checksum: "582c7a4ad7b9a54c489227b1a72bdd84f649ea9cbefb3051cd8001a3e2e5e786",
+    statements: [`ALTER TABLE "ProjetEtape" ADD COLUMN "echeance" TIMESTAMP(3)`],
   },
 ]
 
