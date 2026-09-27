@@ -88,6 +88,11 @@ function Chat() {
   useEffect(() => {
     const prefill = searchParams.get("prefill")
     if (prefill) setInput(prefill)
+    // ?conversation=<id> : « Plein écran » du panneau Archiaccess AI de
+    // l'espace projet ou du tableau de bord — reprend la même conversation
+    // (scopée à l'utilisateur côté API, un id d'autrui renvoie 404).
+    const conversation = searchParams.get("conversation")
+    if (conversation) void openConversation(conversation)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

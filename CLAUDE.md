@@ -70,7 +70,10 @@ trace de ça dans le code actuel, ne pas la réintroduire.
   étapes, variantes filtrées selon le profil, avancement et notes par
   étape, échéance), avec Archiaccess AI à droite
   (`components/panneau-ia.tsx`, contexte projet + étape ouverte construit
-  par `lib/referentiel/contexte-ia.ts`) ; création guidée
+  par `lib/referentiel/contexte-ia.ts`). Panneau **modulable** (demande
+  utilisateur) : largeur réglable en glissant son bord gauche, repliable
+  en bande, préférences en localStorage protégé, « Nouvelle
+  conversation », « Plein écran » vers `/ai?conversation=<id>` ; création guidée
   `app/sit/projets/nouveau`. `app/sit/referentiel/page.tsx` —
   consultation de la méthode. En-tête commun `components/sit-nav.tsx`.
   **Ce que voient les collaborateurs** : jamais la liste « ce que l'outil

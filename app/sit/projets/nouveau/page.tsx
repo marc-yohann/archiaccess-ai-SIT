@@ -5,39 +5,19 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { AuthGate } from "@/components/auth-gate"
 import { SitNav } from "@/components/sit-nav"
-import { MISSIONS, MONTAGES, STATUTS_MOA, TYPOLOGIES } from "@/lib/referentiel/libelles"
+import { LIBELLES_COURTS, MISSIONS, MONTAGES, STATUTS_MOA, TYPOLOGIES } from "@/lib/referentiel/libelles"
 
 // Création d'un projet : le cadrage de l'opération en quatre questions à
 // boutons (maître d'ouvrage, ouvrage, montage, mission). Chaque réponse
 // peut rester vide et se compléter plus tard depuis l'espace projet.
 
-// Libellés courts pour les boutons ; les libellés complets restent ceux de
-// lib/referentiel/libelles.ts (espace projet, PDF).
+// Libellés courts pour les boutons (lib/referentiel/libelles.ts) ; pour le
+// montage, le libellé complet reste plus explicite au moment du cadrage.
 const COURTS: Record<string, string> = {
-  ETAT_COLLECTIVITE: "État, collectivité",
-  EPIC: "Établissement public industriel et commercial",
-  BAILLEUR_SOCIAL: "Bailleur social",
-  PRIVE_REGLEMENTE: "Organisme privé soumis à la commande publique",
-  PRIVE: "Maître d'ouvrage privé",
-  BATIMENT: "Bâtiment",
-  BATIMENT_ERP: "Établissement recevant du public",
-  LOGEMENT: "Logement",
-  OUVRAGE_ART: "Ouvrage d'art",
-  INFRA_LINEAIRE: "Route, voirie, aménagement",
-  FERROVIAIRE: "Ferroviaire, métro",
-  RESEAUX: "Réseaux",
-  INDUSTRIEL: "Industriel",
+  ...LIBELLES_COURTS,
   MOE_LOTS_SEPARES: "Maîtrise d'œuvre + lots séparés",
   MOE_ENTREPRISE_GENERALE: "Maîtrise d'œuvre + entreprise générale",
-  CONCEPTION_REALISATION: "Conception-réalisation",
-  MARCHE_GLOBAL: "Marché global",
-  MARCHE_PARTENARIAT: "Marché de partenariat",
-  CONCESSION: "Concession",
-  MARCHE_PRIVE: "Marché privé",
   AMO: "Assistance à maîtrise d'ouvrage",
-  CONDUITE_OPERATION: "Conduite d'opération",
-  OPC: "OPC",
-  AMO_OPC: "AMO et OPC",
 }
 
 type Cle = "statutMoa" | "typologie" | "montage" | "mission"

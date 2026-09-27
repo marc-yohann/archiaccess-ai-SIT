@@ -12,7 +12,7 @@ import { ProfilChamps, profilVersRequete, type ProfilSaisi } from "@/components/
 import { PHASES, trouverEtape } from "@/lib/referentiel"
 import { avancementPhases, estTraitee, indexEtats, phaseCourante, prochaineEtape, type EtatEtapeProjet } from "@/lib/referentiel/avancement"
 import { contexteProjet } from "@/lib/referentiel/contexte-ia"
-import { MISSIONS, MONTAGES, STATUTS_MOA, TYPOLOGIES } from "@/lib/referentiel/libelles"
+import { LIBELLES_COURTS } from "@/lib/referentiel/libelles"
 import { profilComplet } from "@/lib/referentiel/profil"
 
 // Espace projet : la méthode Archiaccess appliquée à une opération, avec
@@ -42,7 +42,7 @@ interface ProjetDetail {
   documentSitLinks: unknown[]
 }
 
-const lib = (table: Record<string, string>, v: string | null) => (v && v in table ? table[v] : null)
+const court = (v: string | null) => (v && v in LIBELLES_COURTS ? LIBELLES_COURTS[v as keyof typeof LIBELLES_COURTS] : null)
 
 const PUCE: Record<string, string> = {
   FAIT: "bg-foreground",
@@ -123,7 +123,7 @@ function EspaceProjet() {
     })
   }
 
-  const pastilles = [lib(STATUTS_MOA, projet.statutMoa), lib(TYPOLOGIES, projet.typologie), lib(MONTAGES, projet.montage), lib(MISSIONS, projet.mission)].filter(Boolean) as string[]
+  const pastilles = [court(projet.statutMoa), court(projet.typologie), court(projet.montage), court(projet.mission)].filter(Boolean) as string[]
   const rattaches = [
     [projet.sites.length, "site"],
     [projet.acteurs.length, "acteur"],
@@ -134,14 +134,9 @@ function EspaceProjet() {
 
   return (
     <Cadre titre={projet.nom} sousTitre={<Link href="/sit/projets" className="hover:underline">Projets</Link>}>
-      <div className="flex flex-wrap items-center gap-2">
-        {pastilles.map((t) => (
-          <span key={t} className="liquid-glass-pill rounded-full px-3 py-1 text-xs">
-            {t}
-          </span>
-        ))}
-        {projet.rehabilitation && <span className="liquid-glass-pill rounded-full px-3 py-1 text-xs">Réhabilitation ou site occupé</span>}
-        {!profil && <span className="text-xs text-muted-foreground">Profil de l'opération incomplet : les particularités de l'opération ne peuvent pas être affichées.</span>}
+      <div className="-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
+        <span>{pastilles.length ? pastilles.join(" · ") : "Profil de l'opération à compléter"}</span>
+        {projet.rehabilitation && <span>· Réhabilitation ou site occupé</span>}
         <button
           type="button"
           onClick={() =>
@@ -151,12 +146,12 @@ function EspaceProjet() {
                 : { statutMoa: projet.statutMoa ?? "", montage: projet.montage ?? "", typologie: projet.typologie ?? "", mission: projet.mission ?? "", rehabilitation: projet.rehabilitation },
             )
           }
-          className="text-xs text-muted-foreground hover:underline"
+          className="font-medium text-foreground underline-offset-2 hover:underline"
         >
           {edition ? "Fermer" : "Modifier le profil"}
         </button>
         {rattaches.length > 0 && (
-          <span className="ml-auto text-xs text-muted-foreground">
+          <span className="lg:ml-auto">
             {rattaches.map(([n, l]) => `${n} ${l}${n > 1 && !l.endsWith("marché") ? "s" : ""}`).join(" · ")}
           </span>
         )}
@@ -172,7 +167,7 @@ function EspaceProjet() {
       )}
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
-        <nav className="liquid-glass-panel custom-scrollbar flex shrink-0 flex-col gap-1 overflow-y-auto rounded-2xl p-3 lg:w-80" aria-label="Phases et étapes">
+        <nav className="liquid-glass-panel custom-scrollbar flex shrink-0 flex-col gap-0.5 overflow-y-auto rounded-2xl p-3 lg:w-[19rem]" aria-label="Phases et étapes">
           {phases.map(({ phase, total, traitees, complete }) => {
             const ouverte = phasesOuvertes.has(phase.numero)
             return (
@@ -180,20 +175,22 @@ function EspaceProjet() {
                 <button
                   type="button"
                   onClick={() => basculerPhase(phase.numero)}
-                  className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[13px] font-medium hover:bg-white/30"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-[13px] font-medium hover:bg-white/35"
                   aria-expanded={ouverte}
                 >
-                  {ouverte ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                  <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${complete ? "bg-foreground" : traitees > 0 ? "border-2 border-foreground" : "border-[1.5px] border-foreground/30"}`} />
-                  <span className="flex-1">
-                    {phase.numero} · {phase.titre}
+                  <span
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${complete ? "chrome-black text-white" : traitees > 0 ? "border-[1.5px] border-foreground" : "border border-foreground/25 text-muted-foreground"}`}
+                  >
+                    {phase.numero}
                   </span>
-                  <span className="text-[11px] font-normal text-muted-foreground">
+                  <span className="flex-1 leading-snug">{phase.titre}</span>
+                  <span className="text-[11px] font-normal tabular-nums text-muted-foreground">
                     {traitees}/{total}
                   </span>
+                  {ouverte ? <ChevronDown size={14} className="text-muted-foreground" /> : <ChevronRight size={14} className="text-muted-foreground" />}
                 </button>
                 {ouverte && (
-                  <div className="mb-1 ml-3 flex flex-col gap-0.5 border-l border-foreground/10 pl-2">
+                  <div className="mb-2 ml-[1.15rem] flex flex-col gap-0.5 border-l border-foreground/10 pl-2.5">
                     {phase.etapes.map((e) => {
                       const etat = etats.get(e.code)
                       const actif = e.code === codeOuvert
@@ -202,11 +199,11 @@ function EspaceProjet() {
                           key={e.code}
                           type="button"
                           onClick={() => setCodeOuvert(e.code)}
-                          className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] ${actif ? "chrome-black text-white" : "hover:bg-white/30"}`}
+                          className={`flex items-start gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] leading-snug ${actif ? "chrome-black text-white" : "hover:bg-white/35"}`}
                           aria-current={actif ? "step" : undefined}
                         >
-                          <span className={`h-2 w-2 shrink-0 rounded-full ${actif ? "border border-white" : PUCE[etat?.statut ?? "A_FAIRE"]}`} />
-                          <span className="w-8 shrink-0 font-semibold">{e.code}</span>
+                          <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${actif ? "border border-white" : PUCE[etat?.statut ?? "A_FAIRE"]}`} />
+                          <span className={`w-8 shrink-0 tabular-nums ${actif ? "text-white/80" : "text-muted-foreground"}`}>{e.code}</span>
                           <span className={`flex-1 ${estTraitee(etat?.statut) && !actif ? "text-muted-foreground" : ""}`}>{e.titre}</span>
                         </button>
                       )
@@ -234,20 +231,18 @@ function EspaceProjet() {
           )}
         </div>
 
-        <div className="h-[50vh] shrink-0 lg:h-auto lg:w-[340px]">
-          <PanneauIA
-            key={projet.id}
-            titreConversation={`SIT · ${projet.nom}`}
-            contexte={contexteProjet(projet, etapeOuverte)}
-            intro={`Je connais ce projet et l'étape que vous consultez${etapeOuverte ? ` (${etapeOuverte.code} ${etapeOuverte.titre})` : ""}. Je peux préparer une trame, un courrier ou une analyse ; vous relisez et décidez.`}
-            suggestions={[
-              "Que dois-je vérifier en priorité sur cette étape ?",
-              "Rédige un projet de courrier au maître d'ouvrage",
-              "Quels textes s'appliquent ici ?",
-            ]}
-            demande={demandeIA}
-          />
-        </div>
+        <PanneauIA
+          key={projet.id}
+          titreConversation={`SIT · ${projet.nom}`}
+          contexte={contexteProjet(projet, etapeOuverte)}
+          intro={`Je connais ce projet et l'étape que vous consultez${etapeOuverte ? ` (${etapeOuverte.code} ${etapeOuverte.titre})` : ""}. Je peux préparer une trame, un courrier ou une analyse ; vous relisez et décidez.`}
+          suggestions={[
+            "Que dois-je vérifier en priorité sur cette étape ?",
+            "Rédige un projet de courrier au maître d'ouvrage",
+            "Quels textes s'appliquent ici ?",
+          ]}
+          demande={demandeIA}
+        />
       </div>
     </Cadre>
   )

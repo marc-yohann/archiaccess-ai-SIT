@@ -1,22 +1,49 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Check, Copy, Send, Sparkles } from "lucide-react"
+import Link from "next/link"
+import { Check, Copy, Maximize2, PanelRightClose, Plus, Send, Sparkles } from "lucide-react"
 import { formatReply } from "@/lib/format-reply"
 
 // Panneau Archiaccess AI intégré (tableau de bord, espace projet). Même
 // route que /ai et que le panneau de la recherche (/api/mistral/chat),
 // avec un contexte explicite construit par la page appelante : le
 // copilote voit le projet et l'étape en cours sans que l'ingénieur les
-// retape. La conversation est persistée comme toutes les autres (visible
-// dans /ai sous le titre fourni).
+// retape. La conversation est persistée comme toutes les autres.
+//
+// Modulable (demande utilisateur, même principe que le panneau de
+// /sit/recherche) : largeur réglable en glissant le bord gauche, panneau
+// repliable en bande étroite, « Nouvelle conversation », « Plein écran »
+// qui reprend la même conversation dans /ai. Largeur et repli sont
+// mémorisés par navigateur (simple confort, localStorage protégé).
 //
 // `demande` permet à la page d'envoyer une question depuis un bouton
-// (« Préparer avec Archiaccess AI ») : chaque nouvel `id` déclenche un envoi.
+// (« Préparer avec Archiaccess AI ») : chaque nouvel `id` déclenche un
+// envoi, et rouvre le panneau s'il était replié.
 
 interface MessageIA {
   role: "user" | "assistant"
   content: string
+}
+
+const LARGEUR_MIN = 300
+const LARGEUR_MAX = 720
+const CLE_LARGEUR = "sit.panneau-ia.largeur"
+const CLE_REPLIE = "sit.panneau-ia.replie"
+
+function lire(cle: string): string | null {
+  try {
+    return window.localStorage.getItem(cle)
+  } catch {
+    return null
+  }
+}
+function ecrire(cle: string, valeur: string) {
+  try {
+    window.localStorage.setItem(cle, valeur)
+  } catch {
+    // Stockage indisponible (navigation privée...) : préférence non retenue.
+  }
 }
 
 export function PanneauIA({
@@ -38,6 +65,8 @@ export function PanneauIA({
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
   const [copie, setCopie] = useState<number | null>(null)
+  const [largeur, setLargeur] = useState(360)
+  const [replie, setReplie] = useState(false)
   const finRef = useRef<HTMLDivElement>(null)
   // Le contexte change à chaque sélection d'étape : toujours envoyer le
   // plus récent, même depuis un envoi déclenché par effet.
@@ -45,6 +74,37 @@ export function PanneauIA({
   contexteRef.current = contexte
   const conversationRef = useRef<string | null>(null)
   conversationRef.current = conversationId
+
+  useEffect(() => {
+    const l = Number(lire(CLE_LARGEUR))
+    if (l >= LARGEUR_MIN && l <= LARGEUR_MAX) setLargeur(l)
+    setReplie(lire(CLE_REPLIE) === "1")
+  }, [])
+
+  function replier(v: boolean) {
+    setReplie(v)
+    ecrire(CLE_REPLIE, v ? "1" : "0")
+  }
+
+  function debutRedimension(e: React.PointerEvent) {
+    e.preventDefault()
+    const depart = e.clientX
+    const largeurDepart = largeur
+    let derniere = largeurDepart
+    function bouger(ev: PointerEvent) {
+      derniere = Math.min(LARGEUR_MAX, Math.max(LARGEUR_MIN, largeurDepart + (depart - ev.clientX)))
+      setLargeur(derniere)
+    }
+    function fin() {
+      window.removeEventListener("pointermove", bouger)
+      window.removeEventListener("pointerup", fin)
+      document.body.style.cursor = ""
+      ecrire(CLE_LARGEUR, String(derniere))
+    }
+    document.body.style.cursor = "col-resize"
+    window.addEventListener("pointermove", bouger)
+    window.addEventListener("pointerup", fin)
+  }
 
   async function envoyer(texte: string) {
     const message = texte.trim()
@@ -75,10 +135,18 @@ export function PanneauIA({
     }
   }
 
+  function nouvelleConversation() {
+    setMessages([])
+    setConversationId(null)
+    setErreur(null)
+    setSaisie("")
+  }
+
   const derniereDemande = useRef<number | null>(null)
   useEffect(() => {
     if (demande && demande.id !== derniereDemande.current) {
       derniereDemande.current = demande.id
+      replier(false)
       void envoyer(demande.texte)
     }
     // envoyer lit ses entrées par ref : seule une nouvelle demande compte.
@@ -99,25 +167,86 @@ export function PanneauIA({
     }
   }
 
+  if (replie) {
+    return (
+      <aside className="liquid-glass-panel flex h-14 w-full shrink-0 rounded-2xl lg:h-full lg:w-14">
+        <button
+          type="button"
+          onClick={() => replier(false)}
+          className="flex h-full w-full items-center justify-center gap-2 text-muted-foreground hover:text-foreground lg:flex-col lg:justify-start lg:pt-5"
+          title="Afficher Archiaccess AI"
+          aria-label="Afficher Archiaccess AI"
+        >
+          <Sparkles size={16} />
+          <span className="text-sm font-medium lg:[writing-mode:vertical-rl]">Archiaccess AI</span>
+          {messages.length > 0 && <span className="rounded-full bg-foreground/80 px-1.5 text-[10px] text-white">{messages.length}</span>}
+        </button>
+      </aside>
+    )
+  }
+
   return (
-    <aside className="liquid-glass-panel flex h-full min-h-0 flex-col gap-3 rounded-2xl p-4">
+    <aside
+      className="liquid-glass-panel relative flex h-[60vh] w-full shrink-0 flex-col gap-3 rounded-2xl p-4 lg:h-full lg:w-[var(--largeur-ia)]"
+      style={{ "--largeur-ia": `${largeur}px` } as React.CSSProperties}
+    >
+      <div
+        onPointerDown={debutRedimension}
+        className="group absolute -left-2 top-0 z-10 hidden h-full w-4 cursor-col-resize lg:block"
+        title="Glisser pour élargir ou réduire"
+        aria-hidden="true"
+      >
+        <span className="absolute left-1/2 top-1/2 h-10 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/15 transition-colors group-hover:bg-foreground/40" />
+      </div>
+
       <div className="flex items-center gap-2">
         <Sparkles size={15} />
         <h2 className="text-sm font-semibold">Archiaccess AI</h2>
+        <div className="ml-auto flex items-center gap-1">
+          <button
+            type="button"
+            onClick={nouvelleConversation}
+            disabled={messages.length === 0}
+            className="liquid-glass-btn rounded-lg p-1.5 text-muted-foreground disabled:opacity-40"
+            title="Nouvelle conversation"
+            aria-label="Nouvelle conversation"
+          >
+            <Plus size={14} />
+          </button>
+          {conversationId && (
+            <Link
+              href={`/ai?conversation=${conversationId}`}
+              className="liquid-glass-btn rounded-lg p-1.5 text-muted-foreground"
+              title="Continuer en plein écran"
+              aria-label="Continuer en plein écran"
+            >
+              <Maximize2 size={14} />
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={() => replier(true)}
+            className="liquid-glass-btn rounded-lg p-1.5 text-muted-foreground"
+            title="Replier le panneau"
+            aria-label="Replier le panneau"
+          >
+            <PanelRightClose size={14} />
+          </button>
+        </div>
       </div>
 
-      <div className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+      <div className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-0.5">
         {messages.length === 0 && (
           <>
-            <p className="liquid-glass-inset rounded-xl p-3 text-xs leading-relaxed">{intro}</p>
-            <div className="flex flex-col gap-1.5">
+            <p className="text-[13px] leading-relaxed text-muted-foreground">{intro}</p>
+            <div className="mt-1 flex flex-col gap-1.5">
               {suggestions.map((s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => void envoyer(s)}
                   disabled={enCours}
-                  className="liquid-glass-pill rounded-xl px-3 py-2 text-left text-xs disabled:opacity-50"
+                  className="liquid-glass-soft rounded-xl px-3 py-2 text-left text-[13px] transition-shadow hover:shadow-md disabled:opacity-50"
                 >
                   {s}
                 </button>
@@ -128,12 +257,12 @@ export function PanneauIA({
         {messages.map((m, i) =>
           m.role === "user" ? (
             <div key={i} className="text-right">
-              <span className="chrome-black inline-block max-w-[90%] rounded-2xl px-3 py-2 text-left text-xs text-white">{m.content}</span>
+              <span className="chrome-black inline-block max-w-[88%] rounded-2xl rounded-br-md px-3 py-2 text-left text-[13px] text-white">{m.content}</span>
             </div>
           ) : (
             <div key={i} className="text-left">
-              <span className="liquid-glass-soft relative inline-block max-w-[95%] rounded-2xl px-3 py-2 text-xs">
-                <span className="ai-msg-assistant" dangerouslySetInnerHTML={{ __html: formatReply(m.content) }} />
+              <div className="liquid-glass-soft inline-block max-w-[96%] rounded-2xl rounded-bl-md px-3 py-2 text-[13px]">
+                <div className="ai-msg-assistant" dangerouslySetInnerHTML={{ __html: formatReply(m.content) }} />
                 <button
                   type="button"
                   onClick={() => void copier(i, m.content)}
@@ -143,7 +272,7 @@ export function PanneauIA({
                 >
                   {copie === i ? <Check size={11} /> : <Copy size={11} />}
                 </button>
-              </span>
+              </div>
             </div>
           ),
         )}
@@ -157,14 +286,14 @@ export function PanneauIA({
           e.preventDefault()
           void envoyer(saisie)
         }}
-        className="liquid-glass-soft flex items-center gap-2 rounded-xl px-3 py-2"
+        className="liquid-glass-soft flex items-center gap-2 rounded-xl py-1.5 pl-3 pr-1.5"
       >
         <input
           value={saisie}
           onChange={(e) => setSaisie(e.target.value)}
           placeholder="Poser une question…"
           aria-label="Question à Archiaccess AI"
-          className="flex-1 bg-transparent text-xs outline-none"
+          className="flex-1 bg-transparent text-[13px] outline-none"
         />
         <button
           type="submit"

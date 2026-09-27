@@ -20,13 +20,6 @@ export interface MajEtape {
   echeance?: string | null
 }
 
-export const PASTILLE: Record<EtapeStatut, string> = {
-  A_FAIRE: "liquid-glass-pill",
-  EN_COURS: "border border-foreground",
-  FAIT: "chrome-black text-white",
-  SANS_OBJET: "border border-dashed border-foreground/40 text-muted-foreground",
-}
-
 function Rubrique({ titre, children }: { titre: string; children: React.ReactNode }) {
   return (
     <div>
@@ -83,24 +76,24 @@ export function EtapeDetail({
   }
 
   return (
-    <article className="liquid-glass-panel custom-scrollbar flex h-full min-h-0 flex-col gap-4 overflow-y-auto rounded-2xl p-5">
+    <article className="liquid-glass-panel custom-scrollbar flex h-full min-h-0 flex-col gap-5 overflow-y-auto rounded-2xl p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             Étape {etape.code}
             {admin && ` · ${STATUTS_VALIDATION[etape.statut]}`}
           </p>
-          <h2 className="mt-0.5 text-xl font-semibold">{etape.titre}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{etape.objectif}</p>
+          <h2 className="mt-1 text-[22px] font-semibold leading-tight tracking-tight">{etape.titre}</h2>
+          <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">{etape.objectif}</p>
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="liquid-glass-inset flex shrink-0 gap-0.5 rounded-full p-1" role="group" aria-label="Avancement de l'étape">
           {ETAPE_STATUTS.map((s) => (
             <button
               key={s}
               type="button"
               disabled={enCours}
               onClick={() => void enregistrer({ statut: s })}
-              className={`rounded-full px-3 py-1.5 text-xs disabled:opacity-50 ${statut === s ? PASTILLE[s] : "liquid-glass-pill"}`}
+              className={`rounded-full px-3 py-1 text-xs transition-colors disabled:opacity-50 ${statut === s ? "chrome-black text-white" : "text-muted-foreground hover:text-foreground"}`}
               aria-pressed={statut === s}
             >
               {ETAPE_STATUTS_LIBELLES[s]}

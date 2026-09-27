@@ -84,13 +84,13 @@ function TableauDeBord() {
 
   return (
     <main className="glass-scene flex h-screen w-full flex-col gap-4 overflow-hidden p-4 lg:flex-row">
-      <div className="custom-scrollbar flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
-        <SitNav titre="Système d'Information Technique" />
+      <div className="custom-scrollbar flex min-w-0 flex-1 flex-col gap-5 overflow-y-auto px-1 pb-4">
+        <SitNav titre="Archiaccess SIT" />
 
-        <section className="flex flex-wrap items-end justify-between gap-3">
+        <section className="mt-2 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{aujourdhui}</p>
-            <h2 className="mt-1 text-3xl font-light tracking-tight">Bonjour {prenom}, voici vos opérations.</h2>
+            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{aujourdhui}</p>
+            <h2 className="mt-1.5 text-[28px] font-light leading-tight tracking-tight">Bonjour {prenom}, voici vos opérations.</h2>
           </div>
           <div className="flex flex-wrap gap-2">
             <form
@@ -98,7 +98,7 @@ function TableauDeBord() {
                 e.preventDefault()
                 if (recherche.trim()) router.push(`/sit/recherche?resume=${encodeURIComponent(recherche.trim())}`)
               }}
-              className="liquid-glass-soft flex w-80 items-center gap-2 rounded-xl px-3 py-2.5"
+              className="liquid-glass-soft flex w-72 items-center gap-2 rounded-xl px-3 py-2.5"
             >
               <Search size={15} className="shrink-0 text-muted-foreground" />
               <input
@@ -134,7 +134,7 @@ function TableauDeBord() {
 
         {projets && projets.length > 0 && (
           <>
-            <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {projets.slice(0, 6).map((p) => (
                 <CarteProjet key={p.id} projet={p} />
               ))}
@@ -147,10 +147,10 @@ function TableauDeBord() {
           </>
         )}
 
-        <section className="grid gap-3 xl:grid-cols-5">
-          <div className="liquid-glass-panel flex flex-col gap-2 rounded-2xl p-4 xl:col-span-3">
+        <section className="grid items-start gap-4 xl:grid-cols-5">
+          <div className="liquid-glass-panel flex flex-col gap-2.5 rounded-[1.25rem] p-5 xl:col-span-3">
             <div className="flex items-baseline justify-between">
-              <h2 className="text-[15px] font-semibold">À traiter</h2>
+              <h2 className="text-[15px] font-semibold tracking-tight">À traiter</h2>
               <span className="text-xs text-muted-foreground">Échéances des {HORIZON_JOURS} prochains jours et retards</span>
             </div>
             {aTraiter.length === 0 && (
@@ -188,9 +188,9 @@ function TableauDeBord() {
             })}
           </div>
 
-          <div className="flex flex-col gap-3 xl:col-span-2">
-            <div className="liquid-glass-panel flex flex-col gap-2 rounded-2xl p-4">
-              <h2 className="text-[15px] font-semibold">Points de vigilance</h2>
+          <div className="flex flex-col gap-4 xl:col-span-2">
+            <div className="liquid-glass-panel flex flex-col gap-2.5 rounded-[1.25rem] p-5">
+              <h2 className="text-[15px] font-semibold tracking-tight">Points de vigilance</h2>
               {vigilance.length === 0 && <p className="text-sm text-muted-foreground">Rien à signaler.</p>}
               {vigilance.slice(0, 6).map((v) => (
                 <Link key={v.cle} href={`/sit/projets/${v.projet.id}`} className="flex items-start gap-2.5 text-[13px] hover:underline">
@@ -205,9 +205,9 @@ function TableauDeBord() {
               ))}
             </div>
 
-            <div className="liquid-glass-panel flex flex-col gap-2 rounded-2xl p-4">
+            <div className="liquid-glass-panel flex flex-col gap-2.5 rounded-[1.25rem] p-5">
               <div className="flex items-baseline justify-between">
-                <h2 className="text-[15px] font-semibold">Veille marchés AMO / OPC</h2>
+                <h2 className="text-[15px] font-semibold tracking-tight">Veille marchés AMO / OPC</h2>
                 <span className="text-xs text-muted-foreground">Publiés depuis {veille?.jours ?? 7} jours</span>
               </div>
               {veille === null && <p className="text-sm text-muted-foreground">Chargement…</p>}
@@ -236,8 +236,7 @@ function TableauDeBord() {
         </section>
       </div>
 
-      <div className="h-[45vh] shrink-0 lg:h-full lg:w-[340px]">
-        <PanneauIA
+      <PanneauIA
           titreConversation="SIT · Tableau de bord"
           contexte={contexteTableauDeBord(projets ?? [])}
           intro={
@@ -247,7 +246,6 @@ function TableauDeBord() {
           }
           suggestions={["Fais le point sur mes échéances de la semaine", "Quelles opérations demandent mon attention en priorité ?", "Rédige un ordre du jour de réunion de chantier"]}
         />
-      </div>
     </main>
   )
 }
