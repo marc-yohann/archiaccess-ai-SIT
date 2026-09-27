@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "referentiel:pdf": "node scripts/referentiel-pdf.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch": "^3.1141.0",
