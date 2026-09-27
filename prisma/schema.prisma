@@ -46,6 +46,8 @@ model User {
   // Acteur (aucune donnée du SIT n'est aujourd'hui cloisonnée par
   // utilisateur, à l'exception de Conversation).
   projetsCrees  Projet[]
+  // Espace projet — traçabilité de la dernière modification d'une étape.
+  etapesModifiees ProjetEtape[]
 }
 
 model Session {
@@ -925,6 +927,47 @@ model Projet {
   documentSitLinks DocumentSitProjet[]
   // Phase 12 — voir modèle Besoin plus bas.
   besoinLinks      BesoinProjet[]
+
+  // Espace projet (2026-09-27) — profil de l'opération au sens du
+  // référentiel Archiaccess (lib/referentiel) : les trois axes de
+  // variation + la mission confiée au cabinet. Stockés en texte et
+  // validés côté application contre lib/referentiel/libelles.ts, pour que
+  // le référentiel puisse évoluer sans migration d'enum. Nullables : les
+  // Projets créés avant l'espace projet n'ont pas de profil.
+  statutMoa      String?
+  montage        String?
+  typologie      String?
+  mission        String?
+  rehabilitation Boolean @default(false)
+  etapes         ProjetEtape[]
+}
+
+enum ProjetEtapeStatut {
+  A_FAIRE
+  EN_COURS
+  FAIT
+  SANS_OBJET
+}
+
+// Avancement d'un Projet sur une étape du référentiel Archiaccess
+// (etapeCode = Etape.code, ex. "7.4"). Une ligne n'existe qu'à partir du
+// moment où un employé a renseigné l'étape — absence de ligne = A_FAIRE.
+// Le contenu de l'étape (objectif, rôles, vigilances...) n'est jamais
+// copié ici : il vit dans lib/referentiel, source unique.
+model ProjetEtape {
+  id          String            @id @default(cuid())
+  projetId    String
+  projet      Projet            @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  etapeCode   String
+  statut      ProjetEtapeStatut @default(A_FAIRE)
+  note        String?
+  updatedById String?
+  updatedBy   User?             @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([projetId, etapeCode])
+  @@index([projetId])
 }
 
 // Rattachement Projet<->Site, action explicite uniquement (voir Projet

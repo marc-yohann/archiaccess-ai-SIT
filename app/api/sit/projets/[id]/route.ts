@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
 import { serializeDocumentSit } from "@/lib/documents-sit"
+import { lireProfil } from "@/lib/referentiel/profil"
 
 // Lecture/modification d'un Projet (Phase 10) et de ses rattachements
 // réels — jamais une résolution automatique, voir POST des sous-routes
@@ -33,6 +34,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       lots: { include: { lot: { include: { avisMarche: true } } } },
       documentSitLinks: { include: { documentSit: true } },
       besoinLinks: { include: { besoin: true } },
+      etapes: { include: { updatedBy: { select: { id: true, name: true } } } },
     },
   })
   if (!projet) {
@@ -56,7 +58,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   const { id } = await params
-  const body = (await request.json()) as {
+  const body = (await request.json()) as Record<string, unknown> & {
     nom?: string
     type?: string | null
     statut?: string | null
@@ -72,6 +74,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ success: false, error: "Projet introuvable." }, { status: 404 })
   }
 
+  const profil = lireProfil(body)
+  if ("error" in profil) {
+    return NextResponse.json({ success: false, error: profil.error }, { status: 400 })
+  }
+
   const data: {
     nom?: string
     type?: string | null
@@ -80,7 +87,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     dateDebut?: Date | null
     dateFin?: Date | null
     montant?: number | null
-  } = {}
+  } & typeof profil.data = { ...profil.data }
   if (typeof body.nom === "string") {
     const nom = body.nom.trim()
     if (!nom) {

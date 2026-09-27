@@ -900,6 +900,40 @@ WHERE b.id = sdu."batimentId" AND b."sourcePartition" IS NULL`,
       `CREATE INDEX "BoampDepartmentPreflight_ok_idx" ON "BoampDepartmentPreflight"("ok")`,
     ],
   },
+  {
+    // prisma/migrations/20260927120000_espace_projet/migration.sql pour le
+    // contexte complet. Additif : cinq colonnes nullables ou à défaut sur
+    // "Projet" (profil de l'opération), un enum et une table
+    // "ProjetEtape". Vérifiée en local (toutes les migrations rejouées sur
+    // PostgreSQL 16, puis prisma migrate diff : aucun écart propre à
+    // cette migration).
+    name: "20260927120000_espace_projet",
+    checksum: "4b6dc2f29cb28ef67c097dc9239fdfb63aac6314cb700c418ad0d56d02711fc8",
+    statements: [
+      `ALTER TABLE "Projet" ADD COLUMN "statutMoa" TEXT`,
+      `ALTER TABLE "Projet" ADD COLUMN "montage" TEXT`,
+      `ALTER TABLE "Projet" ADD COLUMN "typologie" TEXT`,
+      `ALTER TABLE "Projet" ADD COLUMN "mission" TEXT`,
+      `ALTER TABLE "Projet" ADD COLUMN "rehabilitation" BOOLEAN NOT NULL DEFAULT false`,
+      `CREATE TYPE "ProjetEtapeStatut" AS ENUM ('A_FAIRE', 'EN_COURS', 'FAIT', 'SANS_OBJET')`,
+      `CREATE TABLE "ProjetEtape" (
+    "id" TEXT NOT NULL,
+    "projetId" TEXT NOT NULL,
+    "etapeCode" TEXT NOT NULL,
+    "statut" "ProjetEtapeStatut" NOT NULL DEFAULT 'A_FAIRE',
+    "note" TEXT,
+    "updatedById" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ProjetEtape_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE UNIQUE INDEX "ProjetEtape_projetId_etapeCode_key" ON "ProjetEtape"("projetId", "etapeCode")`,
+      `CREATE INDEX "ProjetEtape_projetId_idx" ON "ProjetEtape"("projetId")`,
+      `ALTER TABLE "ProjetEtape" ADD CONSTRAINT "ProjetEtape_projetId_fkey" FOREIGN KEY ("projetId") REFERENCES "Projet"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `ALTER TABLE "ProjetEtape" ADD CONSTRAINT "ProjetEtape_updatedById_fkey" FOREIGN KEY ("updatedById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE`,
+    ],
+  },
 ]
 
 export async function POST(request: Request) {

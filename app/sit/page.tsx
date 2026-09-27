@@ -1373,13 +1373,31 @@ function Dashboard() {
               l'app — un lien texte simple détonnait à côté des boutons
               en verre utilisés partout ailleurs (retour utilisateur,
               jamais porté depuis l'artéfact). */}
-          <Link
-            href="/"
-            className="liquid-glass-pill flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium"
-          >
-            <Home size={13} />
-            Accueil
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Espace projet et méthode Archiaccess (réorientation du
+                2026-09-27, voir CLAUDE.md) — mêmes pilules que Accueil. */}
+            <Link
+              href="/sit/projets"
+              className="liquid-glass-pill flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium"
+            >
+              <FolderKanban size={13} />
+              Projets
+            </Link>
+            <Link
+              href="/sit/referentiel"
+              className="liquid-glass-pill flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium"
+            >
+              <ListChecks size={13} />
+              Méthode
+            </Link>
+            <Link
+              href="/"
+              className="liquid-glass-pill flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium"
+            >
+              <Home size={13} />
+              Accueil
+            </Link>
+          </div>
         </div>
 
         {/* 5 onglets — voir SEARCH_MODE_META. "Recherche" (ex-"Point précis",
@@ -1942,16 +1960,16 @@ function Dashboard() {
             <h2 className="mb-2 text-xs font-medium text-muted-foreground">Projets trouvés</h2>
             <div className="space-y-2">
               {projetResults.map((p) => (
-                <button
+                <Link
                   key={p.id}
-                  onClick={() => void sendAiMessage(`Peux-tu m'en dire plus sur ce projet : "${p.nom}"${p.description ? ` — ${p.description}` : ""} ?`, {})}
+                  href={`/sit/projets/${p.id}`}
                   className="liquid-glass-soft block w-full rounded-xl p-3 text-left text-sm transition-shadow hover:shadow-md"
                 >
                   <p className="font-medium">{p.nom}</p>
                   <p className="text-xs text-muted-foreground">
-                    {[p.type, p.statut].filter(Boolean).join(" · ") || "Information non disponible"}
+                    {[p.type, p.statut].filter(Boolean).join(" · ") || "Ouvrir l'espace projet"}
                   </p>
-                </button>
+                </Link>
               ))}
             </div>
           </div>

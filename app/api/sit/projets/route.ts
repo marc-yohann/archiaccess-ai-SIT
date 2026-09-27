@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
+import { lireProfil } from "@/lib/referentiel/profil"
 
 // Projet (Phase 10) — objet de travail interne (voir prisma/schema.prisma
 // pour la définition exacte), jamais une donnée externe canonique.
@@ -21,6 +22,8 @@ export async function GET() {
     include: {
       createdBy: { select: { id: true, name: true } },
       _count: { select: { sites: true, acteurs: true, avisMarches: true, lots: true } },
+      // Espace projet : statuts d'étape pour l'avancement affiché en liste.
+      etapes: { select: { etapeCode: true, statut: true } },
     },
   })
 
@@ -35,7 +38,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
   }
 
-  const body = (await request.json()) as {
+  const body = (await request.json()) as Record<string, unknown> & {
     nom?: string
     type?: string | null
     statut?: string | null
@@ -50,9 +53,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "Le nom du projet est requis." }, { status: 400 })
   }
 
+  // Profil de l'opération (espace projet) — facultatif, validé contre le
+  // référentiel (lib/referentiel/libelles.ts).
+  const profil = lireProfil(body)
+  if ("error" in profil) {
+    return NextResponse.json({ success: false, error: profil.error }, { status: 400 })
+  }
+
   const prisma = await getPrisma()
   const projet = await prisma.projet.create({
     data: {
+      ...profil.data,
       nom,
       type: body.type?.trim() || null,
       statut: body.statut?.trim() || null,

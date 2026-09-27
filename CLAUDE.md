@@ -57,6 +57,16 @@ trace de ça dans le code actuel, ne pas la réintroduire.
 - `app/ai/page.tsx` — chat avec le copilote : sidebar de conversations
   (`GET/DELETE /api/mistral/conversations`), écran d'accueil avec
   suggestions.
+- `app/sit/projets/page.tsx`, `app/sit/projets/[id]/page.tsx` — **espace
+  projet** AMO/OPC : liste et création des projets avec leur profil
+  d'opération, puis la méthode Archiaccess appliquée au projet (phases,
+  étapes, variantes filtrées selon le profil, avancement et notes par
+  étape). `app/sit/referentiel/page.tsx` — consultation de la méthode.
+  En-tête commun `components/sit-nav.tsx` ; affichage d'une étape
+  `components/referentiel/etape-vue.tsx`.
+- `lib/referentiel/` — **source unique** du référentiel de méthode
+  (données TS pures, importables côté client) : alimente l'espace projet
+  et le PDF (`npm run referentiel:pdf`, voir `docs/referentiel/README.md`).
 - `app/admin/page.tsx` — gestion des comptes employés (création,
   désactivation), et **seul** endroit où un compte peut être créé
   (bootstrap du tout premier compte compris — voir "Pièges").
@@ -110,6 +120,13 @@ trace de ça dans le code actuel, ne pas la réintroduire.
 - `Document` / `DocumentChunk` — corpus indexé pour le copilote
   (`DocumentChunk.embedding` est `Unsupported("vector(1024)")`,
   insertion/recherche via `$executeRaw`/`$queryRaw`).
+- `Projet` (Phase 10, objet de travail interne) enrichi par l'espace
+  projet : `statutMoa`/`montage`/`typologie`/`mission` (texte validé
+  contre `lib/referentiel/libelles.ts`, pas d'enum SQL) et
+  `rehabilitation`. `ProjetEtape` : avancement (`ProjetEtapeStatut`) et
+  note par étape du référentiel (`etapeCode`), une ligne seulement une
+  fois l'étape renseignée ; le contenu des étapes n'est jamais copié en
+  base.
 - `DataCacheEntry` — "coffre" du SIT : `source` + `cacheKey` uniques,
   `payload` JSON, **jamais supprimé/purgé** (accumulation permanente,
   voulu explicitement par l'utilisateur comme mémoire à long terme, pas
@@ -319,12 +336,16 @@ expiration.
   « espace projet » AMO/OPC utilisable sur tout type d'opération
   (bâtiment, logement social, ouvrage d'art, ferroviaire, métro...),
   qui **prépare** le travail de l'ingénieur sans jamais décider à sa
-  place. Première brique : le référentiel de méthode
-  `docs/referentiel/` (documentation seulement, aucun code). Phase 7
-  (chantier / OPC) en brouillon v0, autres phases à rédiger. L'équipe
-  n'est pas encore constituée : l'utilisateur valide en attendant des
-  seniors. Aucun développement applicatif de l'espace projet n'est
-  autorisé tant que l'utilisateur ne l'a pas demandé explicitement.
+  place. Deux livrables demandés explicitement par l'utilisateur :
+  (1) construire le SIT avec ce pivot, (2) la documentation et les
+  process Archiaccess en PDF. Référentiel (`lib/referentiel/`) : phases
+  6, 7, 8 rédigées en brouillon, phases 1-5 et 9 à rédiger ; PDF
+  `docs/referentiel/Referentiel-Archiaccess-AMO-OPC.pdf` régénéré à
+  chaque évolution. Espace projet (`/sit/projets`, `/sit/referentiel`)
+  construit et testé en local (build, API, navigateur) mais **pas encore
+  déployé** : migration `20260927120000_espace_projet` à appliquer via
+  `/api/admin/run-migration` après déploiement. L'équipe n'est pas
+  encore constituée : l'utilisateur valide en attendant des seniors.
 - Refonte visuelle du tableau de bord `/sit` (panneau d'accueil avant
   recherche). Une première version (bandeau d'activité défilant +
   colonnes "Sources fédérées"/"Corpus réglementaire") a été committée
