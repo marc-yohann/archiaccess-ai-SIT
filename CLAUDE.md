@@ -343,9 +343,13 @@ expiration.
   attente de relecture senior ; PDF
   `docs/referentiel/Referentiel-Archiaccess-AMO-OPC.pdf` régénéré à
   chaque évolution. Espace projet (`/sit/projets`, `/sit/referentiel`)
-  construit et testé en local (build, API, navigateur) mais **pas encore
-  déployé** : migration `20260927120000_espace_projet` à appliquer via
-  `/api/admin/run-migration` après déploiement. L'équipe n'est pas
+  construit et testé en local (build, API, navigateur), **code déployé
+  le 2026-09-27 (Lambda + assets S3 vérifiés)** mais migration
+  `20260927120000_espace_projet` **PAS ENCORE APPLIQUÉE** (appel à
+  `/api/admin/run-migration` refusé par le garde-fou de permissions de
+  l'environnement, en attente de l'accord explicite de l'utilisateur).
+  Tant qu'elle ne l'est pas, toute requête Prisma sur `Projet` échoue en
+  production (colonnes absentes) : l'appliquer en priorité. L'équipe n'est pas
   encore constituée : l'utilisateur valide en attendant des seniors.
 - Refonte visuelle du tableau de bord `/sit` (panneau d'accueil avant
   recherche). Une première version (bandeau d'activité défilant +
