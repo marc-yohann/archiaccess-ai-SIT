@@ -19,6 +19,7 @@ import { runOneInvocation } from "@/lib/ingestion/runner"
 import { BoampIngestionRunner } from "@/lib/ingestion/sources/boamp"
 import { preflightDepartment } from "@/lib/data-sources/boamp"
 import { BOAMP_DEPARTMENTS } from "@/lib/ingestion/boamp-departments"
+import { checkRdsStorage, storageThresholdGiB, type FreeStorageReading } from "@/lib/ingestion/rds-storage"
 
 const SOURCE = "boamp"
 const DATASET = "avis-marche"
@@ -43,19 +44,6 @@ function envFloat(name: string, fallback: number): number {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback
 }
 
-// Capacité UTILE du volume RDS vue par pg_database_size(), en GiB —
-// PAS la taille allouée brute. Mesuré le 2026-09-26 : 20 GiB alloués,
-// 15,90 GiB libres selon CloudWatch (FreeStorageSpace), mais
-// pg_database_size() ne voyait que 1,17 GiB utilisés : ~2,93 GiB (WAL,
-// journaux, bases système) lui sont invisibles. Avec 20 ici, le garde-fou
-// n'aurait jamais pu se déclencher avant saturation réelle du disque.
-// Production : RDS_ALLOCATED_STORAGE_GB=16.5 (20 - 2,93 mesurés - 0,5 de
-// marge pour la croissance du WAL sous charge d'écriture) — à recalibrer
-// contre CloudWatch si l'instance est redimensionnée.
-function rdsAllocatedStorageGb(): number {
-  return envFloat("RDS_ALLOCATED_STORAGE_GB", 20)
-}
-
 function maxConcurrencyDefault(): number {
   return envInt("BOAMP_MAX_CONCURRENCY", 1)
 }
@@ -78,17 +66,11 @@ export async function getOrCreateCampaign() {
   })
 }
 
-// Mesure directe en base (aucune permission IAM CloudWatch requise,
-// contrairement à un appel à l'API CloudWatch depuis la Lambda — non
-// vérifié disponible pour le rôle d'exécution, voir le rapport de
-// mission). pg_database_size() couvre TOUTE la base (protection du
-// disque RDS partagé, pas seulement les tables BOAMP) — c'est le
-// comportement voulu du garde-fou.
-async function freeStorageGb(): Promise<number> {
-  const prisma = await getPrisma()
-  const rows = await prisma.$queryRaw<{ bytes: bigint }[]>`SELECT pg_database_size(current_database()) AS bytes`
-  const usedGb = Number(rows[0]?.bytes ?? 0) / 1024 ** 3
-  return rdsAllocatedStorageGb() - usedGb
+// Une pause posée par le garde-fou stockage porte son statut en préfixe
+// de lastError (voir runCampaignTick) — c'est ce qui la distingue d'une
+// pause manuelle, qui n'est jamais levée automatiquement.
+function isStoragePause(lastError: string | null): boolean {
+  return !!lastError && (lastError.startsWith("STORAGE_LOW:") || lastError.startsWith("STORAGE_CHECK_UNAVAILABLE:"))
 }
 
 export interface PreflightBatchResult {
@@ -265,13 +247,18 @@ export interface TickResult {
 // précisément ce qui a produit les timeouts proxy mesurés lors de la
 // Vague 1 manuelle) : à concurrence > 1, les départements actifs du tick
 // sont traités SÉQUENTIELLEMENT, in-process, dans la même invocation.
-export async function runCampaignTick(): Promise<TickResult> {
+export async function runCampaignTick(readStorage?: () => Promise<FreeStorageReading | null>): Promise<TickResult> {
   const prisma = await getPrisma()
-  const campaign = await getOrCreateCampaign()
+  let campaign = await getOrCreateCampaign()
 
   await prisma.boampNationalCampaign.update({ where: { id: campaign.id }, data: { lastTickAt: new Date() } })
 
-  if (campaign.status === "PAUSED") {
+  // Une pause MANUELLE (/pause) n'est jamais levée automatiquement ; une
+  // pause STOCKAGE est revérifiée à chaque tick et levée dès que l'espace
+  // libre repasse au-dessus du seuil — sinon un simple incident CloudWatch
+  // figerait la campagne jusqu'à intervention humaine.
+  const storagePaused = campaign.status === "PAUSED" && isStoragePause(campaign.lastError)
+  if (campaign.status === "PAUSED" && !storagePaused) {
     return { action: "idle", campaignStatus: "PAUSED", detail: { reason: campaign.lastError ?? "campagne en pause" } }
   }
   if (campaign.status === "COMPLETED" || campaign.status === "FAILED") {
@@ -279,14 +266,27 @@ export async function runCampaignTick(): Promise<TickResult> {
   }
 
   // Garde-fou stockage — vérifié à CHAQUE tick, avant tout travail
-  // (preflight comme ingestion), jamais seulement au lancement.
-  const free = await freeStorageGb()
-  if (free < campaign.minFreeStorageGb) {
-    await prisma.boampNationalCampaign.update({
+  // (preflight comme ingestion, département déjà RUNNING compris : ses
+  // écritures consomment aussi le disque). Tout statut autre que OK
+  // (STORAGE_LOW, STORAGE_CHECK_UNAVAILABLE) = aucun travail lancé, jobs
+  // et checkpoints intacts, campagne reprenable telle quelle.
+  const storage = await checkRdsStorage(storageThresholdGiB(campaign.minFreeStorageGb), readStorage)
+  if (storage.status !== "OK") {
+    const detail =
+      storage.status === "STORAGE_LOW"
+        ? `espace libre RDS ${storage.freeGiB!.toFixed(2)} GiB <= seuil ${storage.thresholdGiB} GiB (mesure ${storage.measuredAt})`
+        : `mesure CloudWatch indisponible (${storage.error}) — aucun département lancé par sécurité`
+    await prisma.boampNationalCampaign.update({ where: { id: campaign.id }, data: { status: "PAUSED", lastError: `${storage.status}: ${detail}` } })
+    return { action: "storage-paused", campaignStatus: "PAUSED", detail: storage }
+  }
+  if (storagePaused) {
+    // Retour à l'état d'avant la pause : RUNNING seulement si la campagne
+    // avait été explicitement lancée, jamais un lancement implicite.
+    campaign = await prisma.boampNationalCampaign.update({
       where: { id: campaign.id },
-      data: { status: "PAUSED", lastError: `Stockage RDS libre (${free.toFixed(2)} Go) sous le seuil configuré (${campaign.minFreeStorageGb} Go).` },
+      data: { status: campaign.startedAt ? "RUNNING" : "PENDING", lastError: null },
     })
-    return { action: "storage-paused", campaignStatus: "PAUSED", detail: { freeGb: free, thresholdGb: campaign.minFreeStorageGb } }
+    console.log(`[storage-guard] reprise automatique : ${storage.freeGiB!.toFixed(2)} GiB libres > seuil ${storage.thresholdGiB} GiB`)
   }
 
   // Phase 1 — preflight incrémental, tant qu'il n'est pas complet.

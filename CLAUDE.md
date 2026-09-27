@@ -169,9 +169,22 @@ trace de ça dans le code actuel, ne pas la réintroduire.
   chaque tick). **Si `archiaccess-ai-sit/ingest-token` change, mettre à
   jour la connexion** (elle en garde une copie). Pause/reprise :
   routes `.../boamp/national/pause|resume` ou désactiver la règle.
-  Variables d'environnement Lambda (config, non secrètes) :
-  `BOAMP_MAX_CONCURRENCY=1`, `RDS_ALLOCATED_STORAGE_GB=16.5` (voir
-  "Pièges").
+  Variables d'environnement Lambda (config, non secrètes, relues à chaque
+  tick) : `BOAMP_MAX_CONCURRENCY=1`, `BOAMP_MIN_FREE_STORAGE_GB=2.5`
+  (seuil en GiB d'espace **réellement** libre).
+- **Garde-fou stockage BOAMP** (`lib/ingestion/rds-storage.ts`) : source
+  de vérité = CloudWatch `AWS/RDS FreeStorageSpace`
+  (`DBInstanceIdentifier=archiaccess-ai-sit-db`, statistique `Minimum`,
+  période 60 s, point le plus récent des 15 dernières minutes).
+  `libre <= seuil` → `PAUSED` (`lastError` préfixé `STORAGE_LOW:`) ;
+  CloudWatch en erreur ou sans point récent → `PAUSED`
+  (`STORAGE_CHECK_UNAVAILABLE:`), **jamais** de repli sur une mesure en
+  base. Ces deux pauses sont revérifiées à chaque tick et levées seules
+  quand l'espace redevient suffisant ; une pause manuelle (`/pause`) ne
+  l'est jamais. Permission : politique inline `cloudwatch-read-rds-free-storage`
+  du rôle `archiaccess-ai-sit-app`, uniquement
+  `cloudwatch:GetMetricStatistics` (action sans restriction par
+  ressource possible côté AWS, d'où `Resource: *`).
 
 ## Secrets et configuration
 
@@ -415,9 +428,9 @@ expiration.
   résultat comme terminé (`validateCompletion()` le refuse).
 - **`pg_database_size()` sous-estime l'occupation disque RDS de ~2,9 GiB**
   (WAL, journaux, bases système invisibles — mesuré le 2026-09-26 contre
-  CloudWatch `FreeStorageSpace`). Le garde-fou stockage BOAMP compense via
-  `RDS_ALLOCATED_STORAGE_GB=16.5` au lieu des 20 GiB alloués ; à
-  recalibrer contre CloudWatch après tout redimensionnement.
+  CloudWatch `FreeStorageSpace`). Ne jamais s'en servir pour décider qu'il
+  reste de la place : le garde-fou BOAMP lit désormais CloudWatch
+  directement (voir "Infrastructure AWS").
 - **Le conteneur Claude Code on the web est recyclé après inactivité** :
   `node_modules`, AWS CLI (`pip install awscli`, puis
   `AWS_CA_BUNDLE=/root/.ccr/ca-bundle.crt`), extensions Postgres locales

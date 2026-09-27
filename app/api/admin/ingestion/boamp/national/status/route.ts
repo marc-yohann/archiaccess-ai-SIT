@@ -3,6 +3,7 @@ import { isValidIngestBearer } from "@/lib/ingest-auth"
 import { getPrisma } from "@/lib/prisma"
 import { getOrCreateCampaign, preflightSummary } from "@/lib/ingestion/boamp-campaign"
 import { BOAMP_DEPARTMENTS } from "@/lib/ingestion/boamp-departments"
+import { checkRdsStorage, storageThresholdGiB } from "@/lib/ingestion/rds-storage"
 
 // État complet et réel de la campagne — jamais une estimation. Les
 // compteurs viennent de BoampNationalCampaign (recalculés à chaque tick
@@ -33,14 +34,14 @@ export async function GET(request: Request) {
     { recordsRead: 0, recordsInserted: 0, recordsUpdated: 0, recordsRejected: 0, errorCount: 0 },
   )
 
-  const [avisMarcheTotal, lotTotal, storageRows] = await Promise.all([
+  // Même mesure et même décision que le garde-fou du tick (CloudWatch
+  // FreeStorageSpace) — ce que voit le diagnostic est exactement ce que
+  // voit l'orchestrateur, jamais un second calcul divergent.
+  const [avisMarcheTotal, lotTotal, storage] = await Promise.all([
     prisma.avisMarche.count(),
     prisma.lot.count(),
-    prisma.$queryRaw<{ bytes: bigint }[]>`SELECT pg_database_size(current_database()) AS bytes`,
+    checkRdsStorage(storageThresholdGiB(campaign.minFreeStorageGb)),
   ])
-
-  const usedGb = Number(storageRows[0]?.bytes ?? 0) / 1024 ** 3
-  const allocatedGb = Number(process.env.RDS_ALLOCATED_STORAGE_GB ?? 20)
 
   const failedRequiresReview = jobs.filter((j) => j.status === "FAILED_REQUIRES_REVIEW")
   const lastUpdated = jobs.reduce<(typeof jobs)[number] | null>((latest, j) => (!latest || j.updatedAt > latest.updatedAt ? j : latest), null)
@@ -52,7 +53,14 @@ export async function GET(request: Request) {
     totals,
     avisMarcheTotal,
     lotTotal,
-    storage: { usedGb: Number(usedGb.toFixed(3)), allocatedGb, freeGb: Number((allocatedGb - usedGb).toFixed(3)) },
+    storage: {
+      freeGiB: storage.freeGiB === null ? null : Number(storage.freeGiB.toFixed(2)),
+      thresholdGiB: storage.thresholdGiB,
+      status: storage.status,
+      measuredAt: storage.measuredAt,
+      source: storage.source,
+      error: storage.error,
+    },
     failedRequiresReview: failedRequiresReview.map((j) => ({ department: j.partition, lastError: j.lastError })),
     lastDepartment: lastUpdated?.partition ?? null,
     lastError: lastUpdated?.lastError ?? null,
