@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
+// Import statique : le fichier est servi sous /_next/static/media/, déjà
+// couvert par CloudFront. Un chemin /logo-ai-puce.png tomberait sur la
+// Lambda (pas de comportement CloudFront pour ce nom) et renverrait 404.
+import logoPuce from "@/public/logo-ai-puce.png"
 import { Check, Copy, Maximize2, PanelRightClose, Plus, Send, X } from "lucide-react"
 import { formatReply } from "@/lib/format-reply"
 
@@ -204,7 +208,7 @@ export function PanneauIA({
       >
         {/* Téléphone : le pictogramme seul, pour ne pas masquer le texte
             en dessous ; libellé complet à partir de la tablette. */}
-        <Image src="/logo-ai-puce.png" alt="" width={30} height={30} className="shrink-0 sm:size-6" />
+        <Image src={logoPuce} alt="" width={30} height={30} className="shrink-0 sm:size-6" />
         <span className="hidden sm:inline">Archiaccess AI</span>
         {messages.length > 0 && (
           <span className="absolute -right-0.5 -top-0.5 rounded-full bg-foreground px-1.5 text-[10px] leading-4 text-background sm:static">
@@ -225,7 +229,7 @@ export function PanneauIA({
           title="Afficher Archiaccess AI"
           aria-label="Afficher Archiaccess AI"
         >
-          <Image src="/logo-ai-puce.png" alt="" width={28} height={28} />
+          <Image src={logoPuce} alt="" width={28} height={28} />
           <span className="text-sm font-medium [writing-mode:vertical-rl]">Archiaccess AI</span>
           {messages.length > 0 && <span className="rounded-full bg-foreground/80 px-1.5 text-[10px] text-white">{messages.length}</span>}
         </button>
@@ -257,7 +261,7 @@ export function PanneauIA({
       )}
 
       <div className="flex items-center gap-2">
-        <Image src="/logo-ai-puce.png" alt="" width={24} height={24} />
+        <Image src={logoPuce} alt="" width={24} height={24} />
         <h2 className="text-sm font-semibold">Archiaccess AI</h2>
         <div className="ml-auto flex items-center gap-1">
           <button

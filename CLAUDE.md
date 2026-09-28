@@ -378,12 +378,12 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   `7154f02` : tableau de bord, espace projet refondu, panneau Archiaccess
   AI modulable, échéances, adaptation tablette/téléphone) et migration
   `20260927200000_projet_etape_echeance` appliquée le même jour par
-  l'utilisateur lui-même depuis CloudShell (voir "Déploiement"). Le logo
-  Archiaccess AI dans le SIT (commit `822187c`) et le pictogramme « puce
-  AI » (`public/logo-ai-puce.png`, là où le logo s'affiche en grand dans
-  le SIT : bouton flottant, en-têtes et bande repliée des panneaux
-  Archiaccess AI ; le logo complet reste sur `/ai`, à la connexion et en
-  petite icône) sont committés mais **pas encore déployés**. L'équipe n'est pas
+  l'utilisateur lui-même depuis CloudShell (voir "Déploiement"). Logo
+  Archiaccess AI dans le SIT et pictogramme « puce AI »
+  (`public/logo-ai-puce.png`, importé statiquement — là où le logo
+  s'affiche en grand dans le SIT : bouton flottant, en-têtes et bande
+  repliée des panneaux Archiaccess AI ; le logo complet reste sur `/ai`,
+  à la connexion et en petite icône) **déployés le 2026-09-28**. L'équipe n'est pas
   encore constituée : l'utilisateur valide en attendant des seniors.
 - (Remplacé par le tableau de bord de l'espace projet, voir plus haut ;
   ce qui suit est l'historique de l'ancien chantier d'accueil de la
@@ -437,7 +437,12 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   a besoin soit de correspondre à un pattern de cache behavior
   CloudFront existant (`_next/*`), soit d'un nouveau cache behavior
   dédié — sinon 404 silencieux dans le navigateur, invisible côté
-  serveur.
+  serveur. Les logos existants ont chacun leur comportement : il n'y a
+  **pas** de motif générique `logo-*.png` (vérifié le 2026-09-28 :
+  `/logo-ai-puce.png` tombait sur la Lambda, 404). Solution la plus
+  simple, sans toucher à CloudFront : **import statique**
+  (`import x from "@/public/fichier.png"` puis `src={x}`) — Next émet le
+  fichier sous `/_next/static/media/`, déjà couvert.
 - **`next/image` casse en silence sur ce déploiement** : l'optimisation
   à la volée (`/_next/image?...`) exige une Lambda séparée
   (`image-optimization-function`) jamais déployée ici. Réglé une fois
