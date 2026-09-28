@@ -379,8 +379,11 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   AI modulable, échéances, adaptation tablette/téléphone) et migration
   `20260927200000_projet_etape_echeance` appliquée le même jour par
   l'utilisateur lui-même depuis CloudShell (voir "Déploiement"). Le logo
-  Archiaccess AI dans le SIT (commit `822187c`) est committé mais **pas
-  encore déployé**. L'équipe n'est pas
+  Archiaccess AI dans le SIT (commit `822187c`) et le pictogramme « puce
+  AI » (`public/logo-ai-puce.png`, là où le logo s'affiche en grand dans
+  le SIT : bouton flottant, en-têtes et bande repliée des panneaux
+  Archiaccess AI ; le logo complet reste sur `/ai`, à la connexion et en
+  petite icône) sont committés mais **pas encore déployés**. L'équipe n'est pas
   encore constituée : l'utilisateur valide en attendant des seniors.
 - (Remplacé par le tableau de bord de l'espace projet, voir plus haut ;
   ce qui suit est l'historique de l'ancien chantier d'accueil de la

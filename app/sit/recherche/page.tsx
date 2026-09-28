@@ -2155,7 +2155,7 @@ function Dashboard() {
             className="flex h-full w-full items-center justify-center gap-2 text-muted-foreground lg:flex-col"
             title="Afficher le panneau Archiaccess AI"
           >
-            <Image src="/logo-ai.png" alt="" width={24} height={24} />
+            <Image src="/logo-ai-puce.png" alt="" width={24} height={24} />
             <span className="text-sm font-medium lg:hidden">Archiaccess AI</span>
           </button>
         ) : (
@@ -2165,7 +2165,7 @@ function Dashboard() {
             sur une seule ligne — débordait du panneau plutôt que de passer
             à la ligne (mesuré en Chromium à 390px de large). */}
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          <Image src="/logo-ai.png" alt="" width={24} height={24} />
+          <Image src="/logo-ai-puce.png" alt="" width={24} height={24} />
           <h2 className="text-sm font-medium">Archiaccess AI</h2>
           <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
             {hasTiles && (
