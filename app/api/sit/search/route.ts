@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, isValidSession } from "@/lib/session"
+import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { filtreProjetsAccessibles } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
 import { searchAddress } from "@/lib/data-sources/ban"
 import { searchCompanies, looksLikeSirenOrSiret } from "@/lib/data-sources/entreprises"
@@ -36,9 +37,12 @@ const RESULT_LIMIT = 20
 export async function GET(request: Request) {
   const store = await cookies()
   const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await isValidSession(token))) {
+  const user = await getSessionUser(token)
+  if (!user) {
     return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
   }
+  // Espace collaboratif : la recherche ne remonte que les projets accessibles.
+  const projetsAccessibles = filtreProjetsAccessibles(user)
 
   const url = new URL(request.url)
   const query = url.searchParams.get("q")?.trim()
@@ -68,12 +72,13 @@ export async function GET(request: Request) {
   async function searchProjet() {
     return prisma.projet.findMany({
       where: {
-        OR: [
+        ...projetsAccessibles,
+        AND: [{ OR: [
           { nom: { contains: query!, mode: "insensitive" } },
           { type: { contains: query!, mode: "insensitive" } },
           { statut: { contains: query!, mode: "insensitive" } },
           { description: { contains: query!, mode: "insensitive" } },
-        ],
+        ] }],
       },
       select: { id: true, nom: true, type: true, statut: true, description: true, dateDebut: true, dateFin: true, montant: true, createdAt: true },
       take: RESULT_LIMIT,

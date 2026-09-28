@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { exigerAccesProjet } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
 import { ActeurType } from "@/lib/generated/prisma/client"
 
@@ -11,13 +10,9 @@ import { ActeurType } from "@/lib/generated/prisma/client"
 const VALID_ROLES = new Set<string>(Object.values(ActeurType))
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await getSessionUser(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
-
   const { id: projetId } = await params
+  const garde = await exigerAccesProjet(projetId)
+  if ("reponse" in garde) return garde.reponse
   const { acteurId, role } = (await request.json()) as { acteurId?: string; role?: string | null }
   if (!acteurId) {
     return NextResponse.json({ success: false, error: "Paramètre acteurId manquant." }, { status: 400 })

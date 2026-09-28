@@ -1,18 +1,13 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { exigerAccesProjet } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
 
 // Détachement Projet<->Acteur — supprime uniquement le rattachement
 // (ProjetActeur), jamais l'Acteur lui-même (Phase 2/8).
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string; acteurId: string }> }) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await getSessionUser(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
-
   const { id: projetId, acteurId } = await params
+  const garde = await exigerAccesProjet(projetId)
+  if ("reponse" in garde) return garde.reponse
   const prisma = await getPrisma()
   await prisma.projetActeur.deleteMany({ where: { projetId, acteurId } })
 

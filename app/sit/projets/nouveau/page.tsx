@@ -1,15 +1,19 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { AuthGate } from "@/components/auth-gate"
+import { useRouter, useSearchParams } from "next/navigation"
+import { AuthGate, useUser } from "@/components/auth-gate"
 import { SitNav } from "@/components/sit-nav"
 import { LIBELLES_COURTS, MISSIONS, MONTAGES, STATUTS_MOA, TYPOLOGIES } from "@/lib/referentiel/libelles"
 
 // Création d'un projet : le cadrage de l'opération en quatre questions à
 // boutons (maître d'ouvrage, ouvrage, montage, mission). Chaque réponse
 // peut rester vide et se compléter plus tard depuis l'espace projet.
+//
+// ?espace=collaboratif (administrateurs uniquement, 2026-09-28) : même
+// cadrage pour un projet de l'équipe, puis choix des membres dans
+// /admin/projets. Le serveur refuse la création à un non-administrateur.
 
 // Libellés courts pour les boutons (lib/referentiel/libelles.ts) ; pour le
 // montage, le libellé complet reste plus explicite au moment du cadrage.
@@ -31,6 +35,8 @@ const QUESTIONS: { cle: Cle; titre: string; valeurs: Record<string, string>; col
 
 function NouveauProjet() {
   const router = useRouter()
+  const user = useUser()
+  const collaboratif = useSearchParams().get("espace") === "collaboratif" && user.isAdmin
   const [nom, setNom] = useState("")
   const [description, setDescription] = useState("")
   const [choix, setChoix] = useState<Record<Cle, string | null>>({ statutMoa: null, typologie: null, montage: null, mission: null })
@@ -46,11 +52,11 @@ function NouveauProjet() {
       const r = await fetch("/api/sit/projets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nom, description: description || null, ...choix, rehabilitation }),
+        body: JSON.stringify({ nom, description: description || null, ...choix, rehabilitation, espace: collaboratif ? "collaboratif" : undefined }),
       })
       const d = await r.json()
       if (!d.success) throw new Error(d.error ?? "Création impossible.")
-      router.push(`/sit/projets/${d.projet.id}`)
+      router.push(collaboratif ? `/admin/projets?projet=${d.projet.id}` : `/sit/projets/${d.projet.id}`)
     } catch (err) {
       setErreur(err instanceof Error ? err.message : "Création impossible.")
       setEnCours(false)
@@ -60,7 +66,21 @@ function NouveauProjet() {
   return (
     <main className="glass-scene custom-scrollbar flex h-screen w-full items-start justify-center overflow-y-auto p-4">
       <div className="flex w-full max-w-6xl flex-col gap-4 pb-10">
-        <SitNav titre="Nouveau projet" sousTitre={<Link href="/sit/projets" className="hover:underline">Projets</Link>} />
+        <SitNav
+          titre={collaboratif ? "Nouveau projet collaboratif" : "Nouveau projet"}
+          sousTitre={
+            collaboratif ? (
+              <Link href="/admin/projets" className="hover:underline">Projets collaboratifs</Link>
+            ) : (
+              <Link href="/sit/projets" className="hover:underline">Projets</Link>
+            )
+          }
+        />
+        {collaboratif && (
+          <p className="text-sm text-muted-foreground">
+            Après la création, vous choisirez les collaborateurs qui ont accès au projet.
+          </p>
+        )}
 
         <form onSubmit={creer} className="liquid-glass-panel flex flex-col gap-6 rounded-2xl p-4 sm:p-6">
           <label className="flex flex-col gap-1.5">
@@ -124,7 +144,7 @@ function NouveauProjet() {
             <button type="submit" disabled={enCours || !nom.trim()} className="chrome-black flex-1 rounded-xl px-5 py-3 text-sm font-medium text-white disabled:opacity-50 sm:flex-none">
               Créer le projet
             </button>
-            <Link href="/sit/projets" className="liquid-glass-pill rounded-xl px-5 py-3 text-center text-sm">
+            <Link href={collaboratif ? "/admin/projets" : "/sit/projets"} className="liquid-glass-pill rounded-xl px-5 py-3 text-center text-sm">
               Annuler
             </Link>
             {erreur && <p className="text-sm text-red-600">{erreur}</p>}
@@ -138,7 +158,10 @@ function NouveauProjet() {
 export default function NouveauProjetPage() {
   return (
     <AuthGate logoSrc="/logo-sit.png" appName="Archiaccess SIT">
-      <NouveauProjet />
+      {/* useSearchParams (?espace=) exige un ancêtre Suspense au build. */}
+      <Suspense fallback={null}>
+        <NouveauProjet />
+      </Suspense>
     </AuthGate>
   )
 }

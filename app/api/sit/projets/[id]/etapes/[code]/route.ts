@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { exigerAccesProjet } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
 import { trouverEtape } from "@/lib/referentiel"
 import { ETAPE_STATUTS, type EtapeStatut } from "@/lib/referentiel/profil"
@@ -10,13 +9,10 @@ import { ETAPE_STATUTS, type EtapeStatut } from "@/lib/referentiel/profil"
 // qu'une fois l'étape renseignée. Le code d'étape est vérifié contre le
 // référentiel (lib/referentiel) : jamais d'étape inventée côté client.
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string; code: string }> }) {
-  const store = await cookies()
-  const user = await getSessionUser(store.get(SESSION_COOKIE_NAME)?.value)
-  if (!user) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
-
   const { id, code } = await params
+  const garde = await exigerAccesProjet(id)
+  if ("reponse" in garde) return garde.reponse
+  const { user } = garde
   if (!trouverEtape(code)) {
     return NextResponse.json({ success: false, error: "Étape inconnue du référentiel." }, { status: 400 })
   }

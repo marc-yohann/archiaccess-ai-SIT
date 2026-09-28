@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
+import { exigerAccesProjet } from "@/lib/projet-acces"
 
 // Rattachement DocumentSit<->Projet (Phase 10/11) — action explicite
 // uniquement, upsert idempotent.
@@ -17,6 +18,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!projetId) {
     return NextResponse.json({ success: false, error: "Paramètre projetId manquant." }, { status: 400 })
   }
+  const garde = await exigerAccesProjet(projetId)
+  if ("reponse" in garde) return garde.reponse
 
   const prisma = await getPrisma()
   const [document, projet] = await Promise.all([

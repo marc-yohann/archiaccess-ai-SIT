@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { filtreProjetsAccessibles } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
 
 // Lecture/modification d'un Besoin (Phase 12) et de ses rattachements
@@ -10,7 +11,8 @@ import { getPrisma } from "@/lib/prisma"
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const store = await cookies()
   const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await getSessionUser(token))) {
+  const user = await getSessionUser(token)
+  if (!user) {
     return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
   }
 
@@ -20,7 +22,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     where: { id },
     include: {
       sites: { include: { site: true } },
-      projets: { include: { projet: true } },
+      projets: { where: { projet: filtreProjetsAccessibles(user) }, include: { projet: true } },
       acteurs: { include: { acteur: true } },
       avisMarches: { include: { avisMarche: true } },
       lots: { include: { lot: true } },

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, isValidSession } from "@/lib/session"
+import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { filtreProjetsAccessibles } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
 import { serializeDocumentSit } from "@/lib/documents-sit"
 
@@ -17,7 +18,8 @@ import { serializeDocumentSit } from "@/lib/documents-sit"
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const store = await cookies()
   const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await isValidSession(token))) {
+  const user = await getSessionUser(token)
+  if (!user) {
     return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
   }
 
@@ -31,7 +33,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       avisMarcheCommeAcheteur: true,
       avisMarcheCommeTitulaire: true,
       lotsCommeTitulaire: { include: { avisMarche: true } },
-      projetLinks: { include: { projet: true } },
+      projetLinks: { where: { projet: filtreProjetsAccessibles(user) }, include: { projet: true } },
       documentSitLinks: { include: { documentSit: true } },
       besoinLinks: { include: { besoin: true } },
     },

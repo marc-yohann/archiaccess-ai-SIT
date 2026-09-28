@@ -1,18 +1,13 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { exigerAccesProjet } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
 
 // Rattachement Projet<->Lot (Phase 9/10) — action explicite uniquement,
 // même principe que avis-marches ci-dessus.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await getSessionUser(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
-
   const { id: projetId } = await params
+  const garde = await exigerAccesProjet(projetId)
+  if ("reponse" in garde) return garde.reponse
   const { lotId } = (await request.json()) as { lotId?: string }
   if (!lotId) {
     return NextResponse.json({ success: false, error: "Paramètre lotId manquant." }, { status: 400 })

@@ -18,6 +18,14 @@ export interface ProjetResume {
   description: string | null
   updatedAt: string
   etapes: EtatEtapeProjet[]
+  // Espace collaboratif : l'équipe du projet (absente des projets personnels).
+  membres?: { role: "MEMBRE" | "CHEF_DE_PROJET"; user: { id: string; name: string } }[]
+  archivedAt?: string | null
+}
+
+function initiales(nom: string): string {
+  const mots = nom.trim().split(/\s+/)
+  return ((mots[0]?.[0] ?? "") + (mots.length > 1 ? mots[mots.length - 1][0] : "")).toUpperCase()
 }
 
 const court = (v: string | null) => (v && v in LIBELLES_COURTS ? LIBELLES_COURTS[v as keyof typeof LIBELLES_COURTS] : null)
@@ -26,7 +34,7 @@ export function profilCourt(p: ProjetResume): string {
   return [court(p.typologie), court(p.montage), court(p.mission)].filter(Boolean).join(" · ")
 }
 
-export function CarteProjet({ projet }: { projet: ProjetResume }) {
+export function CarteProjet({ projet, href, equipe = false }: { projet: ProjetResume; href?: string; equipe?: boolean }) {
   const etats = indexEtats(projet.etapes)
   const phases = avancementPhases(etats)
   const courante = phaseCourante(etats)
@@ -34,10 +42,11 @@ export function CarteProjet({ projet }: { projet: ProjetResume }) {
   const etatSuivante = suivante ? etats.get(suivante.code) : undefined
   const retard = etatSuivante?.echeance ? joursRestants(etatSuivante.echeance) < 0 : false
   const profil = profilCourt(projet)
+  const chef = projet.membres?.find((m) => m.role === "CHEF_DE_PROJET")
 
   return (
     <Link
-      href={`/sit/projets/${projet.id}`}
+      href={href ?? `/sit/projets/${projet.id}`}
       className="liquid-glass-panel group flex flex-col gap-4 rounded-[1.25rem] p-5 transition-shadow hover:shadow-lg"
     >
       <div className="flex items-start justify-between gap-3">
@@ -63,6 +72,27 @@ export function CarteProjet({ projet }: { projet: ProjetResume }) {
           Phase {courante.numero} sur 9 · {courante.titre}
         </p>
       </div>
+
+      {equipe && projet.membres && (
+        <div className="flex items-center justify-between gap-3">
+          <span className="flex" aria-label={`${projet.membres.length} membre${projet.membres.length > 1 ? "s" : ""}`}>
+            {projet.membres.slice(0, 4).map((m, i) => (
+              <span
+                key={m.user.id}
+                title={m.user.name}
+                className={`chrome-black flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-semibold text-white ${i > 0 ? "-ml-1.5" : ""}`}
+              >
+                {initiales(m.user.name)}
+              </span>
+            ))}
+            {projet.membres.length > 4 && <span className="-ml-1.5 flex h-6 min-w-6 items-center justify-center rounded-full bg-foreground/60 px-1 text-[9px] font-semibold text-white">+{projet.membres.length - 4}</span>}
+            {projet.membres.length === 0 && <span className="text-xs text-muted-foreground">Aucun membre</span>}
+          </span>
+          <span className="truncate text-xs text-muted-foreground">
+            {projet.archivedAt ? "Archivé" : chef ? `Chef de projet : ${chef.user.name}` : ""}
+          </span>
+        </div>
+      )}
 
       <div className="mt-auto border-t border-foreground/10 pt-3">
         <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Prochaine étape</p>

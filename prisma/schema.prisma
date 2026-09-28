@@ -38,16 +38,20 @@ model User {
   mustChangePassword Boolean  @default(true)
   createdAt          DateTime @default(now())
 
-  sessions      Session[]
-  conversations Conversation[]
+  sessions        Session[]
+  conversations   Conversation[]
   // Phase 10 — traçabilité de création uniquement (voir Projet plus bas),
   // jamais une notion de propriété exclusive : un Projet reste visible et
   // modifiable par tout employé authentifié, même principe que Site/
   // Acteur (aucune donnée du SIT n'est aujourd'hui cloisonnée par
   // utilisateur, à l'exception de Conversation).
-  projetsCrees  Projet[]
+  projetsCrees    Projet[]
   // Espace projet — traçabilité de la dernière modification d'une étape.
   etapesModifiees ProjetEtape[]
+  // Espace collaboratif (2026-09-28) — projets d'équipe auxquels
+  // l'administrateur a donné accès, et accès qu'il a lui-même donnés.
+  projetsMembre   ProjetMembre[] @relation("ProjetMembreUser")
+  accesDonnes     ProjetMembre[] @relation("ProjetMembreAjoutePar")
 }
 
 model Session {
@@ -938,8 +942,47 @@ model Projet {
   montage        String?
   typologie      String?
   mission        String?
-  rehabilitation Boolean @default(false)
+  rehabilitation Boolean       @default(false)
   etapes         ProjetEtape[]
+
+  // Espace collaboratif (2026-09-28) — PERSONNEL : visible de son seul
+  // créateur (createdBy), l'administrateur compris ne le voit pas.
+  // COLLABORATIF : créé par un administrateur, visible des seuls membres
+  // (ProjetMembre) et des administrateurs. Tous les projets antérieurs
+  // restent PERSONNEL (valeur par défaut). archivedAt : projet
+  // collaboratif retiré des espaces des membres, conservé pour
+  // l'administrateur.
+  espace     ProjetEspace   @default(PERSONNEL)
+  archivedAt DateTime?
+  membres    ProjetMembre[]
+}
+
+enum ProjetEspace {
+  PERSONNEL
+  COLLABORATIF
+}
+
+enum ProjetRole {
+  MEMBRE
+  CHEF_DE_PROJET
+}
+
+// Accès d'un collaborateur à un projet collaboratif, donné (et retiré)
+// par un administrateur uniquement.
+model ProjetMembre {
+  id          String     @id @default(cuid())
+  projetId    String
+  projet      Projet     @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User       @relation("ProjetMembreUser", fields: [userId], references: [id], onDelete: Cascade)
+  role        ProjetRole @default(MEMBRE)
+  ajouteParId String?
+  ajoutePar   User?      @relation("ProjetMembreAjoutePar", fields: [ajouteParId], references: [id], onDelete: SetNull)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([projetId, userId])
+  @@index([userId])
 }
 
 enum ProjetEtapeStatut {

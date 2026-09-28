@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { exigerAccesProjet } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
 
 // Rattachement Projet<->AvisMarche (Phase 9/10) — action explicite
@@ -8,13 +7,9 @@ import { getPrisma } from "@/lib/prisma"
 // objet, acheteur ou localisation : ces signaux ont été étudiés et
 // écartés comme non fiables (voir le rapport d'audit Phase 10).
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await getSessionUser(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
-
   const { id: projetId } = await params
+  const garde = await exigerAccesProjet(projetId)
+  if ("reponse" in garde) return garde.reponse
   const { avisMarcheId } = (await request.json()) as { avisMarcheId?: string }
   if (!avisMarcheId) {
     return NextResponse.json({ success: false, error: "Paramètre avisMarcheId manquant." }, { status: 400 })

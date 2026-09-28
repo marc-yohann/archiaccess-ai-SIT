@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { exigerAccesProjet } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
 
 // Rattachement Projet<->Site — action explicite uniquement (Phase 10, voir
@@ -9,13 +8,9 @@ import { getPrisma } from "@/lib/prisma"
 // second rattachement identique (même projetId+siteId) est un no-op
 // idempotent, jamais un doublon (contrainte @@unique déjà en base).
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await getSessionUser(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
-
   const { id: projetId } = await params
+  const garde = await exigerAccesProjet(projetId)
+  if ("reponse" in garde) return garde.reponse
   const { siteId } = (await request.json()) as { siteId?: string }
   if (!siteId) {
     return NextResponse.json({ success: false, error: "Paramètre siteId manquant." }, { status: 400 })

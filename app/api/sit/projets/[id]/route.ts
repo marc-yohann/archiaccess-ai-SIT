@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { exigerAccesProjet, peutModifierProfil } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
 import { serializeDocumentSit } from "@/lib/documents-sit"
 import { lireProfil } from "@/lib/referentiel/profil"
@@ -16,13 +15,10 @@ import { lireProfil } from "@/lib/referentiel/profil"
 // fonctionnel démontré, pas une préférence. Correction additive
 // uniquement, aucune migration.
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await getSessionUser(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
-
   const { id } = await params
+  const garde = await exigerAccesProjet(id)
+  if ("reponse" in garde) return garde.reponse
+  const { user, niveau } = garde
   const prisma = await getPrisma()
   const projet = await prisma.projet.findUnique({
     where: { id },
@@ -35,6 +31,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       documentSitLinks: { include: { documentSit: true } },
       besoinLinks: { include: { besoin: true } },
       etapes: { include: { updatedBy: { select: { id: true, name: true } } } },
+      membres: {
+        select: { role: true, createdAt: true, user: { select: { id: true, name: true } } },
+        orderBy: { createdAt: "asc" },
+      },
     },
   })
   if (!projet) {
@@ -47,17 +47,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     documentSitLinks: projet.documentSitLinks.map((link) => ({ ...link, documentSit: serializeDocumentSit(link.documentSit) })),
   }
 
-  return NextResponse.json({ success: true, projet: serialized })
+  // acces : ce que l'interface peut proposer à cet utilisateur (le
+  // serveur revérifie à chaque modification).
+  const acces = { niveau, modifierProfil: peutModifierProfil(niveau), administrer: user.isAdmin && projet.espace === "COLLABORATIF" }
+  return NextResponse.json({ success: true, projet: serialized, acces })
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await getSessionUser(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
-
   const { id } = await params
+  const garde = await exigerAccesProjet(id)
+  if ("reponse" in garde) return garde.reponse
+  const { user, niveau } = garde
+
   const body = (await request.json()) as Record<string, unknown> & {
     nom?: string
     type?: string | null
@@ -66,12 +67,24 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     dateDebut?: string | null
     dateFin?: string | null
     montant?: number | null
+    archive?: boolean
   }
 
   const prisma = await getPrisma()
-  const existing = await prisma.projet.findUnique({ where: { id }, select: { id: true } })
+  const existing = await prisma.projet.findUnique({ where: { id }, select: { espace: true } })
   if (!existing) {
     return NextResponse.json({ success: false, error: "Projet introuvable." }, { status: 404 })
+  }
+
+  // Archiver / désarchiver : un administrateur, sur un projet
+  // collaboratif uniquement.
+  const archivage = typeof body.archive === "boolean"
+  if (archivage && !(user.isAdmin && existing.espace === "COLLABORATIF")) {
+    return NextResponse.json({ success: false, error: "Seul un administrateur archive un projet collaboratif." }, { status: 403 })
+  }
+  const modifieProfil = Object.keys(body).some((k) => k !== "archive")
+  if (modifieProfil && !peutModifierProfil(niveau)) {
+    return NextResponse.json({ success: false, error: "Seuls le chef de projet et l'administrateur modifient le profil du projet." }, { status: 403 })
   }
 
   const profil = lireProfil(body)
@@ -87,6 +100,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     dateDebut?: Date | null
     dateFin?: Date | null
     montant?: number | null
+    archivedAt?: Date | null
   } & typeof profil.data = { ...profil.data }
   if (typeof body.nom === "string") {
     const nom = body.nom.trim()
@@ -101,6 +115,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if ("dateDebut" in body) data.dateDebut = body.dateDebut ? new Date(body.dateDebut) : null
   if ("dateFin" in body) data.dateFin = body.dateFin ? new Date(body.dateFin) : null
   if ("montant" in body) data.montant = typeof body.montant === "number" ? body.montant : null
+  if (archivage) data.archivedAt = body.archive ? new Date() : null
 
   const projet = await prisma.projet.update({ where: { id }, data })
   return NextResponse.json({ success: true, projet })

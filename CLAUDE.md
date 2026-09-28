@@ -81,6 +81,25 @@ trace de ça dans le code actuel, ne pas la réintroduire.
   la maintenance de la méthode (version, statut brouillon, « à préciser
   avec un senior », principes internes) — réservées aux administrateurs
   (`useUser().isAdmin`) et au PDF.
+- **Espace collaboratif** (2026-09-28, maquette validée : artefact
+  « Espace collaboratif Archiaccess ») : « Mon espace » (projets
+  personnels, `/sit`, `/sit/projets`) et « Espace collaboratif »
+  (`/sit/equipe`, `/sit/equipe/[id]`) sont deux endroits séparés, bascule
+  dans `components/sit-nav.tsx`. La vue projet est partagée
+  (`components/projet/vue-projet.tsx`, prop `espace`) : sélecteur de
+  projet, équipe, droits selon le rôle ; un projet ouvert depuis le
+  mauvais espace est redirigé. Règle d'accès **unique**
+  `lib/projet-acces.ts` (`filtreProjetsAccessibles`, `exigerAccesProjet`,
+  `exigerAdmin`) appliquée à **toutes** les routes qui lisent ou modifient
+  un projet ou ses rattachements (y compris recherche, sites, acteurs,
+  documents, besoins) : PERSONNEL = son créateur seul (l'administrateur ne
+  le voit pas) ; COLLABORATIF = membres (`ProjetMembre`) + administrateurs,
+  masqué aux membres une fois archivé. Inaccessible → 404, jamais 403.
+  Seul un administrateur crée un projet collaboratif (création guidée
+  `?espace=collaboratif`), donne/retire les accès et archive
+  (`/admin/projets`, `/api/sit/projets/[id]/membres`). Rôles : membre,
+  chef de projet (modifie en plus le profil). **Toute nouvelle route
+  touchant un projet doit passer par `lib/projet-acces.ts`.**
 - `lib/referentiel/` — **source unique** du référentiel de méthode
   (données TS pures, importables côté client) : alimente l'espace projet
   et le PDF (`npm run referentiel:pdf`, voir `docs/referentiel/README.md`).
@@ -143,7 +162,10 @@ trace de ça dans le code actuel, ne pas la réintroduire.
   `rehabilitation`. `ProjetEtape` : avancement (`ProjetEtapeStatut`) et
   note par étape du référentiel (`etapeCode`), une ligne seulement une
   fois l'étape renseignée ; le contenu des étapes n'est jamais copié en
-  base.
+  base. `Projet.espace` (`PERSONNEL` par défaut — tous les projets
+  antérieurs le restent — ou `COLLABORATIF`), `Projet.archivedAt`,
+  `ProjetMembre` (projet, utilisateur, rôle `MEMBRE`/`CHEF_DE_PROJET`,
+  qui a donné l'accès).
 - `DataCacheEntry` — "coffre" du SIT : `source` + `cacheKey` uniques,
   `payload` JSON, **jamais supprimé/purgé** (accumulation permanente,
   voulu explicitement par l'utilisateur comme mémoire à long terme, pas
@@ -383,7 +405,19 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   (`public/logo-ai-puce.png`, importé statiquement — là où le logo
   s'affiche en grand dans le SIT : bouton flottant, en-têtes et bande
   repliée des panneaux Archiaccess AI ; le logo complet reste sur `/ai`,
-  à la connexion et en petite icône) **déployés le 2026-09-28**. L'équipe n'est pas
+  à la connexion et en petite icône) **déployés le 2026-09-28**.
+  **Espace collaboratif, lot 1 (accès)** construit et testé en local le
+  2026-09-28 (règles d'accès vérifiées par l'API avec trois comptes :
+  propriétaire, membre, non-membre, administrateur ; archivage ; retrait
+  d'accès), **pas déployé** ; migration `20260928180000_espace_collaboratif`
+  écrite, enregistrée dans `/api/admin/run-migration`, **pas appliquée** —
+  à lancer juste après le déploiement du code (le code lit
+  `Projet.espace`). Lots suivants validés sur maquette, pas commencés :
+  fils d'étape + dossier + « Joindre au projet » depuis Archiaccess AI ;
+  notifications, mentions, circuit de validation ; discussion du projet
+  (rafraîchie par interrogation périodique — **pas** de nouveau service
+  AWS, décision utilisateur) et actions ; photos de chantier et ajout
+  depuis la recherche. L'équipe n'est pas
   encore constituée : l'utilisateur valide en attendant des seniors.
 - (Remplacé par le tableau de bord de l'espace projet, voir plus haut ;
   ce qui suit est l'historique de l'ancien chantier d'accueil de la

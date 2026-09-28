@@ -134,6 +134,9 @@ function AdminPanel() {
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-medium">Administration — comptes employés</h1>
           <div className="flex items-center gap-3">
+            <Link href="/admin/projets" className="text-sm text-muted-foreground hover:underline">
+              Projets collaboratifs
+            </Link>
             <Link href="/admin/ingestion" className="text-sm text-muted-foreground hover:underline">
               Ingestion
             </Link>

@@ -940,6 +940,32 @@ WHERE b.id = sdu."batimentId" AND b."sourcePartition" IS NULL`,
     checksum: "582c7a4ad7b9a54c489227b1a72bdd84f649ea9cbefb3051cd8001a3e2e5e786",
     statements: [`ALTER TABLE "ProjetEtape" ADD COLUMN "echeance" TIMESTAMP(3)`],
   },
+  {
+    name: "20260928180000_espace_collaboratif",
+    checksum: "2c0624fd4c78d76c8b36c59d440cd8fed8d297129c30f9e2859aa8b5a3d1cae4",
+    statements: [
+      `CREATE TYPE "ProjetEspace" AS ENUM ('PERSONNEL', 'COLLABORATIF')`,
+      `CREATE TYPE "ProjetRole" AS ENUM ('MEMBRE', 'CHEF_DE_PROJET')`,
+      `ALTER TABLE "Projet" ADD COLUMN "espace" "ProjetEspace" NOT NULL DEFAULT 'PERSONNEL'`,
+      `ALTER TABLE "Projet" ADD COLUMN "archivedAt" TIMESTAMP(3)`,
+      `CREATE TABLE "ProjetMembre" (
+    "id" TEXT NOT NULL,
+    "projetId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "role" "ProjetRole" NOT NULL DEFAULT 'MEMBRE',
+    "ajouteParId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ProjetMembre_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE UNIQUE INDEX "ProjetMembre_projetId_userId_key" ON "ProjetMembre"("projetId", "userId")`,
+      `CREATE INDEX "ProjetMembre_userId_idx" ON "ProjetMembre"("userId")`,
+      `ALTER TABLE "ProjetMembre" ADD CONSTRAINT "ProjetMembre_projetId_fkey" FOREIGN KEY ("projetId") REFERENCES "Projet"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `ALTER TABLE "ProjetMembre" ADD CONSTRAINT "ProjetMembre_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      `ALTER TABLE "ProjetMembre" ADD CONSTRAINT "ProjetMembre_ajouteParId_fkey" FOREIGN KEY ("ajouteParId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE`,
+    ],
+  },
 ]
 
 export async function POST(request: Request) {
