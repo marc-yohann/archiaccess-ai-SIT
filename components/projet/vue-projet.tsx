@@ -321,7 +321,7 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
 
 function Cadre({ titre, sousTitre, children }: { titre: string; sousTitre?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <main className="glass-scene flex min-h-screen w-full flex-col gap-4 p-4 pb-24 lg:h-screen lg:overflow-hidden lg:pb-4">
+    <main className="glass-scene flex min-h-screen w-full flex-col gap-4 p-4 pb-40 md:pb-24 lg:h-screen lg:overflow-hidden lg:pb-4">
       <SitNav titre={titre} sousTitre={sousTitre} />
       {children}
     </main>

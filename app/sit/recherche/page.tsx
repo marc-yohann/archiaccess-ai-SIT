@@ -1373,7 +1373,7 @@ function Dashboard() {
   }).filter((x): x is { tag: string; question: string; title: string } => x !== null)
 
   return (
-    <main className="glass-scene flex h-screen w-full flex-col overflow-hidden lg:flex-row">
+    <main className="glass-scene flex h-[calc(100dvh-60px-env(safe-area-inset-bottom))] w-full flex-col overflow-hidden md:h-screen lg:flex-row">
       <div className="custom-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto p-4">
         {/* En-tête commun du SIT (components/sit-nav.tsx) : mêmes pilules
             que le tableau de bord, les projets et la méthode, et même

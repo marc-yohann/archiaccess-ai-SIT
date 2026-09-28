@@ -257,7 +257,7 @@ function GestionProjets() {
 
 function Cadre({ children }: { children: React.ReactNode }) {
   return (
-    <main className="glass-scene flex min-h-screen w-full flex-col gap-4 p-4 pb-10">
+    <main className="glass-scene flex min-h-screen w-full flex-col gap-4 p-4 pb-28 md:pb-10">
       <SitNav titre="Projets collaboratifs et accès" sousTitre={<Link href="/admin" className="hover:underline">Administration</Link>} />
       {children}
     </main>

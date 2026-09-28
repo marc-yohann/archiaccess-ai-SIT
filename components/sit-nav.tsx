@@ -4,7 +4,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
-import { BookOpen, FolderKanban, LayoutDashboard, Search, Users } from "lucide-react"
+import { BookOpen, FolderKanban, LayoutDashboard, Search, Settings, Users } from "lucide-react"
+import { useUser } from "@/components/auth-gate"
 
 // En-tête commun aux écrans du SIT centrés sur les projets (tableau de
 // bord, projets, méthode) : même logo et mêmes pilules en verre que la
@@ -31,6 +32,7 @@ const ESPACE_KEY = "sit.espace"
 
 export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.ReactNode }) {
   const pathname = usePathname()
+  const { isAdmin } = useUser()
   // L'espace courant se lit dans l'adresse ; sur les pages communes
   // (recherche, méthode), on garde le dernier espace visité.
   const [dernierEspace, setDernierEspace] = useState<"personnel" | "equipe">("personnel")
@@ -58,7 +60,8 @@ export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.
       </div>
       {/* Bascule entre les deux espaces : mon espace (projets personnels)
           et l'espace collaboratif (projets d'équipe). */}
-      <div className="liquid-glass-inset order-first flex w-full gap-0.5 rounded-full p-1 md:order-none md:w-auto" role="group" aria-label="Changer d'espace">
+      <div className="order-first flex w-full items-center gap-2 md:order-none md:w-auto">
+      <div className="liquid-glass-inset flex flex-1 gap-0.5 rounded-full p-1 md:flex-none" role="group" aria-label="Changer d'espace">
         <Link
           href="/sit"
           aria-current={!equipe ? "true" : undefined}
@@ -74,9 +77,28 @@ export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.
           Espace collaboratif
         </Link>
       </div>
-      {/* Téléphone : cinq onglets égaux (icône + libellé court) sur toute la
-          largeur. À partir de la tablette : les pilules habituelles. */}
-      <nav className={`grid w-full ${equipe ? "grid-cols-4" : "grid-cols-5"} gap-1 md:flex md:w-auto md:flex-wrap md:items-center md:gap-1.5`} aria-label="Navigation principale">
+      {/* Visible des seuls administrateurs : comptes, projets collaboratifs
+          et accès, ingestion (les pages /admin revérifient le droit). */}
+      {isAdmin && (
+        <Link
+          href="/admin"
+          aria-label="Administration"
+          aria-current={pathname.startsWith("/admin") ? "page" : undefined}
+          className={`flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-[13px] font-medium md:h-auto md:py-1.5 ${pathname.startsWith("/admin") ? "chrome-black text-white" : "liquid-glass-pill text-foreground/80 hover:text-foreground"}`}
+        >
+          <Settings size={15} className="shrink-0 md:size-3.5" />
+          <span className="hidden md:inline">Administration</span>
+        </Link>
+      )}
+      </div>
+      {/* Téléphone : barre d'onglets fixée en bas de l'écran (demande
+          utilisateur), icône + libellé court, à portée de pouce. À partir
+          de la tablette : les pilules habituelles dans l'en-tête. Les pages
+          réservent la hauteur de la barre en bas (pb-40 / pb-28 < md). */}
+      <nav
+        className={`fixed inset-x-0 bottom-0 z-30 grid ${equipe ? "grid-cols-4" : "grid-cols-5"} gap-1 border-t border-white/70 bg-white/85 px-2 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-8px_24px_-12px_rgba(30,35,45,0.25)] backdrop-blur-xl md:static md:z-auto md:flex md:w-auto md:flex-wrap md:items-center md:gap-1.5 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none`}
+        aria-label="Navigation principale"
+      >
         {LIENS.map(({ href, label, court, icon: Icon, exact }) => {
           const actif = exact ? pathname === href : pathname.startsWith(href)
           return (
@@ -84,7 +106,7 @@ export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.
               key={href}
               href={href}
               aria-current={actif ? "page" : undefined}
-              className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-medium md:flex-row md:gap-1.5 md:whitespace-nowrap md:rounded-full md:px-3 md:py-1.5 md:text-[13px] ${actif ? "chrome-black text-white" : "liquid-glass-pill text-foreground/80 hover:text-foreground"}`}
+              className={`flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 text-[11px] font-medium md:flex-row md:gap-1.5 md:whitespace-nowrap md:rounded-full md:px-3 md:py-1.5 md:text-[13px] ${actif ? "chrome-black text-white" : "liquid-glass-pill text-foreground/80 hover:text-foreground"}`}
             >
               {Icon ? (
                 <Icon size={16} className="shrink-0 md:size-3" />

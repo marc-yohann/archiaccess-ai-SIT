@@ -15,7 +15,7 @@ import { MONTAGES, STATUTS_MOA, TYPOLOGIES } from "@/lib/referentiel/libelles"
 function Referentiel() {
   const { isAdmin } = useUser()
   return (
-      <main className="glass-scene custom-scrollbar flex h-screen w-full items-start justify-center overflow-y-auto p-4">
+      <main className="glass-scene custom-scrollbar flex h-screen w-full items-start justify-center overflow-y-auto p-4 pb-28 md:pb-4">
         <div className="flex w-full max-w-5xl flex-col gap-4 pb-10">
           <SitNav titre="Méthode Archiaccess" />
 

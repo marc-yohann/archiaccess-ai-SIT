@@ -83,7 +83,7 @@ function TableauDeBord() {
   const aujourdhui = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })
 
   return (
-    <main className="glass-scene flex min-h-screen w-full flex-col gap-4 p-4 pb-24 lg:h-screen lg:flex-row lg:overflow-hidden lg:pb-4">
+    <main className="glass-scene flex min-h-screen w-full flex-col gap-4 p-4 pb-40 md:pb-24 lg:h-screen lg:flex-row lg:overflow-hidden lg:pb-4">
       <div className="custom-scrollbar flex min-w-0 flex-1 flex-col gap-5 px-1 pb-4 lg:overflow-y-auto">
         <SitNav titre="Archiaccess SIT" />
 
@@ -148,8 +148,8 @@ function TableauDeBord() {
         )}
 
         <section className="grid items-start gap-4 xl:grid-cols-5">
-          <div className="liquid-glass-panel flex flex-col gap-2.5 rounded-[1.25rem] p-5 xl:col-span-3">
-            <div className="flex items-baseline justify-between">
+          <div className="liquid-glass-panel flex min-w-0 flex-col gap-2.5 rounded-[1.25rem] p-5 xl:col-span-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <h2 className="text-[15px] font-semibold tracking-tight">À traiter</h2>
               <span className="text-xs text-muted-foreground">Échéances des {HORIZON_JOURS} prochains jours et retards</span>
             </div>
@@ -188,7 +188,7 @@ function TableauDeBord() {
             })}
           </div>
 
-          <div className="flex flex-col gap-4 xl:col-span-2">
+          <div className="flex min-w-0 flex-col gap-4 xl:col-span-2">
             <div className="liquid-glass-panel flex flex-col gap-2.5 rounded-[1.25rem] p-5">
               <h2 className="text-[15px] font-semibold tracking-tight">Points de vigilance</h2>
               {vigilance.length === 0 && <p className="text-sm text-muted-foreground">Rien à signaler.</p>}
@@ -206,7 +206,7 @@ function TableauDeBord() {
             </div>
 
             <div className="liquid-glass-panel flex flex-col gap-2.5 rounded-[1.25rem] p-5">
-              <div className="flex items-baseline justify-between">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <h2 className="text-[15px] font-semibold tracking-tight">Veille marchés AMO / OPC</h2>
                 <span className="text-xs text-muted-foreground">Publiés depuis {veille?.jours ?? 7} jours</span>
               </div>
@@ -218,7 +218,7 @@ function TableauDeBord() {
                 <div key={a.id} className="liquid-glass-soft rounded-xl px-3 py-2">
                   <p className="line-clamp-2 text-[13px] font-medium">{a.objet ?? "Objet non communiqué"}</p>
                   <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span className="truncate">
+                    <span className="min-w-0 truncate">
                       {[a.acheteurNom, a.codeDepartement && `département ${a.codeDepartement}`, a.dateLimiteReponse && `réponse avant le ${new Date(a.dateLimiteReponse).toLocaleDateString("fr-FR")}`]
                         .filter(Boolean)
                         .join(" · ")}

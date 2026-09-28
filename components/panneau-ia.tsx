@@ -203,7 +203,7 @@ export function PanneauIA({
       <button
         type="button"
         onClick={() => setOuvertMobile(true)}
-        className="liquid-glass-pill fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full p-3 text-sm font-medium shadow-lg sm:py-2.5 sm:pl-3 sm:pr-4"
+        className="liquid-glass-pill fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-4 z-40 md:bottom-4 flex items-center gap-2 rounded-full p-3 text-sm font-medium shadow-lg sm:py-2.5 sm:pl-3 sm:pr-4"
         aria-label="Ouvrir Archiaccess AI"
       >
         {/* Téléphone : le pictogramme seul, pour ne pas masquer le texte

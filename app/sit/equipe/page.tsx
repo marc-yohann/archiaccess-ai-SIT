@@ -51,7 +51,7 @@ function EspaceCollaboratif() {
   const aujourdhui = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })
 
   return (
-    <main className="glass-scene flex min-h-screen w-full flex-col gap-4 p-4 pb-24 lg:h-screen lg:flex-row lg:overflow-hidden lg:pb-4">
+    <main className="glass-scene flex min-h-screen w-full flex-col gap-4 p-4 pb-40 md:pb-24 lg:h-screen lg:flex-row lg:overflow-hidden lg:pb-4">
       <div className="custom-scrollbar flex min-w-0 flex-1 flex-col gap-5 px-1 pb-4 lg:overflow-y-auto">
         <SitNav titre="Espace collaboratif" />
 
