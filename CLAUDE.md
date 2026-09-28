@@ -262,7 +262,18 @@ route, nouveau connecteur) nécessite bien un redéploiement complet
 Identifiants AWS temporaires (CloudShell, courte durée de vie) fournis
 par l'utilisateur à la demande — vérifier leur validité
 (`aws sts get-caller-identity`) avant tout appel, en redemander dès
-expiration.
+expiration. Les charger en **variables d'environnement**
+(`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`/`AWS_SESSION_TOKEN`, fichier
+`source`-é depuis le scratchpad puis supprimé) : les mêmes valeurs écrites
+dans `~/.aws/credentials` ont été refusées (`InvalidClientTokenId`) le
+2026-09-28 alors qu'elles passaient en variables d'environnement. Durée
+de vie courte (≈ 10-60 min restantes à réception) : construire **avant**
+de demander les identifiants si possible, et appliquer une migration
+juste après le déploiement du code. Si les identifiants expirent entre
+les deux, l'utilisateur peut appliquer la migration lui-même depuis
+CloudShell sans jamais afficher le jeton :
+`TOK=$(aws secretsmanager get-secret-value --secret-id archiaccess-ai-sit/ingest-token --query SecretString --output text)`
+puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "Authorization: Bearer $TOK"`.
 
 ## Conventions établies
 
@@ -363,11 +374,13 @@ expiration.
   construit, testé en local et **déployé le 2026-09-27** (code + migration
   `20260927120000_espace_projet` appliquée via `/api/admin/run-migration`
   avec l'accord explicite de l'utilisateur, le garde-fou de permissions
-  ayant d'abord refusé l'appel). Migration suivante
-  `20260927200000_projet_etape_echeance` (échéance par étape) écrite,
-  **pas encore appliquée** : à lancer juste après le prochain déploiement
-  (le tableau de bord et l'espace projet la lisent ; code prêt, testé en
-  local, non déployé). L'équipe n'est pas
+  ayant d'abord refusé l'appel). **Redéployé le 2026-09-28** (commit
+  `7154f02` : tableau de bord, espace projet refondu, panneau Archiaccess
+  AI modulable, échéances, adaptation tablette/téléphone) et migration
+  `20260927200000_projet_etape_echeance` appliquée le même jour par
+  l'utilisateur lui-même depuis CloudShell (voir "Déploiement"). Le logo
+  Archiaccess AI dans le SIT (commit `822187c`) est committé mais **pas
+  encore déployé**. L'équipe n'est pas
   encore constituée : l'utilisateur valide en attendant des seniors.
 - (Remplacé par le tableau de bord de l'espace projet, voir plus haut ;
   ce qui suit est l'historique de l'ancien chantier d'accueil de la
