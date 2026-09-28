@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BookOpen, FolderKanban, LayoutDashboard, Search, Sparkles } from "lucide-react"
+import { BookOpen, FolderKanban, LayoutDashboard, Search } from "lucide-react"
 
 // En-tête commun aux écrans du SIT centrés sur les projets (tableau de
 // bord, projets, méthode) : même logo et mêmes pilules en verre que la
@@ -15,7 +15,7 @@ const LIENS = [
   { href: "/sit/projets", label: "Projets", court: "Projets", icon: FolderKanban, exact: false },
   { href: "/sit/recherche", label: "Recherche de données", court: "Données", icon: Search, exact: false },
   { href: "/sit/referentiel", label: "Méthode", court: "Méthode", icon: BookOpen, exact: false },
-  { href: "/ai", label: "Archiaccess AI", court: "AI", icon: Sparkles, exact: false },
+  { href: "/ai", label: "Archiaccess AI", court: "AI", icon: null, exact: false },
 ]
 
 export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.ReactNode }) {
@@ -41,7 +41,11 @@ export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.
               aria-current={actif ? "page" : undefined}
               className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-medium md:flex-row md:gap-1.5 md:whitespace-nowrap md:rounded-full md:px-3 md:py-1.5 md:text-[13px] ${actif ? "chrome-black text-white" : "liquid-glass-pill text-foreground/80 hover:text-foreground"}`}
             >
-              <Icon size={16} className="shrink-0 md:size-3" />
+              {Icon ? (
+                <Icon size={16} className="shrink-0 md:size-3" />
+              ) : (
+                <Image src="/logo-ai.png" alt="" width={18} height={18} className="shrink-0 md:size-4" />
+              )}
               <span className="max-w-full truncate md:hidden">{court}</span>
               <span className="hidden md:inline">{label}</span>
             </Link>

@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { Check, Copy, Maximize2, PanelRightClose, Plus, Send, Sparkles, X } from "lucide-react"
+import Image from "next/image"
+import { Check, Copy, Maximize2, PanelRightClose, Plus, Send, X } from "lucide-react"
 import { formatReply } from "@/lib/format-reply"
 
 // Panneau Archiaccess AI intégré (tableau de bord, espace projet). Même
@@ -198,15 +199,15 @@ export function PanneauIA({
       <button
         type="button"
         onClick={() => setOuvertMobile(true)}
-        className="chrome-black fixed bottom-4 right-4 z-40 flex h-14 w-14 items-center justify-center gap-2 rounded-full text-sm font-medium text-white shadow-lg sm:h-auto sm:w-auto sm:px-4 sm:py-3"
+        className="liquid-glass-pill fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full p-1.5 text-sm font-medium shadow-lg sm:pr-4"
         aria-label="Ouvrir Archiaccess AI"
       >
-        {/* Téléphone : bouton rond (icône seule) pour ne pas masquer le
-            texte en dessous ; libellé complet à partir de la tablette. */}
-        <Sparkles size={18} className="sm:size-[15px]" />
+        {/* Téléphone : le logo seul, pour ne pas masquer le texte en
+            dessous ; libellé complet à partir de la tablette. */}
+        <Image src="/logo-ai.png" alt="" width={44} height={44} className="shrink-0 sm:size-9" />
         <span className="hidden sm:inline">Archiaccess AI</span>
         {messages.length > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 rounded-full bg-foreground px-1.5 text-[10px] leading-4 text-background sm:static sm:bg-white/25 sm:text-white">
+          <span className="absolute -right-0.5 -top-0.5 rounded-full bg-foreground px-1.5 text-[10px] leading-4 text-background sm:static">
             {messages.length}
           </span>
         )}
@@ -224,7 +225,7 @@ export function PanneauIA({
           title="Afficher Archiaccess AI"
           aria-label="Afficher Archiaccess AI"
         >
-          <Sparkles size={16} />
+          <Image src="/logo-ai.png" alt="" width={28} height={28} />
           <span className="text-sm font-medium [writing-mode:vertical-rl]">Archiaccess AI</span>
           {messages.length > 0 && <span className="rounded-full bg-foreground/80 px-1.5 text-[10px] text-white">{messages.length}</span>}
         </button>
@@ -256,7 +257,7 @@ export function PanneauIA({
       )}
 
       <div className="flex items-center gap-2">
-        <Sparkles size={15} />
+        <Image src="/logo-ai.png" alt="" width={24} height={24} />
         <h2 className="text-sm font-semibold">Archiaccess AI</h2>
         <div className="ml-auto flex items-center gap-1">
           <button

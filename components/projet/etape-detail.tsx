@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Sparkles } from "lucide-react"
+import Image from "next/image"
 import { itemsApplicables, texteItem, variantesApplicables, type Etape, type ProfilOperation } from "@/lib/referentiel"
 import { ACTEURS, STATUTS_VALIDATION } from "@/lib/referentiel/libelles"
 import { ETAPE_STATUTS, ETAPE_STATUTS_LIBELLES, type EtapeStatut } from "@/lib/referentiel/profil"
@@ -121,7 +121,7 @@ export function EtapeDetail({
           }
           className="chrome-black flex w-full items-center justify-center gap-1.5 rounded-xl px-3.5 py-2.5 text-xs font-medium text-white sm:ml-auto sm:w-auto sm:py-2"
         >
-          <Sparkles size={13} />
+          <Image src="/logo-ai.png" alt="" width={18} height={18} />
           Préparer avec Archiaccess AI
         </button>
       </div>
