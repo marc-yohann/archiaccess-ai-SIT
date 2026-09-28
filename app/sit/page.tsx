@@ -83,22 +83,22 @@ function TableauDeBord() {
   const aujourdhui = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })
 
   return (
-    <main className="glass-scene flex h-screen w-full flex-col gap-4 overflow-hidden p-4 lg:flex-row">
-      <div className="custom-scrollbar flex min-w-0 flex-1 flex-col gap-5 overflow-y-auto px-1 pb-4">
+    <main className="glass-scene flex min-h-screen w-full flex-col gap-4 p-4 pb-24 lg:h-screen lg:flex-row lg:overflow-hidden lg:pb-4">
+      <div className="custom-scrollbar flex min-w-0 flex-1 flex-col gap-5 px-1 pb-4 lg:overflow-y-auto">
         <SitNav titre="Archiaccess SIT" />
 
         <section className="mt-2 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{aujourdhui}</p>
-            <h2 className="mt-1.5 text-[28px] font-light leading-tight tracking-tight">Bonjour {prenom}, voici vos opérations.</h2>
+            <h2 className="mt-1.5 text-2xl font-light leading-tight tracking-tight sm:text-[28px]">Bonjour {prenom}, voici vos opérations.</h2>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <form
               onSubmit={(e) => {
                 e.preventDefault()
                 if (recherche.trim()) router.push(`/sit/recherche?resume=${encodeURIComponent(recherche.trim())}`)
               }}
-              className="liquid-glass-soft flex w-72 items-center gap-2 rounded-xl px-3 py-2.5"
+              className="liquid-glass-soft flex min-w-0 flex-1 items-center gap-2 rounded-xl px-3 py-2.5 sm:w-72 sm:flex-none"
             >
               <Search size={15} className="shrink-0 text-muted-foreground" />
               <input

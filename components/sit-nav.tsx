@@ -27,7 +27,12 @@ export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.
           <h1 className="truncate text-[17px] font-medium tracking-tight">{titre}</h1>
         </div>
       </div>
-      <nav className="flex flex-wrap items-center gap-1.5" aria-label="Navigation principale">
+      {/* Petit écran : une seule ligne qui défile horizontalement plutôt que
+          trois lignes de pilules qui repoussent le contenu. */}
+      <nav
+        className="-mx-4 flex w-[calc(100%+2rem)] flex-nowrap items-center gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:w-auto md:flex-wrap md:overflow-visible md:px-0 [&::-webkit-scrollbar]:hidden"
+        aria-label="Navigation principale"
+      >
         {LIENS.map(({ href, label, icon: Icon, exact }) => {
           const actif = exact ? pathname === href : pathname.startsWith(href)
           return (
@@ -35,7 +40,7 @@ export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.
               key={href}
               href={href}
               aria-current={actif ? "page" : undefined}
-              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium ${actif ? "chrome-black text-white" : "liquid-glass-pill text-foreground/80 hover:text-foreground"}`}
+              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] font-medium ${actif ? "chrome-black text-white" : "liquid-glass-pill text-foreground/80 hover:text-foreground"}`}
             >
               <Icon size={12} />
               {label}

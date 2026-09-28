@@ -76,7 +76,7 @@ export function EtapeDetail({
   }
 
   return (
-    <article className="liquid-glass-panel custom-scrollbar flex h-full min-h-0 flex-col gap-5 overflow-y-auto rounded-2xl p-6">
+    <article className="liquid-glass-panel custom-scrollbar flex flex-col gap-5 rounded-2xl p-5 sm:p-6 lg:h-full lg:min-h-0 lg:overflow-y-auto">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -168,7 +168,7 @@ export function EtapeDetail({
           <tbody>
             {etape.roles.map((r) => (
               <tr key={r.acteur} className="border-b border-border/60 last:border-0">
-                <th className="w-44 py-1.5 pr-3 text-left align-top font-medium">{ACTEURS[r.acteur]}</th>
+                <th className="w-28 py-1.5 pr-3 text-left align-top font-medium sm:w-44">{ACTEURS[r.acteur]}</th>
                 <td className="py-1.5 align-top">{r.role}</td>
               </tr>
             ))}

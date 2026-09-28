@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { Check, Copy, Maximize2, PanelRightClose, Plus, Send, Sparkles } from "lucide-react"
+import { Check, Copy, Maximize2, PanelRightClose, Plus, Send, Sparkles, X } from "lucide-react"
 import { formatReply } from "@/lib/format-reply"
 
 // Panneau Archiaccess AI intégré (tableau de bord, espace projet). Même
@@ -17,6 +17,10 @@ import { formatReply } from "@/lib/format-reply"
 // qui reprend la même conversation dans /ai. Largeur et repli sont
 // mémorisés par navigateur (simple confort, localStorage protégé).
 //
+// Sur tablette et téléphone (moins de 1024 px), pas de panneau latéral :
+// un bouton flottant « Archiaccess AI » ouvre la même conversation en
+// plein écran, pour ne jamais masquer le contenu de la page.
+//
 // `demande` permet à la page d'envoyer une question depuis un bouton
 // (« Préparer avec Archiaccess AI ») : chaque nouvel `id` déclenche un
 // envoi, et rouvre le panneau s'il était replié.
@@ -30,6 +34,21 @@ const LARGEUR_MIN = 300
 const LARGEUR_MAX = 720
 const CLE_LARGEUR = "sit.panneau-ia.largeur"
 const CLE_REPLIE = "sit.panneau-ia.replie"
+const GRAND_ECRAN = "(min-width: 1024px)"
+
+// Largeur « lg » de Tailwind : panneau latéral au-dessus, plein écran
+// à la demande en dessous.
+function useGrandEcran(): boolean {
+  const [grand, setGrand] = useState(true)
+  useEffect(() => {
+    const mq = window.matchMedia(GRAND_ECRAN)
+    const maj = () => setGrand(mq.matches)
+    maj()
+    mq.addEventListener("change", maj)
+    return () => mq.removeEventListener("change", maj)
+  }, [])
+  return grand
+}
 
 function lire(cle: string): string | null {
   try {
@@ -67,6 +86,8 @@ export function PanneauIA({
   const [copie, setCopie] = useState<number | null>(null)
   const [largeur, setLargeur] = useState(360)
   const [replie, setReplie] = useState(false)
+  const [ouvertMobile, setOuvertMobile] = useState(false)
+  const grandEcran = useGrandEcran()
   const finRef = useRef<HTMLDivElement>(null)
   // Le contexte change à chaque sélection d'étape : toujours envoyer le
   // plus récent, même depuis un envoi déclenché par effet.
@@ -147,14 +168,19 @@ export function PanneauIA({
     if (demande && demande.id !== derniereDemande.current) {
       derniereDemande.current = demande.id
       replier(false)
+      setOuvertMobile(true)
       void envoyer(demande.texte)
     }
     // envoyer lit ses entrées par ref : seule une nouvelle demande compte.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demande?.id])
 
+  // Défile uniquement la zone des messages, jamais la page entière (un
+  // scrollIntoView faisait sauter la page en bas à l'ouverture d'un projet
+  // sur téléphone).
   useEffect(() => {
-    finRef.current?.scrollIntoView({ block: "end" })
+    const zone = finRef.current?.parentElement
+    if (zone) zone.scrollTop = zone.scrollHeight
   }, [messages, enCours])
 
   async function copier(i: number, texte: string) {
@@ -167,18 +193,33 @@ export function PanneauIA({
     }
   }
 
-  if (replie) {
+  if (!grandEcran && !ouvertMobile) {
     return (
-      <aside className="liquid-glass-panel flex h-14 w-full shrink-0 rounded-2xl lg:h-full lg:w-14">
+      <button
+        type="button"
+        onClick={() => setOuvertMobile(true)}
+        className="chrome-black fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-medium text-white shadow-lg"
+        aria-label="Ouvrir Archiaccess AI"
+      >
+        <Sparkles size={15} />
+        Archiaccess AI
+        {messages.length > 0 && <span className="rounded-full bg-white/25 px-1.5 text-[10px]">{messages.length}</span>}
+      </button>
+    )
+  }
+
+  if (grandEcran && replie) {
+    return (
+      <aside className="liquid-glass-panel flex h-full w-14 shrink-0 rounded-2xl">
         <button
           type="button"
           onClick={() => replier(false)}
-          className="flex h-full w-full items-center justify-center gap-2 text-muted-foreground hover:text-foreground lg:flex-col lg:justify-start lg:pt-5"
+          className="flex h-full w-full flex-col items-center justify-start gap-2 pt-5 text-muted-foreground hover:text-foreground"
           title="Afficher Archiaccess AI"
           aria-label="Afficher Archiaccess AI"
         >
           <Sparkles size={16} />
-          <span className="text-sm font-medium lg:[writing-mode:vertical-rl]">Archiaccess AI</span>
+          <span className="text-sm font-medium [writing-mode:vertical-rl]">Archiaccess AI</span>
           {messages.length > 0 && <span className="rounded-full bg-foreground/80 px-1.5 text-[10px] text-white">{messages.length}</span>}
         </button>
       </aside>
@@ -186,18 +227,27 @@ export function PanneauIA({
   }
 
   return (
+    <>
+      {!grandEcran && <div className="glass-scene fixed inset-0 z-40" aria-hidden="true" onClick={() => setOuvertMobile(false)} />}
     <aside
-      className="liquid-glass-panel relative flex h-[60vh] w-full shrink-0 flex-col gap-3 rounded-2xl p-4 lg:h-full lg:w-[var(--largeur-ia)]"
+      className={
+        grandEcran
+          ? "liquid-glass-panel relative flex h-full w-[var(--largeur-ia)] shrink-0 flex-col gap-3 rounded-2xl p-4"
+          : "liquid-glass-panel fixed inset-2 z-50 flex flex-col gap-3 rounded-2xl p-4"
+      }
       style={{ "--largeur-ia": `${largeur}px` } as React.CSSProperties}
+      aria-label="Archiaccess AI"
     >
-      <div
-        onPointerDown={debutRedimension}
-        className="group absolute -left-2 top-0 z-10 hidden h-full w-4 cursor-col-resize lg:block"
-        title="Glisser pour élargir ou réduire"
-        aria-hidden="true"
-      >
-        <span className="absolute left-1/2 top-1/2 h-10 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/15 transition-colors group-hover:bg-foreground/40" />
-      </div>
+      {grandEcran && (
+        <div
+          onPointerDown={debutRedimension}
+          className="group absolute -left-2 top-0 z-10 h-full w-4 cursor-col-resize"
+          title="Glisser pour élargir ou réduire"
+          aria-hidden="true"
+        >
+          <span className="absolute left-1/2 top-1/2 h-10 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/15 transition-colors group-hover:bg-foreground/40" />
+        </div>
+      )}
 
       <div className="flex items-center gap-2">
         <Sparkles size={15} />
@@ -223,15 +273,26 @@ export function PanneauIA({
               <Maximize2 size={14} />
             </Link>
           )}
-          <button
-            type="button"
-            onClick={() => replier(true)}
-            className="liquid-glass-btn rounded-lg p-1.5 text-muted-foreground"
-            title="Replier le panneau"
-            aria-label="Replier le panneau"
-          >
-            <PanelRightClose size={14} />
-          </button>
+          {grandEcran ? (
+            <button
+              type="button"
+              onClick={() => replier(true)}
+              className="liquid-glass-btn rounded-lg p-1.5 text-muted-foreground"
+              title="Replier le panneau"
+              aria-label="Replier le panneau"
+            >
+              <PanelRightClose size={14} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setOuvertMobile(false)}
+              className="liquid-glass-btn rounded-lg p-2 text-muted-foreground"
+              aria-label="Fermer Archiaccess AI"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -305,5 +366,6 @@ export function PanneauIA({
         </button>
       </form>
     </aside>
+    </>
   )
 }

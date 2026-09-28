@@ -61,6 +61,7 @@ function EspaceProjet() {
   const [phasesOuvertes, setPhasesOuvertes] = useState<Set<number>>(new Set())
   const [edition, setEdition] = useState<ProfilSaisi | null>(null)
   const [demandeIA, setDemandeIA] = useState<{ id: number; texte: string } | null>(null)
+  const [listeOuverte, setListeOuverte] = useState(false)
 
   useEffect(() => {
     fetch(`/api/sit/projets/${id}`)
@@ -166,8 +167,20 @@ function EspaceProjet() {
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
-        <nav className="liquid-glass-panel custom-scrollbar flex shrink-0 flex-col gap-0.5 overflow-y-auto rounded-2xl p-3 lg:w-[19rem]" aria-label="Phases et étapes">
+      <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1 lg:flex-row">
+        {/* Tablette et téléphone : la liste des étapes se replie au-dessus
+            du détail, pour que l'étape ouverte reste immédiatement visible. */}
+        <button
+          type="button"
+          onClick={() => setListeOuverte((o) => !o)}
+          className="liquid-glass-panel flex items-center gap-3 rounded-2xl px-4 py-3 text-left lg:hidden"
+          aria-expanded={listeOuverte}
+        >
+          <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Étapes</span>
+          <span className="min-w-0 flex-1 truncate text-sm font-medium">{etapeOuverte ? `${etapeOuverte.code} ${etapeOuverte.titre}` : "Choisir une étape"}</span>
+          {listeOuverte ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        </button>
+        <nav className={`liquid-glass-panel custom-scrollbar ${listeOuverte ? "flex" : "hidden"} shrink-0 flex-col gap-0.5 rounded-2xl p-3 lg:flex lg:w-[19rem] lg:overflow-y-auto`} aria-label="Phases et étapes">
           {phases.map(({ phase, total, traitees, complete }) => {
             const ouverte = phasesOuvertes.has(phase.numero)
             return (
@@ -198,7 +211,10 @@ function EspaceProjet() {
                         <button
                           key={e.code}
                           type="button"
-                          onClick={() => setCodeOuvert(e.code)}
+                          onClick={() => {
+                            setCodeOuvert(e.code)
+                            setListeOuverte(false)
+                          }}
                           className={`flex items-start gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] leading-snug ${actif ? "chrome-black text-white" : "hover:bg-white/35"}`}
                           aria-current={actif ? "step" : undefined}
                         >
@@ -215,7 +231,7 @@ function EspaceProjet() {
           })}
         </nav>
 
-        <div className="min-h-0 min-w-0 flex-1">
+        <div className="min-w-0 lg:min-h-0 lg:flex-1">
           {etapeOuverte ? (
             <EtapeDetail
               key={etapeOuverte.code}
@@ -250,7 +266,7 @@ function EspaceProjet() {
 
 function Cadre({ titre, sousTitre, children }: { titre: string; sousTitre?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <main className="glass-scene flex h-screen w-full flex-col gap-4 overflow-y-auto p-4 lg:overflow-hidden">
+    <main className="glass-scene flex min-h-screen w-full flex-col gap-4 p-4 pb-24 lg:h-screen lg:overflow-hidden lg:pb-4">
       <SitNav titre={titre} sousTitre={sousTitre} />
       {children}
     </main>
