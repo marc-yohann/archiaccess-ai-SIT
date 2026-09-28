@@ -409,10 +409,13 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   **Espace collaboratif, lot 1 (accès)** construit et testé en local le
   2026-09-28 (règles d'accès vérifiées par l'API avec trois comptes :
   propriétaire, membre, non-membre, administrateur ; archivage ; retrait
-  d'accès), **pas déployé** ; migration `20260928180000_espace_collaboratif`
-  écrite, enregistrée dans `/api/admin/run-migration`, **pas appliquée** —
-  à lancer juste après le déploiement du code (le code lit
-  `Projet.espace`). Lots suivants validés sur maquette, pas commencés :
+  d'accès), **déployé le 2026-09-28** (commit `d94ab78`, avec le bouton
+  « Administration » réservé aux administrateurs dans l'en-tête et la
+  barre d'onglets fixée en bas sur téléphone) ; migration
+  `20260928180000_espace_collaboratif` appliquée le même jour via
+  `/api/admin/run-migration`, juste après le code, avec l'accord de
+  l'utilisateur. Tous les projets existants sont devenus PERSONNEL de
+  leur créateur. Lots suivants validés sur maquette, pas commencés :
   fils d'étape + dossier + « Joindre au projet » depuis Archiaccess AI ;
   notifications, mentions, circuit de validation ; discussion du projet
   (rafraîchie par interrogation périodique — **pas** de nouveau service
