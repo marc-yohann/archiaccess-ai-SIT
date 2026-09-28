@@ -62,15 +62,15 @@ function NouveauProjet() {
       <div className="flex w-full max-w-6xl flex-col gap-4 pb-10">
         <SitNav titre="Nouveau projet" sousTitre={<Link href="/sit/projets" className="hover:underline">Projets</Link>} />
 
-        <form onSubmit={creer} className="liquid-glass-panel flex flex-col gap-6 rounded-2xl p-6">
+        <form onSubmit={creer} className="liquid-glass-panel flex flex-col gap-6 rounded-2xl p-4 sm:p-6">
           <label className="flex flex-col gap-1.5">
             <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Nom de l'opération</span>
             <input
               value={nom}
               onChange={(e) => setNom(e.target.value)}
               required
-              placeholder="Ex. : Groupe scolaire — construction neuve"
-              className="liquid-glass-inset rounded-xl px-3.5 py-3 text-lg outline-none"
+              placeholder="Ex. : Groupe scolaire Jules-Ferry"
+              className="liquid-glass-inset min-w-0 rounded-xl px-3.5 py-3 text-base outline-none sm:text-lg"
             />
           </label>
           <label className="flex flex-col gap-1.5">
@@ -120,11 +120,11 @@ function NouveauProjet() {
             </fieldset>
           ))}
 
-          <div className="flex items-center gap-3">
-            <button type="submit" disabled={enCours || !nom.trim()} className="chrome-black rounded-xl px-5 py-3 text-sm font-medium text-white disabled:opacity-50">
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="submit" disabled={enCours || !nom.trim()} className="chrome-black flex-1 rounded-xl px-5 py-3 text-sm font-medium text-white disabled:opacity-50 sm:flex-none">
               Créer le projet
             </button>
-            <Link href="/sit/projets" className="liquid-glass-pill rounded-xl px-5 py-3 text-sm">
+            <Link href="/sit/projets" className="liquid-glass-pill rounded-xl px-5 py-3 text-center text-sm">
               Annuler
             </Link>
             {erreur && <p className="text-sm text-red-600">{erreur}</p>}

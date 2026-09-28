@@ -1055,3 +1055,15 @@
     background: transparent !important;
   }
 }
+
+/* Téléphone : Safari iOS zoome toute la page dès qu'on touche un champ dont
+   le texte fait moins de 16 px, et la page reste ensuite décalée et trop
+   large. Règle hors @layer pour primer sur les utilitaires text-sm/text-xs
+   des champs, sans toucher à leur taille à partir de la tablette. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}

@@ -92,13 +92,13 @@ function TableauDeBord() {
             <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{aujourdhui}</p>
             <h2 className="mt-1.5 text-2xl font-light leading-tight tracking-tight sm:text-[28px]">Bonjour {prenom}, voici vos opérations.</h2>
           </div>
-          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <form
               onSubmit={(e) => {
                 e.preventDefault()
                 if (recherche.trim()) router.push(`/sit/recherche?resume=${encodeURIComponent(recherche.trim())}`)
               }}
-              className="liquid-glass-soft flex min-w-0 flex-1 items-center gap-2 rounded-xl px-3 py-2.5 sm:w-72 sm:flex-none"
+              className="liquid-glass-soft flex w-full min-w-0 items-center gap-2 rounded-xl px-3 py-2.5 sm:w-72"
             >
               <Search size={15} className="shrink-0 text-muted-foreground" />
               <input
@@ -106,10 +106,10 @@ function TableauDeBord() {
                 onChange={(e) => setRecherche(e.target.value)}
                 placeholder="Adresse, entreprise, marché…"
                 aria-label="Recherche de données"
-                className="flex-1 bg-transparent text-sm outline-none"
+                className="min-w-0 flex-1 bg-transparent text-sm outline-none"
               />
             </form>
-            <Link href="/sit/projets/nouveau" className="chrome-black flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium text-white">
+            <Link href="/sit/projets/nouveau" className="chrome-black flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium text-white">
               <Plus size={14} />
               Nouveau projet
             </Link>

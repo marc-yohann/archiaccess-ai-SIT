@@ -4,9 +4,9 @@ import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import Image from "next/image"
-import { Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Home, Layers, Map, LayoutGrid, ListChecks, PanelRightClose, PanelRightOpen, MapPin, Building2, FolderKanban, FileText, Hash } from "lucide-react"
+import { Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Layers, Map, LayoutGrid, ListChecks, PanelRightClose, PanelRightOpen, MapPin, Building2, FolderKanban, FileText, Hash } from "lucide-react"
 import { AuthGate } from "@/components/auth-gate"
+import { SitNav } from "@/components/sit-nav"
 import { AutoGrowTextarea } from "@/components/auto-grow-textarea"
 import type { AddressResult, CommuneResult } from "@/lib/data-sources/ban"
 import type { Parcel } from "@/lib/data-sources/cadastre"
@@ -886,6 +886,12 @@ function Dashboard() {
   // gauche (desktop uniquement), replié = simple bande verticale.
   const [aiWidth, setAiWidth] = useState(384)
   const [aiCollapsed, setAiCollapsed] = useState(false)
+  // Sur téléphone et tablette, le panneau ouvert prenait près de la moitié
+  // de l'écran avant même la première recherche : il démarre replié en
+  // bande « Archiaccess AI » en bas, un appui l'ouvre.
+  useEffect(() => {
+    if (!window.matchMedia("(min-width: 1024px)").matches) setAiCollapsed(true)
+  }, [])
 
   function startAiResize(e: React.MouseEvent) {
     e.preventDefault()
@@ -1364,43 +1370,10 @@ function Dashboard() {
   return (
     <main className="glass-scene flex h-screen w-full flex-col overflow-hidden lg:flex-row">
       <div className="custom-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Image src="/logo-sit.png" alt="Archiaccess SIT" width={40} height={40} />
-            <h1 className="text-lg font-medium">Système d'Information Technique</h1>
-          </div>
-          {/* Bouton pilule en verre chromé, cohérent avec le reste de
-              l'app — un lien texte simple détonnait à côté des boutons
-              en verre utilisés partout ailleurs (retour utilisateur,
-              jamais porté depuis l'artéfact). */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Espace projet et méthode Archiaccess (réorientation du
-                2026-09-27, voir CLAUDE.md) : la recherche de données devient
-                un outil parmi d'autres, le tableau de bord (/sit) est
-                l'accueil. */}
-            <Link
-              href="/sit/projets"
-              className="liquid-glass-pill flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium"
-            >
-              <FolderKanban size={13} />
-              Projets
-            </Link>
-            <Link
-              href="/sit/referentiel"
-              className="liquid-glass-pill flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium"
-            >
-              <ListChecks size={13} />
-              Méthode
-            </Link>
-            <Link
-              href="/sit"
-              className="liquid-glass-pill flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium"
-            >
-              <Home size={13} />
-              Tableau de bord
-            </Link>
-          </div>
-        </div>
+        {/* En-tête commun du SIT (components/sit-nav.tsx) : mêmes pilules
+            que le tableau de bord, les projets et la méthode, et même
+            comportement sur téléphone. */}
+        <SitNav titre="Recherche de données" />
 
         {/* 5 onglets — voir SEARCH_MODE_META. "Recherche" (ex-"Point précis",
             renommé pour ne plus concurrencer visuellement les 6 catégories
@@ -1506,10 +1479,17 @@ function Dashboard() {
                 <button
                   type="submit"
                   disabled={isSearching}
-                  className="chrome-black shrink-0 rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
+                  aria-label="Rechercher"
+                  className="chrome-black flex shrink-0 items-center rounded-xl px-3 py-2 text-sm text-white disabled:opacity-50 sm:px-4"
                   style={{ margin: ".25rem" }}
                 >
-                  {isSearching ? "…" : "Rechercher"}
+                  {/* Téléphone : icône seule, pour laisser la place au champ. */}
+                  {isSearching ? "…" : (
+                    <>
+                      <Search size={16} className="sm:hidden" />
+                      <span className="hidden sm:inline">Rechercher</span>
+                    </>
+                  )}
                 </button>
               </form>
             </div>
@@ -2154,7 +2134,7 @@ function Dashboard() {
         className={
           aiCollapsed
             ? "liquid-glass-panel relative flex h-14 w-full shrink-0 flex-col overflow-hidden p-3 lg:h-screen lg:w-14"
-            : "liquid-glass-panel relative flex h-[45vh] w-full shrink-0 flex-col p-4 lg:h-screen lg:w-[var(--ai-width)]"
+            : "liquid-glass-panel relative flex h-[65vh] w-full shrink-0 flex-col p-4 lg:h-screen lg:w-[var(--ai-width)]"
         }
         style={!aiCollapsed ? ({ "--ai-width": `${aiWidth}px` } as React.CSSProperties) : undefined}
       >

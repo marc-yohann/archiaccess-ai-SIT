@@ -83,17 +83,17 @@ export function EtapeDetail({
             Étape {etape.code}
             {admin && ` · ${STATUTS_VALIDATION[etape.statut]}`}
           </p>
-          <h2 className="mt-1 text-[22px] font-semibold leading-tight tracking-tight">{etape.titre}</h2>
+          <h2 className="mt-1 text-xl font-semibold leading-tight tracking-tight sm:text-[22px]">{etape.titre}</h2>
           <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">{etape.objectif}</p>
         </div>
-        <div className="liquid-glass-inset flex shrink-0 gap-0.5 rounded-full p-1" role="group" aria-label="Avancement de l'étape">
+        <div className="liquid-glass-inset flex w-full shrink-0 gap-0.5 rounded-full p-1 sm:w-auto" role="group" aria-label="Avancement de l'étape">
           {ETAPE_STATUTS.map((s) => (
             <button
               key={s}
               type="button"
               disabled={enCours}
               onClick={() => void enregistrer({ statut: s })}
-              className={`rounded-full px-3 py-1 text-xs transition-colors disabled:opacity-50 ${statut === s ? "chrome-black text-white" : "text-muted-foreground hover:text-foreground"}`}
+              className={`flex-auto whitespace-nowrap rounded-full px-2 py-1.5 text-xs transition-colors sm:flex-none sm:px-3 sm:py-1 disabled:opacity-50 ${statut === s ? "chrome-black text-white" : "text-muted-foreground hover:text-foreground"}`}
               aria-pressed={statut === s}
             >
               {ETAPE_STATUTS_LIBELLES[s]}
@@ -119,7 +119,7 @@ export function EtapeDetail({
               `Aide-moi à préparer l'étape ${etape.code} « ${etape.titre} » pour ce projet : propose une trame pour les livrables attendus et les points à vérifier. Je relirai et déciderai.`,
             )
           }
-          className="chrome-black ml-auto flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-medium text-white"
+          className="chrome-black flex w-full items-center justify-center gap-1.5 rounded-xl px-3.5 py-2.5 text-xs font-medium text-white sm:ml-auto sm:w-auto sm:py-2"
         >
           <Sparkles size={13} />
           Préparer avec Archiaccess AI

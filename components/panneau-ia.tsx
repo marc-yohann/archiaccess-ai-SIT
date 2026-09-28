@@ -198,12 +198,18 @@ export function PanneauIA({
       <button
         type="button"
         onClick={() => setOuvertMobile(true)}
-        className="chrome-black fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-medium text-white shadow-lg"
+        className="chrome-black fixed bottom-4 right-4 z-40 flex h-14 w-14 items-center justify-center gap-2 rounded-full text-sm font-medium text-white shadow-lg sm:h-auto sm:w-auto sm:px-4 sm:py-3"
         aria-label="Ouvrir Archiaccess AI"
       >
-        <Sparkles size={15} />
-        Archiaccess AI
-        {messages.length > 0 && <span className="rounded-full bg-white/25 px-1.5 text-[10px]">{messages.length}</span>}
+        {/* Téléphone : bouton rond (icône seule) pour ne pas masquer le
+            texte en dessous ; libellé complet à partir de la tablette. */}
+        <Sparkles size={18} className="sm:size-[15px]" />
+        <span className="hidden sm:inline">Archiaccess AI</span>
+        {messages.length > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 rounded-full bg-foreground px-1.5 text-[10px] leading-4 text-background sm:static sm:bg-white/25 sm:text-white">
+            {messages.length}
+          </span>
+        )}
       </button>
     )
   }
