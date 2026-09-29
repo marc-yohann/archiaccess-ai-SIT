@@ -180,7 +180,7 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
         <div className="flex flex-wrap items-center gap-2">
           <SelecteurProjet actuel={projet.id} />
           <Equipe membres={projet.membres} />
-          {projet.archivedAt && <span className="rounded-full border border-foreground/40 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide">Archivé</span>}
+          {projet.archivedAt && <span className="rounded-full border border-foreground/40 px-2.5 py-1 text-xs font-medium">Archivé</span>}
           {acces?.administrer && (
             <Link href={`/admin/projets?projet=${projet.id}`} className="liquid-glass-pill rounded-full px-3 py-1.5 text-[13px] font-medium">
               Gérer les accès
@@ -231,7 +231,7 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
           className="liquid-glass-panel flex items-center gap-3 rounded-2xl px-4 py-3 text-left lg:hidden"
           aria-expanded={listeOuverte}
         >
-          <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Étapes</span>
+          <span className="text-[12.5px] font-medium text-muted-foreground">Étapes</span>
           <span className="min-w-0 flex-1 truncate text-sm font-medium">{etapeOuverte ? `${etapeOuverte.code} ${etapeOuverte.titre}` : "Choisir une étape"}</span>
           {listeOuverte ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </button>
@@ -243,7 +243,7 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
                 <button
                   type="button"
                   onClick={() => basculerPhase(phase.numero)}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-[13px] font-medium hover:bg-white/35"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-[13px] font-medium transition-colors hover:bg-white/50"
                   aria-expanded={ouverte}
                 >
                   <span
@@ -270,11 +270,11 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
                             setCodeOuvert(e.code)
                             setListeOuverte(false)
                           }}
-                          className={`flex items-start gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] leading-snug ${actif ? "chrome-black text-white" : "hover:bg-white/35"}`}
+                          className={`flex items-start gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] leading-snug transition-colors ${actif ? "bg-white text-foreground shadow-[0_1px_2px_rgba(16,24,40,0.08),0_2px_8px_-2px_rgba(16,24,40,0.1)] font-medium" : "hover:bg-white/50"}`}
                           aria-current={actif ? "step" : undefined}
                         >
-                          <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${actif ? "border border-white" : PUCE[etat?.statut ?? "A_FAIRE"]}`} />
-                          <span className={`w-8 shrink-0 tabular-nums ${actif ? "text-white/80" : "text-muted-foreground"}`}>{e.code}</span>
+                          <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${actif ? "border-2 border-foreground" : PUCE[etat?.statut ?? "A_FAIRE"]}`} />
+                          <span className={`w-8 shrink-0 tabular-nums ${actif ? "text-foreground" : "text-muted-foreground"}`}>{e.code}</span>
                           <span className={`flex-1 ${estTraitee(etat?.statut) && !actif ? "text-muted-foreground" : ""}`}>{e.titre}</span>
                         </button>
                       )
@@ -367,7 +367,7 @@ function SelecteurProjet({ actuel }: { actuel: string }) {
       </button>
       {ouvert && (
         <div className="absolute left-0 top-full z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-white/70 bg-white/95 p-2 shadow-xl backdrop-blur-xl">
-          <p className="px-2.5 py-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Vos projets collaboratifs</p>
+          <p className="px-2.5 py-1.5 text-[12.5px] font-medium text-muted-foreground">Vos projets collaboratifs</p>
           {!projets && <p className="px-2.5 py-2 text-sm text-muted-foreground">Chargement…</p>}
           {projets?.map((p) => (
             <Link
@@ -417,7 +417,7 @@ function Equipe({ membres }: { membres: Membre[] }) {
       </button>
       {ouvert && (
         <div className="absolute left-0 top-full z-30 mt-2 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-white/70 bg-white/95 p-2 shadow-xl backdrop-blur-xl">
-          <p className="px-2.5 py-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Équipe du projet</p>
+          <p className="px-2.5 py-1.5 text-[12.5px] font-medium text-muted-foreground">Équipe du projet</p>
           {membres.length === 0 && <p className="px-2.5 py-2 text-sm text-muted-foreground">Aucun membre pour l'instant.</p>}
           {membres.map((m) => (
             <div key={m.user.id} className="flex items-center justify-between gap-3 px-2.5 py-2 text-sm">

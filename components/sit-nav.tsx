@@ -52,27 +52,27 @@ export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.
   return (
     <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
       <div className="flex min-w-0 items-center gap-3">
-        <Image src="/logo-sit.png" alt="Archiaccess SIT" width={40} height={40} className="shrink-0" />
+        <Image src="/logo-sit.png" alt="Archiaccess SIT" width={36} height={36} className="shrink-0" />
         <div className="min-w-0">
           {sousTitre && <div className="text-xs text-muted-foreground">{sousTitre}</div>}
-          <h1 className="line-clamp-2 text-[17px] font-medium leading-snug tracking-tight md:line-clamp-1">{titre}</h1>
+          <h1 className="line-clamp-2 text-[17px] font-semibold leading-snug tracking-[-0.015em] md:line-clamp-1">{titre}</h1>
         </div>
       </div>
       {/* Bascule entre les deux espaces : mon espace (projets personnels)
           et l'espace collaboratif (projets d'équipe). */}
       <div className="order-first flex w-full items-center gap-2 md:order-none md:w-auto">
-      <div className="liquid-glass-inset flex flex-1 gap-0.5 rounded-full p-1 md:flex-none" role="group" aria-label="Changer d'espace">
+      <div className="liquid-glass-inset flex flex-1 gap-0.5 rounded-xl p-1 md:flex-none" role="group" aria-label="Changer d'espace">
         <Link
           href="/sit"
           aria-current={!equipe ? "true" : undefined}
-          className={`flex-1 whitespace-nowrap rounded-full px-3.5 py-1.5 text-center text-[13px] font-medium md:flex-none ${!equipe ? "chrome-black text-white" : "text-muted-foreground hover:text-foreground"}`}
+          className={`flex-1 whitespace-nowrap rounded-lg px-3.5 py-1.5 text-center text-[13px] font-medium transition-colors md:flex-none ${!equipe ? "bg-white text-foreground shadow-[0_1px_2px_rgba(16,24,40,0.08),0_2px_8px_-2px_rgba(16,24,40,0.1)]" : "text-muted-foreground hover:text-foreground"}`}
         >
           Mon espace
         </Link>
         <Link
           href="/sit/equipe"
           aria-current={equipe ? "true" : undefined}
-          className={`flex-1 whitespace-nowrap rounded-full px-3.5 py-1.5 text-center text-[13px] font-medium md:flex-none ${equipe ? "chrome-black text-white" : "text-muted-foreground hover:text-foreground"}`}
+          className={`flex-1 whitespace-nowrap rounded-lg px-3.5 py-1.5 text-center text-[13px] font-medium transition-colors md:flex-none ${equipe ? "bg-white text-foreground shadow-[0_1px_2px_rgba(16,24,40,0.08),0_2px_8px_-2px_rgba(16,24,40,0.1)]" : "text-muted-foreground hover:text-foreground"}`}
         >
           Espace collaboratif
         </Link>
@@ -84,7 +84,7 @@ export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.
           href="/admin"
           aria-label="Administration"
           aria-current={pathname.startsWith("/admin") ? "page" : undefined}
-          className={`flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-[13px] font-medium md:h-auto md:py-1.5 ${pathname.startsWith("/admin") ? "chrome-black text-white" : "liquid-glass-pill text-foreground/80 hover:text-foreground"}`}
+          className={`flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 text-[13px] font-medium md:h-auto md:py-1.5 ${pathname.startsWith("/admin") ? "chrome-black text-white" : "liquid-glass-pill text-foreground/80 hover:text-foreground"}`}
         >
           <Settings size={15} className="shrink-0 md:size-3.5" />
           <span className="hidden md:inline">Administration</span>
@@ -96,7 +96,7 @@ export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.
           de la tablette : les pilules habituelles dans l'en-tête. Les pages
           réservent la hauteur de la barre en bas (pb-40 / pb-28 < md). */}
       <nav
-        className={`fixed inset-x-0 bottom-0 z-30 grid ${equipe ? "grid-cols-4" : "grid-cols-5"} gap-1 border-t border-white/70 bg-white/85 px-2 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-8px_24px_-12px_rgba(30,35,45,0.25)] backdrop-blur-xl md:static md:z-auto md:flex md:w-auto md:flex-wrap md:items-center md:gap-1.5 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none`}
+        className={`fixed inset-x-0 bottom-0 z-30 grid ${equipe ? "grid-cols-4" : "grid-cols-5"} gap-1 border-t border-foreground/[0.07] bg-white/[0.97] px-2 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1.5 backdrop-blur-xl md:static md:z-auto md:flex md:w-auto md:flex-wrap md:items-center md:gap-0.5 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none`}
         aria-label="Navigation principale"
       >
         {LIENS.map(({ href, label, court, icon: Icon, exact }) => {
@@ -106,12 +106,12 @@ export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.
               key={href}
               href={href}
               aria-current={actif ? "page" : undefined}
-              className={`flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 text-[11px] font-medium md:flex-row md:gap-1.5 md:whitespace-nowrap md:rounded-full md:px-3 md:py-1.5 md:text-[13px] ${actif ? "chrome-black text-white" : "liquid-glass-pill text-foreground/80 hover:text-foreground"}`}
+              className={`flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-medium transition-colors md:flex-row md:gap-1.5 md:whitespace-nowrap md:rounded-lg md:px-3 md:py-1.5 md:text-[13.5px] ${actif ? "text-foreground md:bg-foreground/[0.07]" : "text-muted-foreground hover:text-foreground md:hover:bg-white/60"}`}
             >
               {Icon ? (
-                <Icon size={16} className="shrink-0 md:size-3" />
+                <Icon size={20} strokeWidth={actif ? 2.2 : 1.8} className="shrink-0 md:size-3.5" />
               ) : (
-                <Image src="/logo-ai.png" alt="" width={18} height={18} className="shrink-0 md:size-4" />
+                <Image src="/logo-ai.png" alt="" width={20} height={20} className={`shrink-0 md:size-4 ${actif ? "" : "opacity-70"}`} />
               )}
               <span className="max-w-full truncate md:hidden">{court}</span>
               <span className="hidden md:inline">{label}</span>

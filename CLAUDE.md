@@ -32,8 +32,9 @@ trace de ça dans le code actuel, ne pas la réintroduire.
 - **Prisma 7** (`@prisma/adapter-pg`, driver `pg`) contre **PostgreSQL 16**
   avec l'extension **pgvector** (recherche par similarité pour le corpus
   réglementaire).
-- **Tailwind v4** (`@tailwindcss/postcss`), polices Inter + Geist Mono
-  auto-hébergées (`app/fonts/*.woff2`).
+- **Tailwind v4** (`@tailwindcss/postcss`), polices Geist + Geist Mono
+  auto-hébergées (`app/fonts/*.woff2`, licence OFL `Geist-OFL.txt` ;
+  Geist remplace Inter depuis la modernisation du 2026-09-29).
 - **Mistral AI** — chat (`mistral-medium-latest` actuellement, voir
   "Pièges" plus bas pour pourquoi ce n'est pas `large`) et embeddings
   (`mistral-embed`, dimension 1024).
@@ -327,8 +328,14 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   `claude/archiaccess-sit-build-kunkji` (`main` est très en retard,
   quasiment au premier squelette — ne pas s'y fier comme référence de
   l'état du projet). Pas de workflow de PR/review établi à ce jour.
-- **CSS** : système de design "verre liquide" partagé avec
-  `archiaccess-pro`, entièrement dans `app/globals.css`
+- **CSS** : système de design "verre liquide", **modernisé le
+  2026-09-29** à la demande de l'utilisateur (« garder le même design
+  mais le moderniser ») : mêmes noms de classes, mais verre allégé
+  (blanc translucide, flou doux, liseré fin, plus de reflets ni de
+  grain), neutres légèrement froids, `.chrome-black` à plat, libellés
+  en casse normale (plus de petites majuscules espacées). Il peut donc
+  désormais différer visuellement d'`archiaccess-pro`. Entièrement dans
+  `app/globals.css`
   (`@layer components`) — classes `.liquid-glass` / `.liquid-glass-panel`
   / `.liquid-glass-soft` / `.liquid-glass-pill` / `.chrome-black` /
   `.chrome-white` / `.glass-scene` / `.custom-scrollbar`. **Ne jamais

@@ -89,8 +89,8 @@ function TableauDeBord() {
 
         <section className="mt-2 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{aujourdhui}</p>
-            <h2 className="mt-1.5 text-2xl font-light leading-tight tracking-tight sm:text-[28px]">Bonjour {prenom}, voici vos opérations.</h2>
+            <p className="text-[12.5px] font-medium text-muted-foreground">{aujourdhui}</p>
+            <h2 className="mt-1.5 text-2xl font-semibold leading-tight tracking-[-0.025em] sm:text-[30px]">Bonjour {prenom}, voici vos opérations.</h2>
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <form

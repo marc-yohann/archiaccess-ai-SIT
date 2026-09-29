@@ -57,8 +57,8 @@ function EspaceCollaboratif() {
 
         <section className="mt-2 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{aujourdhui}</p>
-            <h2 className="mt-1.5 text-2xl font-light leading-tight tracking-tight sm:text-[28px]">
+            <p className="text-[12.5px] font-medium text-muted-foreground">{aujourdhui}</p>
+            <h2 className="mt-1.5 text-2xl font-semibold leading-tight tracking-[-0.025em] sm:text-[30px]">
               Bonjour {prenom}, voici les projets de l'équipe.
             </h2>
             <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">

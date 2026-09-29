@@ -20,7 +20,7 @@ function Referentiel() {
           <SitNav titre="Méthode Archiaccess" />
 
           <div className="liquid-glass-panel rounded-2xl p-5">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            <p className="text-[12.5px] font-medium text-muted-foreground">
               Méthode AMO / OPC{isAdmin ? ` — version ${REFERENTIEL_VERSION} — document de travail` : ""}
             </p>
             <p className="mt-2 text-sm">{PRESENTATION}</p>
@@ -44,7 +44,7 @@ function Referentiel() {
                 ["Typologie d'ouvrage", TYPOLOGIES],
               ].map(([titre, valeurs]) => (
                 <div key={titre as string} className="liquid-glass-soft rounded-xl p-3">
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{titre as string}</p>
+                  <p className="text-[12.5px] font-medium text-muted-foreground">{titre as string}</p>
                   <ul className="mt-1.5 list-disc space-y-0.5 pl-4 text-sm">
                     {Object.values(valeurs as Record<string, string>).map((v) => (
                       <li key={v}>{v}</li>
@@ -57,7 +57,7 @@ function Referentiel() {
 
           {PHASES.map((phase) => (
             <section key={phase.numero} className="liquid-glass-panel rounded-2xl p-5">
-              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Phase {phase.numero}</p>
+              <p className="text-[12.5px] font-medium text-muted-foreground">Phase {phase.numero}</p>
               <h2 className="text-base font-semibold">{phase.titre}</h2>
               {phase.etapes.length === 0 ? (
                 <p className="mt-2 text-sm text-muted-foreground">Phase en cours de rédaction.</p>

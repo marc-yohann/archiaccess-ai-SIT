@@ -1427,7 +1427,7 @@ function Dashboard() {
                   un bloc parmi d'autres (retour utilisateur : la grille doit
                   être immédiatement identifiable comme les 6 portes
                   d'entrée). */}
-              <p className="mb-2 text-[0.66rem] font-semibold uppercase tracking-wide text-muted-foreground/80">
+              <p className="mb-2 text-xs font-semibold text-muted-foreground/80">
                 6 portes d'entrée
               </p>
               {/* disc-grid/disc-card : classes déjà en place pour la grille de
@@ -1467,7 +1467,7 @@ function Dashboard() {
                       <span className="liquid-glass-btn flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
                         <c.icon size={15} />
                       </span>
-                      <span className="font-semibold uppercase tracking-wide">{c.label}</span>
+                      <span className="font-semibold">{c.label}</span>
                     </div>
                     <div className="hint">{c.items.join(" · ")}</div>
                   </button>
@@ -1506,7 +1506,7 @@ function Dashboard() {
                 Partir d'un objectif d'étude plutôt que d'une adresse — chaque discipline demande l'échelle qui lui
                 correspond.
               </p>
-              <p className="mb-1.5 text-[0.66rem] font-medium uppercase tracking-wide text-muted-foreground/80">Données du SIT</p>
+              <p className="mb-1.5 text-xs font-medium text-muted-foreground/80">Données du SIT</p>
               <div className="disc-grid">
                 {SOURCE_GROUPS.map((g, i) => (
                   <button
@@ -1551,7 +1551,7 @@ function Dashboard() {
                   (retour de comparaison avec l'exploration de référence).
                   Contenu et logique inchangés (badges Corpus/Données
                   SIT/Connaissances générales calculés à l'affichage). */}
-              <p className="mb-1.5 mt-4 text-[0.66rem] font-medium uppercase tracking-wide text-muted-foreground/80">
+              <p className="mb-1.5 mt-4 text-xs font-medium text-muted-foreground/80">
                 Disciplines techniques Archiaccess
               </p>
               <p className="mode-desc">
@@ -1876,7 +1876,7 @@ function Dashboard() {
                     const active = counts.filter((c) => c > 0).length
                     return (
                       <div key={g.label} id={`src-group-${g.label}`}>
-                        <div className="mb-0.5 flex items-center justify-between text-[0.66rem] font-medium uppercase tracking-wide text-muted-foreground/80">
+                        <div className="mb-0.5 flex items-center justify-between text-xs font-medium text-muted-foreground/80">
                           <span>{g.label}</span>
                           <span className="font-mono">
                             {active}/{g.sources.length}

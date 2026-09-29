@@ -95,7 +95,7 @@ export function CarteProjet({ projet, href, equipe = false }: { projet: ProjetRe
       )}
 
       <div className="mt-auto border-t border-foreground/10 pt-3">
-        <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Prochaine étape</p>
+        <p className="text-xs font-medium text-muted-foreground">Prochaine étape</p>
         {suivante ? (
           <div className="mt-1 flex items-baseline justify-between gap-3">
             <p className="line-clamp-1 text-[13px]">

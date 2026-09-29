@@ -23,7 +23,7 @@ export interface MajEtape {
 function Rubrique({ titre, children }: { titre: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{titre}</h3>
+      <h3 className="mb-1.5 text-[12.5px] font-medium text-muted-foreground">{titre}</h3>
       {children}
     </div>
   )
@@ -79,21 +79,21 @@ export function EtapeDetail({
     <article className="liquid-glass-panel custom-scrollbar flex flex-col gap-5 rounded-2xl p-5 sm:p-6 lg:h-full lg:min-h-0 lg:overflow-y-auto">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          <p className="text-[12.5px] font-medium text-muted-foreground">
             Étape {etape.code}
             {admin && ` · ${STATUTS_VALIDATION[etape.statut]}`}
           </p>
           <h2 className="mt-1 text-xl font-semibold leading-tight tracking-tight sm:text-[22px]">{etape.titre}</h2>
           <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">{etape.objectif}</p>
         </div>
-        <div className="liquid-glass-inset flex w-full shrink-0 gap-0.5 rounded-full p-1 sm:w-auto" role="group" aria-label="Avancement de l'étape">
+        <div className="liquid-glass-inset flex w-full shrink-0 gap-0.5 rounded-xl p-1 sm:w-auto" role="group" aria-label="Avancement de l'étape">
           {ETAPE_STATUTS.map((s) => (
             <button
               key={s}
               type="button"
               disabled={enCours}
               onClick={() => void enregistrer({ statut: s })}
-              className={`flex-auto whitespace-nowrap rounded-full px-2 py-1.5 text-xs transition-colors sm:flex-none sm:px-3 sm:py-1 disabled:opacity-50 ${statut === s ? "chrome-black text-white" : "text-muted-foreground hover:text-foreground"}`}
+              className={`flex-auto whitespace-nowrap rounded-lg px-2 py-1.5 text-[13px] transition-colors sm:flex-none sm:px-3 sm:py-1 disabled:opacity-50 ${statut === s ? "bg-white text-foreground shadow-[0_1px_2px_rgba(16,24,40,0.08),0_2px_8px_-2px_rgba(16,24,40,0.1)] font-medium" : "text-muted-foreground hover:text-foreground"}`}
               aria-pressed={statut === s}
             >
               {ETAPE_STATUTS_LIBELLES[s]}
@@ -128,7 +128,7 @@ export function EtapeDetail({
 
       <div className="grid gap-3 md:grid-cols-2">
         <div className="chrome-black rounded-xl p-3 text-white">
-          <h3 className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-white/70">Vos actions</h3>
+          <h3 className="mb-1.5 text-[12.5px] font-medium text-white/70">Vos actions</h3>
           <ul className="list-disc space-y-1 pl-4 text-[13px] leading-relaxed">
             {etape.humain.map((t) => (
               <li key={t}>{t}</li>
@@ -153,7 +153,7 @@ export function EtapeDetail({
               <p key={v.texte} className="liquid-glass-inset rounded-xl px-3 py-2 text-[13px]">
                 {v.texte}
                 {admin && v.aPreciser && (
-                  <span className="ml-2 whitespace-nowrap rounded-full border border-foreground px-2 py-0.5 text-[10px] uppercase tracking-wide">
+                  <span className="ml-2 whitespace-nowrap rounded-full border border-foreground px-2 py-0.5 text-[11px] font-medium">
                     À préciser avec un senior
                   </span>
                 )}
@@ -184,7 +184,7 @@ export function EtapeDetail({
 
       <div className="liquid-glass-inset flex flex-col gap-2 rounded-xl p-3">
         <div className="flex items-baseline justify-between gap-2">
-          <h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Notes de l'ingénieur</h3>
+          <h3 className="text-[12.5px] font-medium text-muted-foreground">Notes de l'ingénieur</h3>
           {etat?.updatedAt && (
             <span className="text-[11px] text-muted-foreground">
               Modifié le {new Date(etat.updatedAt).toLocaleDateString("fr-FR")}

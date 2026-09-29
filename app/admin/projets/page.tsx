@@ -132,7 +132,7 @@ function GestionProjets() {
             <>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Projet collaboratif</p>
+                  <p className="text-[12.5px] font-medium text-muted-foreground">Projet collaboratif</p>
                   <h2 className="mt-1 text-xl font-semibold tracking-tight">{projet.nom}</h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -204,7 +204,7 @@ function GestionProjets() {
                 className="liquid-glass-inset flex flex-col gap-3 rounded-xl p-3.5 sm:flex-row sm:items-end"
               >
                 <label className="flex min-w-0 flex-1 flex-col gap-1">
-                  <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Donner accès à un collaborateur</span>
+                  <span className="text-[12.5px] font-medium text-muted-foreground">Donner accès à un collaborateur</span>
                   <select
                     value={ajout.userId}
                     onChange={(e) => setAjout((a) => ({ ...a, userId: e.target.value }))}
@@ -219,7 +219,7 @@ function GestionProjets() {
                   </select>
                 </label>
                 <label className="flex flex-col gap-1 sm:w-44">
-                  <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Rôle</span>
+                  <span className="text-[12.5px] font-medium text-muted-foreground">Rôle</span>
                   <select
                     value={ajout.role}
                     onChange={(e) => setAjout((a) => ({ ...a, role: e.target.value as Role }))}

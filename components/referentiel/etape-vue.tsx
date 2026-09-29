@@ -39,7 +39,7 @@ function Liste({ items }: { items: string[] }) {
 function Rubrique({ titre, children }: { titre: string; children: React.ReactNode }) {
   return (
     <div>
-      <h4 className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{titre}</h4>
+      <h4 className="mb-1.5 text-[12.5px] font-medium text-muted-foreground">{titre}</h4>
       {children}
     </div>
   )
@@ -88,7 +88,7 @@ export function EtapeVue({ etape, admin }: { etape: Etape; admin: boolean }) {
 
           <div className="grid gap-3 md:grid-cols-2">
             <div className="chrome-black rounded-xl p-3 text-white">
-              <h4 className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-white/70">Actions de l'ingénieur</h4>
+              <h4 className="mb-1.5 text-[12.5px] font-medium text-white/70">Actions de l'ingénieur</h4>
               <ul className="list-disc space-y-1 pl-4 text-sm">
                 {etape.humain.map((t) => (
                   <li key={t}>{t}</li>
@@ -123,7 +123,7 @@ export function EtapeVue({ etape, admin }: { etape: Etape; admin: boolean }) {
                     <p>
                       {v.texte}
                       {admin && v.aPreciser && (
-                        <span className="ml-2 whitespace-nowrap rounded-full border border-foreground px-2 py-0.5 text-[10px] uppercase tracking-wide">
+                        <span className="ml-2 whitespace-nowrap rounded-full border border-foreground px-2 py-0.5 text-[11px] font-medium">
                           À préciser avec un senior
                         </span>
                       )}

@@ -84,7 +84,7 @@ function NouveauProjet() {
 
         <form onSubmit={creer} className="liquid-glass-panel flex flex-col gap-6 rounded-2xl p-4 sm:p-6">
           <label className="flex flex-col gap-1.5">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Nom de l'opération</span>
+            <span className="text-[12.5px] font-medium text-muted-foreground">Nom de l'opération</span>
             <input
               value={nom}
               onChange={(e) => setNom(e.target.value)}
@@ -94,7 +94,7 @@ function NouveauProjet() {
             />
           </label>
           <label className="flex flex-col gap-1.5">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Description (facultatif)</span>
+            <span className="text-[12.5px] font-medium text-muted-foreground">Description (facultatif)</span>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -105,7 +105,7 @@ function NouveauProjet() {
 
           {QUESTIONS.map((q, i) => (
             <fieldset key={q.cle} className="flex flex-col gap-2">
-              <legend className="mb-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              <legend className="mb-2 text-[12.5px] font-medium text-muted-foreground">
                 {i + 1} · {q.titre}
               </legend>
               <div className={`grid gap-2 ${q.colonnes}`}>

@@ -2,13 +2,16 @@ import type { Metadata } from "next"
 import localFont from "next/font/local"
 import "./globals.css"
 
-const inter = localFont({
-  variable: "--font-inter",
+// Geist (SIL Open Font License, app/fonts/Geist-OFL.txt), auto-hébergée
+// comme les autres polices : modernisation du design du 2026-09-29,
+// décidée par l'utilisateur (remplace Inter).
+const geist = localFont({
+  variable: "--font-geist",
   src: [
-    { path: "./fonts/Inter-300.woff2", weight: "300", style: "normal" },
-    { path: "./fonts/Inter-400.woff2", weight: "400", style: "normal" },
-    { path: "./fonts/Inter-500.woff2", weight: "500", style: "normal" },
-    { path: "./fonts/Inter-900.woff2", weight: "900", style: "normal" },
+    { path: "./fonts/Geist-Regular.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/Geist-Medium.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/Geist-SemiBold.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/Geist-Bold.woff2", weight: "700", style: "normal" },
   ],
 })
 
@@ -27,7 +30,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={`${inter.variable} ${geistMono.variable} bg-background`}>
+    <html lang="fr" className={`${geist.variable} ${geistMono.variable} bg-background`}>
       <body>{children}</body>
     </html>
   )
