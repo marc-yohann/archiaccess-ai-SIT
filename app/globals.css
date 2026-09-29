@@ -49,7 +49,7 @@
 }
 
 :root {
-  --background: oklch(0.965 0.004 255);
+  --background: oklch(0.94 0.018 135);
   --foreground: oklch(0.17 0.008 260);
   --card: oklch(0.985 0.003 255);
   --card-foreground: oklch(0.17 0.008 260);
@@ -139,21 +139,20 @@
 @layer components {
   /* ── Verre modernisé (2026-09-29, direction validée par l'utilisateur :
      « garder le même design mais le moderniser ») ────────────────────
-     Mêmes classes, même esprit verre dépoli, mais épuré : plus de reflets
-     spéculaires, de dégradés « métal brossé » ni de bruit ; des surfaces
-     blanches translucides nettes, un liseré fin, des ombres douces, et des
-     boutons noirs plats. Les noms de classes sont conservés pour que tout
+     Mêmes classes, même fond, même esprit verre dépoli, mais épuré : plus
+     de reflets spéculaires ni de bruit sur les panneaux ; des surfaces
+     blanches translucides nettes, un liseré fin, des ombres douces. Seuls
+     les boutons noirs gardent leur effet chromé. Les noms de classes sont conservés pour que tout
      le SIT et Archiaccess AI en profitent sans réécriture. */
 
-  /* Fond : gris-bleu clair, deux halos très doux pour que le flou des
-     panneaux ait de la matière. */
+  /* Fond : celui d'origine, conservé à la demande de l'utilisateur
+     (« garde le fond comme avant »). */
   .glass-scene {
     position: relative;
     isolation: isolate;
     background:
-      radial-gradient(900px 520px at 88% -8%, rgba(214, 223, 239, 0.9) 0%, rgba(214, 223, 239, 0) 70%),
-      radial-gradient(760px 520px at -6% 106%, rgba(226, 231, 240, 0.9) 0%, rgba(226, 231, 240, 0) 70%),
-      linear-gradient(180deg, #f4f6f9 0%, #eceff4 100%);
+      radial-gradient(ellipse 68% 54% at 106% 108%, oklch(0.5 0.02 250) 0%, transparent 72%),
+      oklch(0.9 0.012 255);
   }
 
   .glass-orb {
@@ -261,16 +260,27 @@
     box-shadow: 0 2px 6px -2px rgba(16, 24, 40, 0.1);
   }
 
-  /* Bouton principal et élément actif : noir plat (plus de dégradé métal) */
+  /* Bouton noir chromé : dégradé métal sombre avec liseré spéculaire,
+     conservé à la demande de l'utilisateur (« chrome juste les boutons
+     noirs ») ; le bouton blanc, lui, reste plat. */
   .chrome-black {
-    background: #111317;
-    border: 1px solid #111317;
-    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.12), 0 4px 12px -6px rgba(16, 24, 40, 0.35);
-    transition: background 0.15s ease, box-shadow 0.15s ease;
+    background: linear-gradient(
+      150deg,
+      rgba(70, 70, 72, 0.96) 0%,
+      rgba(13, 13, 14, 0.94) 45%,
+      rgba(28, 28, 30, 0.96) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.22) inset,
+      0 3px 10px -3px rgba(0, 0, 0, 0.4);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
   }
 
   .chrome-black:hover {
-    background: #23262d;
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.3) inset,
+      0 4px 14px -3px rgba(0, 0, 0, 0.45);
   }
 
   /* Bouton blanc : équivalent clair de .chrome-black */

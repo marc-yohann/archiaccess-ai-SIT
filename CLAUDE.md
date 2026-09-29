@@ -330,10 +330,13 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   l'état du projet). Pas de workflow de PR/review établi à ce jour.
 - **CSS** : système de design "verre liquide", **modernisé le
   2026-09-29** à la demande de l'utilisateur (« garder le même design
-  mais le moderniser ») : mêmes noms de classes, mais verre allégé
-  (blanc translucide, flou doux, liseré fin, plus de reflets ni de
-  grain), neutres légèrement froids, `.chrome-black` à plat, libellés
-  en casse normale (plus de petites majuscules espacées). Il peut donc
+  mais le moderniser ») : mêmes noms de classes, même fond
+  (`.glass-scene`, `--background` d'origine), mais panneaux de verre
+  allégés (blanc translucide, flou doux, liseré fin, plus de reflets ni
+  de grain), libellés en casse normale (plus de petites majuscules
+  espacées). Seul `.chrome-black` garde son dégradé chromé (demande
+  explicite : « chrome juste les boutons noirs ») ; `.chrome-white` est
+  plat. Il peut donc
   désormais différer visuellement d'`archiaccess-pro`. Entièrement dans
   `app/globals.css`
   (`@layer components`) — classes `.liquid-glass` / `.liquid-glass-panel`
