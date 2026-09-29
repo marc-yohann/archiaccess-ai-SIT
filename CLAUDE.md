@@ -425,7 +425,10 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   `20260928180000_espace_collaboratif` appliquée le même jour via
   `/api/admin/run-migration`, juste après le code, avec l'accord de
   l'utilisateur. Tous les projets existants sont devenus PERSONNEL de
-  leur créateur. Lots suivants validés sur maquette, pas commencés :
+  leur créateur. **Modernisation du design** (police Geist, verre
+  allégé, fond d'origine et boutons noirs chromés conservés, validée par
+  l'utilisateur sur artefact avant/après) **déployée le 2026-09-29**
+  (commit `f96f07b`, sans migration). Lots suivants validés sur maquette, pas commencés :
   fils d'étape + dossier + « Joindre au projet » depuis Archiaccess AI ;
   notifications, mentions, circuit de validation ; discussion du projet
   (rafraîchie par interrogation périodique — **pas** de nouveau service
