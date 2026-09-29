@@ -313,6 +313,7 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
             "Quels textes s'appliquent ici ?",
           ]}
           demande={demandeIA}
+          suiteLien={`projet=${projet.id}${etapeOuverte ? `&etape=${encodeURIComponent(etapeOuverte.code)}` : ""}`}
         />
       </div>
     </Cadre>

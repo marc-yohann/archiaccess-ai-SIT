@@ -31,7 +31,9 @@ const LIENS_EQUIPE = [
 ]
 const ESPACE_KEY = "sit.espace"
 
-export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.ReactNode }) {
+// `logo` : Archiaccess AI (/ai) garde son propre logo en tête, dans la même
+// navigation que le reste du SIT (jonction du 2026-09-29).
+export function SitNav({ titre, sousTitre, logo = "/logo-sit.png" }: { titre: string; sousTitre?: React.ReactNode; logo?: string }) {
   const pathname = usePathname()
   const { isAdmin } = useUser()
   // L'espace courant se lit dans l'adresse ; sur les pages communes
@@ -53,7 +55,7 @@ export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.
   return (
     <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
       <div className="flex min-w-0 items-center gap-3">
-        <Image src="/logo-sit.png" alt="Archiaccess SIT" width={38} height={38} className="shrink-0 rounded-[10px]" />
+        <Image src={logo} alt={logo === "/logo-sit.png" ? "Archiaccess SIT" : "Archiaccess AI"} width={38} height={38} className="shrink-0 rounded-[10px]" />
         <div className="min-w-0">
           {sousTitre && <div className="text-xs font-medium text-muted-foreground">{sousTitre}</div>}
           <h1 className="line-clamp-2 text-[17px] font-bold leading-snug tracking-[-0.015em] md:line-clamp-1">{titre}</h1>

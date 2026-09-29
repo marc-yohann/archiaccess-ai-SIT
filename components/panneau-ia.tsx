@@ -76,12 +76,16 @@ export function PanneauIA({
   intro,
   suggestions,
   demande,
+  suiteLien,
 }: {
   titreConversation: string
   contexte: string
   intro: string
   suggestions: string[]
   demande?: { id: number; texte: string } | null
+  // Paramètres ajoutés au lien « Continuer dans Archiaccess AI » (projet,
+  // étape) : Archiaccess AI garde ainsi le même contexte en plein écran.
+  suiteLien?: string
 }) {
   const [messages, setMessages] = useState<MessageIA[]>([])
   const [conversationId, setConversationId] = useState<string | null>(null)
@@ -276,10 +280,10 @@ export function PanneauIA({
           </button>
           {conversationId && (
             <Link
-              href={`/ai?conversation=${conversationId}`}
+              href={`/ai?conversation=${conversationId}${suiteLien ? `&${suiteLien}` : ""}`}
               className="liquid-glass-btn rounded-lg p-1.5 text-muted-foreground"
-              title="Continuer en plein écran"
-              aria-label="Continuer en plein écran"
+              title="Continuer dans Archiaccess AI"
+              aria-label="Continuer dans Archiaccess AI"
             >
               <Maximize2 size={14} />
             </Link>

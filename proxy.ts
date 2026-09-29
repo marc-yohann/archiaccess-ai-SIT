@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 
-// sit.archiaccess.com et ai.archiaccess.com pointent vers la même Lambda —
-// sans ça, la racine "/" des deux sous-domaines affichait l'accueil
-// générique (titre "Archiaccess AI") au lieu de l'app dédiée au
-// sous-domaine visité. On ne réécrit que "/" : les autres chemins
-// (/sit, /ai, /api/...) restent inchangés sur les deux domaines.
+// sit.archiaccess.com et ai.archiaccess.com pointent vers la même Lambda.
+// Sur sit., seule la racine "/" est réécrite vers le tableau de bord ;
+// tous les autres chemins passent tels quels. ai. est désormais redirigé
+// en entier vers sit. (voir plus bas).
 //
 // CloudFront transmet la requête à la Function URL Lambda via la policy
 // managée "AllViewerExceptHostHeader" : elle NE transmet PAS le header Host
@@ -17,16 +16,27 @@ import { NextRequest, NextResponse } from "next/server"
 export function proxy(request: NextRequest) {
   const host = request.headers.get("x-app-host") ?? request.headers.get("host") ?? ""
 
-  if (host.startsWith("sit.")) {
-    return NextResponse.rewrite(new URL("/sit", request.url))
-  }
+  // Archiaccess AI a rejoint le SIT (décision du 2026-09-29) : un seul
+  // outil, une seule adresse. ai.archiaccess.com redirige tout vers
+  // sit.archiaccess.com (la racine vers l'onglet Archiaccess AI), pour que
+  // les anciens liens et favoris fonctionnent et qu'il n'y ait qu'une
+  // connexion (le cookie de session n'est pas partagé entre sous-domaines).
   if (host.startsWith("ai.")) {
-    return NextResponse.rewrite(new URL("/ai", request.url))
+    const { pathname, search } = request.nextUrl
+    const cible = `https://${host.replace(/^ai\./, "sit.")}${pathname === "/" ? "/ai" : pathname}${search}`
+    return NextResponse.redirect(cible, 308)
+  }
+
+  if (host.startsWith("sit.") && request.nextUrl.pathname === "/") {
+    return NextResponse.rewrite(new URL("/sit", request.url))
   }
 
   return NextResponse.next()
 }
 
+// Toutes les routes sauf les fichiers statiques de Next (servis par S3 via
+// CloudFront en production) : la redirection d'ai.archiaccess.com doit
+// couvrir chaque chemin, pas seulement la racine.
 export const config = {
-  matcher: "/",
+  matcher: "/((?!_next/static|_next/image|favicon.ico).*)",
 }

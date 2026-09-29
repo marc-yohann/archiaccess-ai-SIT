@@ -6,10 +6,10 @@ import { Home, LogOut, Settings } from "lucide-react"
 import { useUser } from "@/components/auth-gate"
 
 // Menu du compte (direction « Verre dépoli », 2026-09-29) : avatar aux
-// initiales, nom, rôle, puis Accueil, Administration (administrateurs
-// seulement) et Déconnexion. Deux présentations : `bloc` (bas de la barre
-// latérale d'Archiaccess AI) et `MenuCompte` (avatar de l'en-tête du SIT
-// qui ouvre le même contenu en menu déroulant).
+// initiales, nom, rôle, puis Accueil (tableau de bord), Administration
+// (administrateurs seulement) et Déconnexion. Ouvert depuis l'avatar de
+// l'en-tête commun (SIT et Archiaccess AI, qui partagent la même
+// navigation depuis leur jonction).
 
 export function initiales(nom: string) {
   const mots = nom.trim().split(/\s+/).filter(Boolean)
@@ -21,7 +21,7 @@ export function initiales(nom: string) {
 
 async function deconnexion() {
   await fetch("/api/auth/logout", { method: "POST" })
-  window.location.href = "/"
+  window.location.href = "/sit"
 }
 
 export function Avatar({ nom, taille = 34 }: { nom: string; taille?: number }) {
@@ -48,7 +48,7 @@ function ContenuCompte({ surClic }: { surClic?: () => void }) {
           <div className="text-xs text-muted-foreground">{user.isAdmin ? "Administrateur" : "Collaborateur"}</div>
         </div>
       </div>
-      <Link href="/" onClick={surClic} className={lien}>
+      <Link href="/sit" onClick={surClic} className={lien}>
         <Home size={16} className="shrink-0" />
         Accueil
       </Link>
@@ -64,14 +64,6 @@ function ContenuCompte({ surClic }: { surClic?: () => void }) {
         Déconnexion
       </button>
     </>
-  )
-}
-
-export function BlocCompte() {
-  return (
-    <div className="liquid-glass-soft flex flex-col gap-0.5 rounded-2xl p-2">
-      <ContenuCompte />
-    </div>
   )
 }
 
