@@ -196,11 +196,13 @@ export function PanneauIA({
         body: JSON.stringify({
           conversationId: conversationRef.current ?? undefined,
           message,
-          context: contexteRef.current,
           title: titreConversation,
+          // Rattaché à un projet : le serveur reconstruit lui-même le
+          // contexte du projet et de l'étape (même texte, accès revérifié),
+          // sans doublon avec celui de la page.
           ...(rattachementRef.current.projetId
             ? { projetId: rattachementRef.current.projetId, etapeCode: rattachementRef.current.etapeCode ?? null }
-            : {}),
+            : { context: contexteRef.current }),
         }),
       })
       const d = await r.json()

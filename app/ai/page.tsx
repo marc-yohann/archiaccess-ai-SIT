@@ -9,7 +9,7 @@ import { AuthGate, useUser } from "@/components/auth-gate"
 import { AutoGrowTextarea } from "@/components/auto-grow-textarea"
 import { SitNav } from "@/components/sit-nav"
 import { AccueilAI, BandeauProjet, lienProjet, type EspaceProjet, type ProjetAI } from "@/components/ai/accueil"
-import type { ProjetResume } from "@/components/projet/carte-projet"
+import { chargerProjetsAccessibles, lireProjetSuivi, suivreProjet } from "@/lib/projet-suivi"
 import { trouverEtape } from "@/lib/referentiel"
 import type { Etape } from "@/lib/referentiel/types"
 import { formatReply } from "@/lib/format-reply"
@@ -115,14 +115,7 @@ function Chat() {
   // Projets accessibles des deux espaces (mêmes routes et mêmes règles
   // d'accès que le SIT), les plus récemment modifiés d'abord.
   useEffect(() => {
-    const charger = (espace: EspaceProjet) =>
-      fetch(`/api/sit/projets${espace === "COLLABORATIF" ? "?espace=collaboratif" : ""}`)
-        .then((r) => r.json())
-        .then((d) => (d.success ? (d.projets as ProjetResume[]).map((p) => ({ ...p, espace })) : []))
-        .catch(() => [] as ProjetAI[])
-    Promise.all([charger("PERSONNEL"), charger("COLLABORATIF")]).then(([perso, equipe]) =>
-      setProjets([...perso, ...equipe].filter((p) => !p.archivedAt).sort((x, y) => (x.updatedAt < y.updatedAt ? 1 : -1))),
-    )
+    void chargerProjetsAccessibles().then(setProjets)
   }, [])
 
   // Reprise depuis /sit : le bouton "Ouvrir dans AI" du panneau intégré au
@@ -139,7 +132,10 @@ function Chat() {
     // et son étape (?projet=&etape=) quand ils sont transmis.
     const conversation = searchParams.get("conversation")
     if (conversation) void openConversation(conversation)
-    setProjetId(searchParams.get("projet"))
+    // Sans projet transmis, on part du projet suivi dans le SIT (s'il
+    // n'est plus accessible, il n'apparaît pas dans la liste des projets
+    // et le choix reste « Sans projet »).
+    setProjetId(searchParams.get("projet") ?? (conversation ? null : lireProjetSuivi()?.id ?? null))
     setEtapeCode(searchParams.get("etape"))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -176,6 +172,14 @@ function Chat() {
   function choisirProjet(id: string | null) {
     setProjetId(id)
     setEtapeCode(null)
+  }
+
+  // « Travailler sur » de l'accueil : le choix devient aussi le projet
+  // suivi dans le SIT (et « Sans projet » n'en suit plus aucun).
+  function travaillerSur(id: string | null) {
+    choisirProjet(id)
+    const p = projets?.find((x) => x.id === id)
+    suivreProjet(p ? { id: p.id, nom: p.nom, espace: p.espace } : null)
   }
 
   async function deleteConversation(id: string, e: React.MouseEvent) {
@@ -412,7 +416,7 @@ function Chat() {
               prenom={user.name.split(" ")[0]}
               projets={projets}
               projetId={projetId}
-              onChoisirProjet={choisirProjet}
+              onChoisirProjet={travaillerSur}
               conversations={listeConversations}
               onOuvrirConversation={ouvrir}
               onPreparer={preparer}

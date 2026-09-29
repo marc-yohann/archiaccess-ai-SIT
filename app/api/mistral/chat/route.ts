@@ -152,10 +152,12 @@ export async function POST(request: Request) {
     contextMessage = undefined
   }
 
-  // Contexte explicite de la page (panneau du SIT : données d'une adresse,
-  // tableau de bord, étape ouverte) ; à défaut, celui du projet rattaché,
-  // reconstruit depuis la base.
-  const contexteSit = context?.trim() || (projetFinal ? contexteDeConversation(projetFinal, etapeFinale) : "")
+  // Contexte explicite de la page (données d'une adresse, tableau de
+  // bord), puis celui du projet rattaché, toujours reconstruit depuis la
+  // base (accès revérifié) : la recherche ouverte sur le site du projet
+  // suivi croise ainsi les deux. Le panneau d'une étape n'envoie plus de
+  // contexte à lui : le projet et l'étape suffisent.
+  const contexteSit = [context?.trim(), projetFinal ? contexteDeConversation(projetFinal, etapeFinale) : ""].filter(Boolean).join("\n\n")
   const sitContextMessage: MistralMessage | undefined = contexteSit
     ? { role: "system", content: `Données actuellement affichées dans le SIT :\n\n${contexteSit}` }
     : undefined

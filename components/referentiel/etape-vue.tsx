@@ -1,9 +1,13 @@
 "use client"
 
-import { useState } from "react"
-import { ChevronDown, ChevronRight } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import Link from "next/link"
+import { ArrowUpRight, ChevronDown, ChevronRight } from "lucide-react"
 import { missionsItem, texteItem, type Condition, type Etape } from "@/lib/referentiel"
 import { ACTEURS, MISSIONS, MONTAGES, STATUTS_MOA, STATUTS_VALIDATION, TYPOLOGIES } from "@/lib/referentiel/libelles"
+import { estTraitee, indexEtats, joursRestants } from "@/lib/referentiel/avancement"
+import { ETAPE_STATUTS_LIBELLES } from "@/lib/referentiel/profil"
+import { lienProjet, type ProjetAccessible } from "@/lib/projet-suivi"
 
 // Consultation d'une étape de la méthode (/sit/referentiel), toutes
 // variantes affichées avec leur condition. L'espace projet a son propre
@@ -45,15 +49,70 @@ function Rubrique({ titre, children }: { titre: string; children: React.ReactNod
   )
 }
 
-export function EtapeVue({ etape, admin }: { etape: Etape; admin: boolean }) {
-  const [ouverte, setOuverte] = useState(false)
+// « Dans vos projets » (maquette validée le 2026-09-29, « Méthode
+// reliée ») : où en est cette étape dans chacun des projets accessibles,
+// avec un lien direct vers l'étape du projet. Le projet suivi vient en tête.
+function DansVosProjets({ etape, projets, suiviId }: { etape: Etape; projets: ProjetAccessible[]; suiviId: string | null }) {
+  const tries = [...projets].sort((a, b) => (a.id === suiviId ? -1 : b.id === suiviId ? 1 : 0))
+  return (
+    <div className="liquid-glass-inset flex flex-col gap-1.5 rounded-xl p-3">
+      <h4 className="text-[13px] font-bold">Dans vos projets</h4>
+      {tries.map((p) => {
+        const etat = indexEtats(p.etapes).get(etape.code)
+        const statut = etat?.statut ?? "A_FAIRE"
+        const retard = etat?.echeance && !estTraitee(statut) && joursRestants(etat.echeance) < 0
+        const echeance = etat?.echeance ? new Date(etat.echeance).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : null
+        return (
+          <div key={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-white/60 px-3 py-2 text-[13px]">
+            <span className="min-w-0 flex-1">
+              <b className="font-semibold">{p.nom}</b>
+              <span className="text-muted-foreground">
+                {" · "}
+                {ETAPE_STATUTS_LIBELLES[statut]}
+                {echeance && !estTraitee(statut) ? ` · échéance ${echeance}` : ""}
+              </span>
+              {retard && <span className="ml-2 rounded-md bg-destructive/10 px-1.5 py-0.5 text-[11.5px] font-semibold text-destructive">En retard</span>}
+            </span>
+            <Link href={lienProjet(p, etape.code)} className="liquid-glass-btn flex shrink-0 items-center gap-1 rounded-[10px] px-2.5 py-1 text-xs font-semibold">
+              Ouvrir l'étape
+              <ArrowUpRight size={12} />
+            </Link>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+export function EtapeVue({
+  etape,
+  admin,
+  ouverteParDefaut = false,
+  projets,
+  suiviId = null,
+}: {
+  etape: Etape
+  admin: boolean
+  ouverteParDefaut?: boolean
+  projets?: ProjetAccessible[] | null
+  suiviId?: string | null
+}) {
+  const [ouverte, setOuverte] = useState(ouverteParDefaut)
+  const ref = useRef<HTMLDivElement>(null)
+  // Arrivée depuis « Voir dans la Méthode » : l'étape s'ouvre et vient à
+  // l'écran.
+  useEffect(() => {
+    if (!ouverteParDefaut) return
+    setOuverte(true)
+    ref.current?.scrollIntoView({ block: "start", behavior: "smooth" })
+  }, [ouverteParDefaut])
   const livrables = etape.livrables.map((i) => {
     const m = missionsItem(i)
     return m ? `${texteItem(i)} (${m.map((x) => MISSIONS[x]).join(" / ")})` : texteItem(i)
   })
 
   return (
-    <div className="liquid-glass-soft rounded-2xl">
+    <div ref={ref} id={`etape-${etape.code}`} className="liquid-glass-soft scroll-mt-4 rounded-2xl">
       <button type="button" onClick={() => setOuverte((o) => !o)} className="flex w-full items-center gap-3 p-4 text-left" aria-expanded={ouverte}>
         {ouverte ? <ChevronDown size={16} className="shrink-0" /> : <ChevronRight size={16} className="shrink-0" />}
         <span className="w-10 shrink-0 text-sm font-semibold">{etape.code}</span>
@@ -66,6 +125,8 @@ export function EtapeVue({ etape, admin }: { etape: Etape; admin: boolean }) {
       {ouverte && (
         <div className="space-y-4 px-4 pb-4">
           <p className="rounded-xl bg-background/60 px-3 py-2 text-sm font-medium">{etape.objectif}</p>
+
+          {projets && projets.length > 0 && <DansVosProjets etape={etape} projets={projets} suiviId={suiviId} />}
 
           <Rubrique titre="Qui fait quoi">
             <table className="w-full text-sm">

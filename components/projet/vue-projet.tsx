@@ -3,17 +3,21 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { ChevronDown, ChevronRight, Users } from "lucide-react"
+import Image from "next/image"
+import { ArrowUpRight, ChevronDown, ChevronRight, MapPin, Users } from "lucide-react"
 import { useUser } from "@/components/auth-gate"
-import { SitNav } from "@/components/sit-nav"
+import { SitNav, type MailleAriane } from "@/components/sit-nav"
 import { PanneauIA } from "@/components/panneau-ia"
 import { EtapeDetail, type MajEtape } from "@/components/projet/etape-detail"
+import { BlocsRattaches, lienDonneesSite, type Rattachements } from "@/components/projet/rattachements"
 import { ProfilChamps, profilVersRequete, type ProfilSaisi } from "@/components/referentiel/profil-champs"
 import { PHASES, trouverEtape } from "@/lib/referentiel"
 import { avancementPhases, estTraitee, indexEtats, phaseCourante, prochaineEtape, type EtatEtapeProjet } from "@/lib/referentiel/avancement"
 import { contexteProjet } from "@/lib/referentiel/contexte-ia"
 import { LIBELLES_COURTS } from "@/lib/referentiel/libelles"
 import { profilComplet } from "@/lib/referentiel/profil"
+import { suivreProjet } from "@/lib/projet-suivi"
+import logoPuce from "@/public/logo-ai-puce.png"
 
 // Espace projet : la méthode Archiaccess appliquée à une opération, avec
 // Archiaccess AI à portée de main. À gauche les phases et leurs étapes, au
@@ -51,7 +55,14 @@ export function initiales(nom: string): string {
 
 type EtapeProjet = EtatEtapeProjet & { updatedAt: string; updatedBy: { id: string; name: string } | null }
 
-interface ProjetDetail {
+interface ConversationProjet {
+  id: string
+  title: string
+  updatedAt: string
+  etapeCode: string | null
+}
+
+interface ProjetDetail extends Rattachements {
   id: string
   nom: string
   description: string | null
@@ -61,11 +72,6 @@ interface ProjetDetail {
   mission: string | null
   rehabilitation: boolean
   etapes: EtapeProjet[]
-  sites: unknown[]
-  acteurs: unknown[]
-  avisMarches: unknown[]
-  lots: unknown[]
-  documentSitLinks: unknown[]
   espace: "PERSONNEL" | "COLLABORATIF"
   archivedAt: string | null
   membres: Membre[]
@@ -93,6 +99,7 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
   const [edition, setEdition] = useState<ProfilSaisi | null>(null)
   const [demandeIA, setDemandeIA] = useState<{ id: number; texte: string } | null>(null)
   const [listeOuverte, setListeOuverte] = useState(false)
+  const [conversations, setConversations] = useState<ConversationProjet[]>([])
 
   useEffect(() => {
     fetch(`/api/sit/projets/${id}`)
@@ -108,6 +115,9 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
         }
         setProjet(p)
         setAcces(d.acces)
+        // Ouvrir un projet en fait le projet suivi : il accompagne
+        // l'employé sur la recherche, la méthode et Archiaccess AI.
+        suivreProjet({ id: p.id, nom: p.nom, espace: p.espace })
         const etats = indexEtats(p.etapes)
         // Étape ouverte par défaut : celle demandée dans l'adresse, sinon la
         // prochaine étape de la méthode ; sa phase est dépliée.
@@ -118,6 +128,15 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
       })
       .catch(() => setErreur("Chargement impossible."))
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
+
+  // Conversations Archiaccess AI rattachées au projet, pour « Utile pour
+  // cette étape » (mêmes règles d'accès côté serveur).
+  useEffect(() => {
+    fetch(`/api/mistral/conversations?projet=${encodeURIComponent(id)}`)
+      .then((r) => r.json())
+      .then((d) => d.success && setConversations(d.conversations))
+      .catch(() => {})
   }, [id])
 
   const etats = useMemo(() => indexEtats(projet?.etapes ?? []), [projet])
@@ -166,29 +185,59 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
   }
 
   const pastilles = [court(projet.statutMoa), court(projet.typologie), court(projet.montage), court(projet.mission)].filter(Boolean) as string[]
-  const rattaches = [
-    [projet.sites.length, "site"],
-    [projet.acteurs.length, "acteur"],
-    [projet.avisMarches.length, "avis de marché"],
-    [projet.lots.length, "lot"],
-    [projet.documentSitLinks.length, "document"],
-  ].filter(([n]) => (n as number) > 0) as [number, string][]
+  const filAriane: MailleAriane[] = [
+    { libelle: retour.libelle, href: retour.href },
+    { libelle: projet.nom, href: collaboratif ? `/sit/equipe/${projet.id}` : `/sit/projets/${projet.id}` },
+    ...(etapeOuverte ? [{ libelle: `Étape ${etapeOuverte.code} ${etapeOuverte.titre}` }] : []),
+  ]
+  const siteProjet = projet.sites[0]?.site ?? null
+  const conversationsEtape = etapeOuverte ? conversations.filter((c) => c.etapeCode === etapeOuverte.code) : []
+  const utile =
+    siteProjet || conversationsEtape.length > 0 ? (
+      <div className="liquid-glass-soft flex shrink-0 flex-col gap-1.5 rounded-xl px-3.5 py-3 text-[13px]">
+        <h3 className="text-[12.5px] font-bold">Utile pour cette étape</h3>
+        {siteProjet && (
+          <Link href={lienDonneesSite(siteProjet.label)} className="flex items-center gap-2 hover:underline">
+            <MapPin size={13} className="shrink-0 text-muted-foreground" />
+            <span className="min-w-0 flex-1 truncate">Données du site : {siteProjet.label}</span>
+            <ArrowUpRight size={13} className="shrink-0" />
+          </Link>
+        )}
+        {conversationsEtape.length > 0 && (
+          <Link
+            href={`/ai?conversation=${conversationsEtape[0].id}&projet=${projet.id}&etape=${encodeURIComponent(etapeOuverte!.code)}`}
+            className="flex items-center gap-2 hover:underline"
+          >
+            <Image src={logoPuce} alt="" width={13} height={13} className="shrink-0" />
+            <span className="min-w-0 flex-1 truncate">
+              {conversationsEtape.length === 1
+                ? "1 conversation Archiaccess AI sur cette étape"
+                : `${conversationsEtape.length} conversations Archiaccess AI sur cette étape`}
+              <span className="text-muted-foreground"> · reprendre la plus récente</span>
+            </span>
+            <ArrowUpRight size={13} className="shrink-0" />
+          </Link>
+        )}
+      </div>
+    ) : null
 
   return (
-    <Cadre titre={projet.nom} sousTitre={<Link href={retour.href} className="hover:underline">{retour.libelle}</Link>}>
-      {collaboratif && (
-        <div className="flex flex-wrap items-center gap-2">
-          <SelecteurProjet actuel={projet.id} />
-          <Equipe membres={projet.membres} />
-          {projet.archivedAt && <span className="rounded-full border border-foreground/40 px-2.5 py-1 text-xs font-medium">Archivé</span>}
-          {acces?.administrer && (
-            <Link href={`/admin/projets?projet=${projet.id}`} className="liquid-glass-pill rounded-full px-3 py-1.5 text-[13px] font-medium">
-              Gérer les accès
-            </Link>
-          )}
-        </div>
-      )}
-      <div className="-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
+    <Cadre titre={projet.nom} sousTitre={<Link href={retour.href} className="hover:underline">{retour.libelle}</Link>} filAriane={filAriane}>
+      {/* Une seule ligne sous le fil d'Ariane : équipe (espace
+          collaboratif) puis profil de l'opération. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px] text-muted-foreground">
+        {collaboratif && (
+          <span className="flex flex-wrap items-center gap-2 text-foreground">
+            <SelecteurProjet actuel={projet.id} />
+            <Equipe membres={projet.membres} />
+            {projet.archivedAt && <span className="rounded-full border border-foreground/40 px-2.5 py-1 text-xs font-medium">Archivé</span>}
+            {acces?.administrer && (
+              <Link href={`/admin/projets?projet=${projet.id}`} className="liquid-glass-pill rounded-full px-3 py-1.5 text-[13px] font-medium">
+                Gérer les accès
+              </Link>
+            )}
+          </span>
+        )}
         <span>{pastilles.length ? pastilles.join(" · ") : "Profil de l'opération à compléter"}</span>
         {projet.rehabilitation && <span>· Réhabilitation ou site occupé</span>}
         {acces?.modifierProfil && (
@@ -206,11 +255,6 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
           {edition ? "Fermer" : "Modifier le profil"}
         </button>
         )}
-        {rattaches.length > 0 && (
-          <span className="lg:ml-auto">
-            {rattaches.map(([n, l]) => `${n} ${l}${n > 1 && !l.endsWith("marché") ? "s" : ""}`).join(" · ")}
-          </span>
-        )}
       </div>
 
       {edition && (
@@ -221,6 +265,8 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
           </button>
         </div>
       )}
+
+      <BlocsRattaches r={projet} />
 
       <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1 lg:flex-row">
         {/* Tablette et téléphone : la liste des étapes se replie au-dessus
@@ -296,6 +342,7 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
               admin={user.isAdmin}
               onEnregistrer={(maj) => enregistrerEtape(etapeOuverte.code, maj)}
               onPreparer={(texte) => setDemandeIA({ id: Date.now(), texte })}
+              utile={utile}
             />
           ) : (
             <p className="text-sm text-muted-foreground">Sélectionnez une étape.</p>
@@ -321,10 +368,20 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
   )
 }
 
-function Cadre({ titre, sousTitre, children }: { titre: string; sousTitre?: React.ReactNode; children: React.ReactNode }) {
+function Cadre({
+  titre,
+  sousTitre,
+  filAriane,
+  children,
+}: {
+  titre: string
+  sousTitre?: React.ReactNode
+  filAriane?: MailleAriane[]
+  children: React.ReactNode
+}) {
   return (
     <main className="glass-scene flex min-h-screen w-full flex-col gap-4 p-4 pb-40 md:pb-24 lg:h-screen lg:overflow-hidden lg:pb-4">
-      <SitNav titre={titre} sousTitre={sousTitre} />
+      <SitNav titre={titre} sousTitre={sousTitre} filAriane={filAriane} />
       {children}
     </main>
   )

@@ -4,7 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ArrowUpRight, CalendarDays, ChevronDown, FolderKanban, History, X } from "lucide-react"
 import logoPuce from "@/public/logo-ai-puce.png"
-import type { ProjetResume } from "@/components/projet/carte-projet"
+import { lienProjet, type ProjetAccessible as ProjetAI } from "@/lib/projet-suivi"
 import { trouverEtape } from "@/lib/referentiel"
 import { estTraitee, joursRestants } from "@/lib/referentiel/avancement"
 import type { Etape } from "@/lib/referentiel/types"
@@ -16,15 +16,11 @@ import type { Etape } from "@/lib/referentiel/types"
 // échéances proches). Rien n'est inventé : sans projet ni échéance, des
 // états vides explicites.
 
-export type EspaceProjet = "PERSONNEL" | "COLLABORATIF"
-export interface ProjetAI extends ProjetResume {
-  espace: EspaceProjet
-}
-
-export function lienProjet(p: Pick<ProjetAI, "id" | "espace">, etapeCode?: string | null) {
-  const base = p.espace === "COLLABORATIF" ? `/sit/equipe/${p.id}` : `/sit/projets/${p.id}`
-  return etapeCode ? `${base}?etape=${encodeURIComponent(etapeCode)}` : base
-}
+// Types et lien vers un projet partagés avec le projet suivi du SIT
+// (lib/projet-suivi.ts).
+export type { EspaceProjet } from "@/lib/projet-suivi"
+export type { ProjetAccessible as ProjetAI } from "@/lib/projet-suivi"
+export { lienProjet } from "@/lib/projet-suivi"
 
 const HORIZON_JOURS = 14
 const PROJETS_EN_TETE = 3

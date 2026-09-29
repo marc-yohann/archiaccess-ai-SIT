@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
+import { BookOpen } from "lucide-react"
 import { itemsApplicables, texteItem, variantesApplicables, type Etape, type ProfilOperation } from "@/lib/referentiel"
 import { ACTEURS, STATUTS_VALIDATION } from "@/lib/referentiel/libelles"
 import { ETAPE_STATUTS, ETAPE_STATUTS_LIBELLES, type EtapeStatut } from "@/lib/referentiel/profil"
@@ -46,6 +48,7 @@ export function EtapeDetail({
   admin,
   onEnregistrer,
   onPreparer,
+  utile,
 }: {
   etape: Etape
   profil: ProfilOperation | null
@@ -53,6 +56,9 @@ export function EtapeDetail({
   admin: boolean
   onEnregistrer: (maj: MajEtape) => Promise<void>
   onPreparer: (texte: string) => void
+  // « Utile pour cette étape » : ce que le SIT connaît déjà du projet et
+  // qui sert ici (site, conversations Archiaccess AI de l'étape).
+  utile?: React.ReactNode
 }) {
   const [note, setNote] = useState(etat?.note ?? "")
   const [enCours, setEnCours] = useState(false)
@@ -112,6 +118,13 @@ export function EtapeDetail({
             className="liquid-glass-inset rounded-lg px-2 py-1 text-sm text-foreground outline-none"
           />
         </label>
+        <Link
+          href={`/sit/referentiel?etape=${encodeURIComponent(etape.code)}`}
+          className="liquid-glass-pill flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold"
+        >
+          <BookOpen size={13} />
+          Voir dans la Méthode
+        </Link>
         <button
           type="button"
           onClick={() =>
@@ -125,6 +138,8 @@ export function EtapeDetail({
           Préparer avec Archiaccess AI
         </button>
       </div>
+
+      {utile}
 
       <div className="grid gap-3 md:grid-cols-2">
         <div className="chrome-black rounded-xl p-3 text-white">

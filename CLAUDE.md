@@ -104,6 +104,22 @@ trace de ça dans le code actuel, ne pas la réintroduire.
   (`/admin/projets`, `/api/sit/projets/[id]/membres`). Rôles : membre,
   chef de projet (modifie en plus le profil). **Toute nouvelle route
   touchant un projet doit passer par `lib/projet-acces.ts`.**
+- **Projet suivi** (jonction SIT / Archiaccess AI, étape 3) :
+  `lib/projet-suivi.ts` (préférence du navigateur en localStorage protégé,
+  ne donne aucun droit — chaque page revérifie l'accès côté serveur et
+  l'oublie si le projet n'est plus accessible) et
+  `components/projet-suivi.tsx` (choix dans l'en-tête, masqué sur `/ai`
+  et `/admin`). Ouvrir un projet le suit ; « Travailler sur » de `/ai`
+  aussi. Il ouvre `/sit/recherche` sur le site du projet (sans résumé
+  automatique ; `?site=<adresse>` depuis « Voir les données du site »,
+  seule une adresse identique est chargée d'office), la conversation de
+  la recherche est alors rattachée au projet et `/api/mistral/chat`
+  croise le contexte de la page et celui du projet (le panneau d'une étape
+  n'envoie plus de contexte à lui). Vue projet : fil d'Ariane
+  (`SitNav filAriane`), blocs Site/Acteurs/Marchés/Documents
+  (`components/projet/rattachements.tsx`), « Voir dans la Méthode »
+  (`/sit/referentiel?etape=`) et « Utile pour cette étape ». Méthode :
+  « Dans vos projets » sur chaque étape.
 - `lib/referentiel/` — **source unique** du référentiel de méthode
   (données TS pures, importables côté client) : alimente l'espace projet
   et le PDF (`npm run referentiel:pdf`, voir `docs/referentiel/README.md`).
@@ -470,7 +486,9 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   `/api/admin/run-migration` ; redirection `ai.` → `sit.archiaccess.com/ai`
   vérifiée en production (308). Reste à retirer l'alias `ai.` de
   CloudFront et du certificat une fois le DNS supprimé ; (3) liens
-  internes du SIT, (4) « Ajouter au projet ». Lots suivants validés sur maquette, pas commencés :
+  internes du SIT — **construite** (voir « Projet suivi » ci-dessous),
+  vérifiée ordinateur/tablette/téléphone, **pas encore déployée** (aucune
+  migration) ; (4) « Ajouter au projet ». Lots suivants validés sur maquette, pas commencés :
   fils d'étape + dossier + « Joindre au projet » depuis Archiaccess AI ;
   notifications, mentions, circuit de validation ; discussion du projet
   (rafraîchie par interrogation périodique — **pas** de nouveau service

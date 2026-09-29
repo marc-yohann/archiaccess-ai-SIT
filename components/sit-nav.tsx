@@ -4,9 +4,10 @@ import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
-import { BookOpen, FolderKanban, LayoutDashboard, Search, Settings, Users } from "lucide-react"
+import { BookOpen, ChevronRight, FolderKanban, LayoutDashboard, Search, Settings, Users } from "lucide-react"
 import { useUser } from "@/components/auth-gate"
 import { MenuCompte } from "@/components/compte"
+import { ChoixProjetSuivi } from "@/components/projet-suivi"
 
 // En-tête commun aux écrans du SIT (tableau de bord, projets, espace
 // collaboratif, recherche, méthode) : logo et titre, bascule d'espace,
@@ -31,9 +32,26 @@ const LIENS_EQUIPE = [
 ]
 const ESPACE_KEY = "sit.espace"
 
+export interface MailleAriane {
+  libelle: string
+  href?: string
+}
+
 // `logo` : Archiaccess AI (/ai) garde son propre logo en tête, dans la même
 // navigation que le reste du SIT (jonction du 2026-09-29).
-export function SitNav({ titre, sousTitre, logo = "/logo-sit.png" }: { titre: string; sousTitre?: React.ReactNode; logo?: string }) {
+// `filAriane` : où l'on est dans le SIT (ex. Projets de l'équipe › Pont de
+// la Vallée › Étape 7.4), sous la navigation.
+export function SitNav({
+  titre,
+  sousTitre,
+  logo = "/logo-sit.png",
+  filAriane,
+}: {
+  titre: string
+  sousTitre?: React.ReactNode
+  logo?: string
+  filAriane?: MailleAriane[]
+}) {
   const pathname = usePathname()
   const { isAdmin } = useUser()
   // L'espace courant se lit dans l'adresse ; sur les pages communes
@@ -52,6 +70,9 @@ export function SitNav({ titre, sousTitre, logo = "/logo-sit.png" }: { titre: st
   }, [surEquipe, surPersonnel])
   const equipe = surEquipe || (!surPersonnel && dernierEspace === "equipe")
   const LIENS = equipe ? LIENS_EQUIPE : LIENS_PERSONNEL
+  // Archiaccess AI a son propre choix de projet (« Travailler sur »),
+  // relié au projet suivi ; l'administration n'en a pas l'usage.
+  const avecProjetSuivi = !pathname.startsWith("/ai") && !pathname.startsWith("/admin")
   return (
     <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
       <div className="flex min-w-0 items-center gap-3">
@@ -126,6 +147,28 @@ export function SitNav({ titre, sousTitre, logo = "/logo-sit.png" }: { titre: st
           )
         })}
       </nav>
+      {avecProjetSuivi && <ChoixProjetSuivi />}
+      {filAriane && filAriane.length > 0 && (
+        <nav aria-label="Fil d'Ariane" className="hidden min-w-0 basis-full items-center md:flex gap-1.5 overflow-hidden text-[13px]">
+          {filAriane.map((m, i) => {
+            const dernier = i === filAriane.length - 1
+            return (
+              <span key={`${i}-${m.libelle}`} className={`flex items-center gap-1.5 ${dernier ? "min-w-0" : "shrink-0"}`}>
+                {i > 0 && <ChevronRight size={13} className="shrink-0 text-muted-foreground" aria-hidden="true" />}
+                {m.href && !dernier ? (
+                  <Link href={m.href} className="max-w-[12rem] truncate text-muted-foreground hover:text-foreground hover:underline">
+                    {m.libelle}
+                  </Link>
+                ) : (
+                  <span className={`truncate ${dernier ? "font-semibold" : "text-muted-foreground"}`} aria-current={dernier ? "page" : undefined}>
+                    {m.libelle}
+                  </span>
+                )}
+              </span>
+            )
+          })}
+        </nav>
+      )}
     </header>
   )
 }

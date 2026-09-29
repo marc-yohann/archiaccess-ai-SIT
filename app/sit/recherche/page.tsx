@@ -12,6 +12,7 @@ import logoPuce from "@/public/logo-ai-puce.png"
 import { Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Layers, Map, LayoutGrid, ListChecks, PanelRightClose, PanelRightOpen, MapPin, Building2, FolderKanban, FileText, Hash } from "lucide-react"
 import { AuthGate } from "@/components/auth-gate"
 import { SitNav } from "@/components/sit-nav"
+import { lienProjet, lireProjetSuivi, suivreProjet, type ProjetSuivi } from "@/lib/projet-suivi"
 import { AutoGrowTextarea } from "@/components/auto-grow-textarea"
 import type { AddressResult, CommuneResult } from "@/lib/data-sources/ban"
 import type { Parcel } from "@/lib/data-sources/cadastre"
@@ -871,11 +872,58 @@ function Dashboard() {
   const searchParams = useSearchParams()
   useEffect(() => {
     const resume = searchParams.get("resume")
-    if (!resume) return
-    setQuery(resume)
-    void search({ preventDefault: () => {} } as React.FormEvent, resume)
+    if (resume) {
+      setQuery(resume)
+      void search({ preventDefault: () => {} } as React.FormEvent, resume)
+      return
+    }
+    void ouvrirSiteDuProjet(searchParams.get("site"))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Recherche reliée au projet (maquette validée le 2026-09-29) : avec un
+  // projet suivi, la page s'ouvre directement sur son site ; ?site=<adresse>
+  // (« Voir les données du site » depuis un projet) ouvre cette adresse.
+  // L'accès au projet est revérifié par le serveur ; un projet suivi qui
+  // n'est plus accessible est oublié. Archiaccess AI reçoit alors le projet
+  // en plus des données du site (voir fetchAiReply).
+  const [siteDuProjet, setSiteDuProjet] = useState<{ label: string; projet: ProjetSuivi | null } | null>(null)
+
+  async function ouvrirSiteDuProjet(siteDemande: string | null) {
+    const suivi = lireProjetSuivi()
+    let label = siteDemande
+    let projet: ProjetSuivi | null = null
+    if (suivi) {
+      const d = await fetch(`/api/sit/projets/${encodeURIComponent(suivi.id)}`)
+        .then((r) => (r.status === 404 ? { oublier: true } : r.json()))
+        .catch(() => null)
+      if (d?.oublier) suivreProjet(null)
+      else if (d?.success) {
+        const sites: string[] = (d.projet.sites as { site: { label: string } }[]).map((x) => x.site.label)
+        if (!label) label = sites[0] ?? null
+        if (label && sites.includes(label)) projet = suivi
+      }
+    }
+    if (!label) return
+    setQuery(label)
+    const trouvees = await search({ preventDefault: () => {} } as React.FormEvent, label)
+    // Seule une adresse identique est chargée d'office ; sinon la liste des
+    // adresses trouvées reste affichée et l'employé choisit.
+    const exacte = trouvees.find((a) => a.label.toLowerCase() === label!.toLowerCase())
+    if (!exacte) return
+    setSiteDuProjet({ label: exacte.label, projet })
+    await selectAddress(exacte, { resumeIA: false })
+  }
+
+  function autreAdresse() {
+    setSiteDuProjet(null)
+    setSelectedAddress(null)
+    setAddresses([])
+    setCompanies([])
+    setQuery("")
+    setAiConversationId(undefined)
+    setAiMessages([])
+  }
 
   // Chargement d'une adresse sélectionnée : le temps que les ~10 appels
   // parallèles de selectAddress() répondent, avant que les tuiles de
@@ -984,7 +1032,15 @@ function Dashboard() {
       const res = await fetch("/api/mistral/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId: aiConversationId, message: text, context: formatContext(snapshot), title }),
+        body: JSON.stringify({
+          conversationId: aiConversationId,
+          message: text,
+          context: formatContext(snapshot),
+          title,
+          // Site du projet suivi : la conversation est rattachée au projet
+          // et Archiaccess AI croise ses données avec celles du site.
+          ...(siteDuProjet?.projet && selectedAddress?.label === siteDuProjet.label ? { projetId: siteDuProjet.projet.id } : {}),
+        }),
       })
       return await res.json()
     } catch {
@@ -1108,10 +1164,11 @@ function Dashboard() {
     return Object.fromEntries(entries)
   }
 
-  async function search(e: React.FormEvent, prefill?: string) {
+  // Renvoie les adresses trouvées (utile à ouvrirSite() plus bas).
+  async function search(e: React.FormEvent, prefill?: string): Promise<AddressResult[]> {
     e.preventDefault()
     const q = (prefill ?? query).trim()
-    if (!q || isSearching) return
+    if (!q || isSearching) return []
     setIsSearching(true)
     setError("")
     setSelectedAddress(null)
@@ -1141,7 +1198,7 @@ function Dashboard() {
         setError(data.error ?? "Recherche impossible.")
         setAddresses([])
         setCompanies([])
-        return
+        return []
       }
 
       // Projet/Document/Référence/Besoin : recherche backend réelle mais
@@ -1162,7 +1219,7 @@ function Dashboard() {
         if (totalResults === 0) {
           setError("Information non disponible — aucun résultat pour cette recherche.")
         }
-        return
+        return []
       }
 
       const foundAddresses: AddressResult[] = data.addresses
@@ -1172,7 +1229,7 @@ function Dashboard() {
 
       if (foundAddresses.length === 0 && foundCompanies.length === 0) {
         setError("Aucun résultat pour cette recherche.")
-        return
+        return []
       }
 
       const bodacc = await loadBodacc(foundCompanies)
@@ -1200,12 +1257,16 @@ function Dashboard() {
           `SIT · ${foundCompanies[0].nom}`,
         )
       }
+      return foundAddresses
     } finally {
       setIsSearching(false)
     }
   }
 
-  async function selectAddress(addr: AddressResult) {
+  // `resumeIA: false` : adresse chargée depuis le projet suivi (ouvrirSite)
+  // — pas de résumé automatique à chaque visite, Archiaccess AI reste à
+  // disposition dans le panneau.
+  async function selectAddress(addr: AddressResult, { resumeIA = true }: { resumeIA?: boolean } = {}) {
     setResultsLoading(true)
     setSelectedAddress(addr)
     setParcels(null)
@@ -1244,6 +1305,7 @@ function Dashboard() {
       body: JSON.stringify({ address: addr, parcels: bundle.parcels, dpeRecords: bundle.dpeRecords }),
     }).catch(() => {})
 
+    if (!resumeIA) return
     void sendAiMessage(
       "Fais un résumé synthétique des informations ci-dessus (adresse, cadastre, urbanisme, risques, DVF, DPE, cavités, sites pollués, servitudes, marchés publics, nappes phréatiques, réseau de chaleur), pertinent pour une étude technique AMO/OPC. Sois concis (5-8 lignes maximum), et signale si une donnée importante manque.",
       {
@@ -1379,6 +1441,26 @@ function Dashboard() {
             que le tableau de bord, les projets et la méthode, et même
             comportement sur téléphone. */}
         <SitNav titre="Recherche de données" />
+
+        {siteDuProjet && selectedAddress?.label === siteDuProjet.label && (
+          <div className="liquid-glass-soft flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl px-3.5 py-2.5 text-[13.5px]">
+            <MapPin size={16} className="shrink-0" />
+            <span className="min-w-0 flex-1">
+              {siteDuProjet.projet ? "Site du projet" : "Adresse"} : <b className="font-semibold">{siteDuProjet.label}</b>
+              {siteDuProjet.projet && (
+                <span className="text-muted-foreground">
+                  {" · "}
+                  <Link href={lienProjet(siteDuProjet.projet)} className="hover:underline">
+                    {siteDuProjet.projet.nom}
+                  </Link>
+                </span>
+              )}
+            </span>
+            <button type="button" onClick={autreAdresse} className="liquid-glass-btn shrink-0 rounded-[10px] px-3 py-1.5 text-[12.5px] font-semibold">
+              Autre adresse
+            </button>
+          </div>
+        )}
 
         {/* 5 onglets — voir SEARCH_MODE_META. "Recherche" (ex-"Point précis",
             renommé pour ne plus concurrencer visuellement les 6 catégories

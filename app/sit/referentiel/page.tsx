@@ -1,11 +1,14 @@
 "use client"
 
+import { Suspense, useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { AuthGate, useUser } from "@/components/auth-gate"
 import { SitNav } from "@/components/sit-nav"
 import { EtapeVue } from "@/components/referentiel/etape-vue"
 import { PHASES, REFERENTIEL_VERSION } from "@/lib/referentiel"
 import { AXES_INTRO, PRESENTATION, PRINCIPES } from "@/lib/referentiel/principes"
 import { MONTAGES, STATUTS_MOA, TYPOLOGIES } from "@/lib/referentiel/libelles"
+import { chargerProjetsAccessibles, useProjetSuivi, type ProjetAccessible } from "@/lib/projet-suivi"
 
 // Consultation du référentiel de méthode Archiaccess (AMO / OPC) — mêmes
 // données que le PDF (scripts/referentiel-pdf.mjs) et que l'espace
@@ -14,6 +17,13 @@ import { MONTAGES, STATUTS_MOA, TYPOLOGIES } from "@/lib/referentiel/libelles"
 // l'outil) n'est montrée qu'aux administrateurs.
 function Referentiel() {
   const { isAdmin } = useUser()
+  // ?etape=<code> : arrivée depuis « Voir dans la Méthode » d'un projet.
+  const etapeDemandee = useSearchParams().get("etape")
+  const suivi = useProjetSuivi()
+  const [projets, setProjets] = useState<ProjetAccessible[] | null>(null)
+  useEffect(() => {
+    void chargerProjetsAccessibles().then(setProjets)
+  }, [])
   return (
       <main className="glass-scene custom-scrollbar flex h-screen w-full items-start justify-center overflow-y-auto p-4 pb-28 md:pb-4">
         <div className="flex w-full max-w-5xl flex-col gap-4 pb-10">
@@ -66,7 +76,14 @@ function Referentiel() {
                   <p className="mt-2 text-sm text-muted-foreground">{phase.intro}</p>
                   <div className="mt-3 space-y-2">
                     {phase.etapes.map((e) => (
-                      <EtapeVue key={e.code} etape={e} admin={isAdmin} />
+                      <EtapeVue
+                        key={e.code}
+                        etape={e}
+                        admin={isAdmin}
+                        ouverteParDefaut={e.code === etapeDemandee}
+                        projets={projets}
+                        suiviId={suivi?.id ?? null}
+                      />
                     ))}
                   </div>
                 </>
@@ -81,7 +98,10 @@ function Referentiel() {
 export default function ReferentielPage() {
   return (
     <AuthGate logoSrc="/logo-sit.png" appName="Archiaccess SIT">
-      <Referentiel />
+      {/* useSearchParams() (?etape=) exige un ancêtre Suspense au build. */}
+      <Suspense fallback={null}>
+        <Referentiel />
+      </Suspense>
     </AuthGate>
   )
 }
