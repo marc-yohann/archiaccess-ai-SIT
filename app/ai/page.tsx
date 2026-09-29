@@ -301,16 +301,19 @@ function Chat() {
     <main className="glass-scene flex h-[100dvh] w-full flex-col gap-4 overflow-hidden p-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:p-6 md:pb-6">
       <SitNav titre="Archiaccess AI" logo="/logo-ai.png" />
 
-      {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/30 md:hidden" onClick={() => setSidebarOpen(false)} />}
+      {/* Sous 1024 px (téléphone, tablette en portrait), la liste des
+          conversations s'ouvre en volet pour laisser toute la largeur à
+          la conversation. */}
+      {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/30 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
       <div className="flex min-h-0 flex-1 gap-4">
         <aside
-          className={`liquid-glass-panel fixed inset-y-0 left-0 z-50 flex w-72 shrink-0 flex-col gap-2 rounded-r-[22px] p-3 pt-[calc(0.75rem+env(safe-area-inset-top))] transition-transform duration-200 max-md:bg-white md:static md:z-auto md:w-[270px] md:translate-x-0 md:rounded-[22px] md:pt-3 ${
+          className={`liquid-glass-panel fixed inset-y-0 left-0 z-50 flex w-72 shrink-0 flex-col gap-2 rounded-r-[22px] p-3 pt-[calc(0.75rem+env(safe-area-inset-top))] transition-transform duration-200 max-lg:bg-white lg:static lg:z-auto lg:w-[270px] lg:translate-x-0 lg:rounded-[22px] lg:pt-3 ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
           aria-label="Conversations"
         >
-          <div className="flex items-center justify-between gap-2 md:hidden">
+          <div className="flex items-center justify-between gap-2 lg:hidden">
             <span className="px-1 text-[15px] font-bold">Conversations</span>
             <button onClick={() => setSidebarOpen(false)} className="rounded-lg p-1.5" aria-label="Fermer la liste">
               <X size={18} />
@@ -366,7 +369,7 @@ function Chat() {
         </aside>
 
         <section className="flex min-w-0 flex-1 flex-col gap-3">
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
             <button
               onClick={() => setSidebarOpen(true)}
               className="liquid-glass-btn flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-semibold"
