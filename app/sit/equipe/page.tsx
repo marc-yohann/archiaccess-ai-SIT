@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Settings } from "lucide-react"
+import { Archive, CalendarDays, Settings } from "lucide-react"
 import { AuthGate, useUser } from "@/components/auth-gate"
 import { SitNav } from "@/components/sit-nav"
 import { PanneauIA } from "@/components/panneau-ia"
@@ -58,7 +58,7 @@ function EspaceCollaboratif() {
         <section className="mt-2 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-[12.5px] font-medium text-muted-foreground">{aujourdhui}</p>
-            <h2 className="mt-1.5 text-2xl font-semibold leading-tight tracking-[-0.025em] sm:text-[30px]">
+            <h2 className="mt-1.5 text-2xl font-bold leading-tight tracking-[-0.03em] sm:text-[30px]">
               Bonjour {prenom}, voici les projets de l'équipe.
             </h2>
             <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">
@@ -79,7 +79,7 @@ function EspaceCollaboratif() {
         {projets === null && !erreur && <p className="text-sm text-muted-foreground">Chargement…</p>}
 
         {projets && actifs.length === 0 && (
-          <div className="liquid-glass-panel rounded-2xl p-6">
+          <div className="liquid-glass-panel rounded-[22px] p-6">
             <p className="font-medium">Aucun projet collaboratif pour l'instant.</p>
             <p className="mt-1 text-sm text-muted-foreground">
               {user.isAdmin
@@ -103,9 +103,9 @@ function EspaceCollaboratif() {
         )}
 
         {actifs.length > 0 && (
-          <section className="liquid-glass-panel flex flex-col gap-2.5 rounded-[1.25rem] p-5">
+          <section className="liquid-glass-panel flex flex-col gap-2.5 rounded-[22px] p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="text-[15px] font-semibold tracking-tight">À traiter dans les projets de l'équipe</h2>
+              <h2 className="flex items-center gap-2.5 text-[15px] font-bold tracking-tight"><span className="glass-icon size-7 rounded-[9px]"><CalendarDays size={15} /></span>À traiter dans les projets de l'équipe</h2>
               <span className="text-xs text-muted-foreground">Échéances des {HORIZON_JOURS} prochains jours et retards</span>
             </div>
             {aTraiter.length === 0 && <p className="text-sm text-muted-foreground">Aucune échéance proche.</p>}
@@ -139,7 +139,7 @@ function EspaceCollaboratif() {
 
         {archives.length > 0 && (
           <section className="flex flex-col gap-3">
-            <h2 className="text-[15px] font-semibold tracking-tight">Projets archivés</h2>
+            <h2 className="flex items-center gap-2.5 text-[15px] font-bold tracking-tight"><span className="glass-icon size-7 rounded-[9px]"><Archive size={15} /></span>Projets archivés</h2>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {archives.map((p) => (
                 <CarteProjet key={p.id} projet={p} href={`/sit/equipe/${p.id}`} equipe />

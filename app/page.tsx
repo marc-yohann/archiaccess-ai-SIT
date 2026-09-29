@@ -44,11 +44,11 @@ function Home() {
           </div>
         </div>
         <div className="grid w-full gap-4 sm:grid-cols-2">
-          <Link href="/sit" className="liquid-glass-panel block rounded-2xl p-6 transition-shadow hover:shadow-lg">
+          <Link href="/sit" className="liquid-glass-panel block rounded-[22px] p-6 transition-shadow hover:shadow-lg">
             <h2 className="font-medium">Système d'Information Technique</h2>
             <p className="mt-1 text-sm text-muted-foreground">Études, documents, données foncières/financières/réglementaires.</p>
           </Link>
-          <Link href="/ai" className="liquid-glass-panel block rounded-2xl p-6 transition-shadow hover:shadow-lg">
+          <Link href="/ai" className="liquid-glass-panel block rounded-[22px] p-6 transition-shadow hover:shadow-lg">
             <h2 className="font-medium">Archiaccess AI</h2>
             <p className="mt-1 text-sm text-muted-foreground">Copilote conversationnel pour vos études AMO/OPC.</p>
           </Link>

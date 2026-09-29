@@ -19,7 +19,7 @@ function Referentiel() {
         <div className="flex w-full max-w-5xl flex-col gap-4 pb-10">
           <SitNav titre="Méthode Archiaccess" />
 
-          <div className="liquid-glass-panel rounded-2xl p-5">
+          <div className="liquid-glass-panel rounded-[22px] p-5">
             <p className="text-[12.5px] font-medium text-muted-foreground">
               Méthode AMO / OPC{isAdmin ? ` — version ${REFERENTIEL_VERSION} — document de travail` : ""}
             </p>
@@ -34,8 +34,8 @@ function Referentiel() {
             </div>
           </div>
 
-          <div className="liquid-glass-panel rounded-2xl p-5">
-            <h2 className="text-sm font-medium">Les trois axes de variation</h2>
+          <div className="liquid-glass-panel rounded-[22px] p-5">
+            <h2 className="text-[15px] font-bold">Les trois axes de variation</h2>
             <p className="mt-1 text-sm text-muted-foreground">{AXES_INTRO}</p>
             <div className="mt-3 grid gap-2 md:grid-cols-3">
               {[
@@ -56,9 +56,9 @@ function Referentiel() {
           </div>
 
           {PHASES.map((phase) => (
-            <section key={phase.numero} className="liquid-glass-panel rounded-2xl p-5">
+            <section key={phase.numero} className="liquid-glass-panel rounded-[22px] p-5">
               <p className="text-[12.5px] font-medium text-muted-foreground">Phase {phase.numero}</p>
-              <h2 className="text-base font-semibold">{phase.titre}</h2>
+              <h2 className="text-base font-bold">{phase.titre}</h2>
               {phase.etapes.length === 0 ? (
                 <p className="mt-2 text-sm text-muted-foreground">Phase en cours de rédaction.</p>
               ) : (

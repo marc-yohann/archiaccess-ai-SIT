@@ -203,15 +203,15 @@ export function PanneauIA({
       <button
         type="button"
         onClick={() => setOuvertMobile(true)}
-        className="liquid-glass-pill fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-4 z-40 md:bottom-4 flex items-center gap-2 rounded-full p-3 text-sm font-medium shadow-lg sm:py-2.5 sm:pl-3 sm:pr-4"
+        className="chrome-black fixed bottom-[calc(6.25rem+env(safe-area-inset-bottom))] right-4 z-40 md:bottom-4 flex items-center gap-2 rounded-[18px] p-3 text-sm font-semibold text-white sm:py-2.5 sm:pl-3 sm:pr-4"
         aria-label="Ouvrir Archiaccess AI"
       >
         {/* Téléphone : le pictogramme seul, pour ne pas masquer le texte
             en dessous ; libellé complet à partir de la tablette. */}
-        <Image src={logoPuce} alt="" width={30} height={30} className="shrink-0 sm:size-6" />
+        <Image src={logoPuce} alt="" width={30} height={30} className="shrink-0 invert sm:size-6" />
         <span className="hidden sm:inline">Archiaccess AI</span>
         {messages.length > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 rounded-full bg-foreground px-1.5 text-[10px] leading-4 text-background sm:static">
+          <span className="absolute -right-0.5 -top-0.5 rounded-full bg-white px-1.5 text-[10px] leading-4 text-foreground sm:static">
             {messages.length}
           </span>
         )}
@@ -221,7 +221,7 @@ export function PanneauIA({
 
   if (grandEcran && replie) {
     return (
-      <aside className="liquid-glass-panel flex h-full w-14 shrink-0 rounded-2xl">
+      <aside className="liquid-glass-panel flex h-full w-14 shrink-0 rounded-[22px]">
         <button
           type="button"
           onClick={() => replier(false)}
@@ -243,8 +243,8 @@ export function PanneauIA({
     <aside
       className={
         grandEcran
-          ? "liquid-glass-panel relative flex h-full w-[var(--largeur-ia)] shrink-0 flex-col gap-3 rounded-2xl p-4"
-          : "liquid-glass-panel fixed inset-2 z-50 flex flex-col gap-3 rounded-2xl p-4"
+          ? "liquid-glass-panel relative flex h-full w-[var(--largeur-ia)] shrink-0 flex-col gap-3 rounded-[22px] p-4"
+          : "liquid-glass-panel fixed inset-2 z-50 flex flex-col gap-3 rounded-[22px] p-4"
       }
       style={{ "--largeur-ia": `${largeur}px` } as React.CSSProperties}
       aria-label="Archiaccess AI"
@@ -262,7 +262,7 @@ export function PanneauIA({
 
       <div className="flex items-center gap-2">
         <Image src={logoPuce} alt="" width={24} height={24} />
-        <h2 className="text-sm font-semibold">Archiaccess AI</h2>
+        <h2 className="text-[14.5px] font-bold">Archiaccess AI</h2>
         <div className="ml-auto flex items-center gap-1">
           <button
             type="button"
@@ -318,7 +318,7 @@ export function PanneauIA({
                   type="button"
                   onClick={() => void envoyer(s)}
                   disabled={enCours}
-                  className="liquid-glass-soft rounded-xl px-3 py-2 text-left text-[13px] transition-shadow hover:shadow-md disabled:opacity-50"
+                  className="liquid-glass-soft rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition-shadow hover:shadow-md disabled:opacity-50"
                 >
                   {s}
                 </button>
@@ -329,11 +329,11 @@ export function PanneauIA({
         {messages.map((m, i) =>
           m.role === "user" ? (
             <div key={i} className="text-right">
-              <span className="chrome-black inline-block max-w-[88%] rounded-2xl rounded-br-md px-3 py-2 text-left text-[13px] text-white">{m.content}</span>
+              <span className="chrome-black inline-block max-w-[88%] rounded-[18px] rounded-br-md px-3.5 py-2.5 text-left text-[13px] text-white">{m.content}</span>
             </div>
           ) : (
             <div key={i} className="text-left">
-              <div className="liquid-glass-soft inline-block max-w-[96%] rounded-2xl rounded-bl-md px-3 py-2 text-[13px]">
+              <div className="liquid-glass-soft inline-block max-w-[96%] rounded-[18px] rounded-bl-md px-3.5 py-2.5 text-[13px]">
                 <div className="ai-msg-assistant" dangerouslySetInnerHTML={{ __html: formatReply(m.content) }} />
                 <button
                   type="button"
@@ -358,7 +358,7 @@ export function PanneauIA({
           e.preventDefault()
           void envoyer(saisie)
         }}
-        className="liquid-glass-soft flex items-center gap-2 rounded-xl py-1.5 pl-3 pr-1.5"
+        className="flex items-center gap-2 rounded-[14px] border border-white bg-white/90 py-1.5 pl-3.5 pr-1.5 shadow-[0_6px_18px_-10px_rgba(16,24,40,0.3)]"
       >
         <input
           value={saisie}
@@ -371,7 +371,7 @@ export function PanneauIA({
           type="submit"
           disabled={enCours || !saisie.trim()}
           aria-label="Envoyer"
-          className="chrome-black flex h-8 w-8 items-center justify-center rounded-lg text-white disabled:opacity-40"
+          className="chrome-black flex h-8 w-8 items-center justify-center rounded-[10px] text-white disabled:opacity-40"
         >
           <Send size={13} />
         </button>

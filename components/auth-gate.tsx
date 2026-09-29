@@ -114,9 +114,9 @@ function LoginForm({
 
   return (
     <main className="glass-scene flex min-h-screen items-center justify-center p-4">
-      <form onSubmit={submit} className="liquid-glass flex w-full max-w-sm flex-col items-center gap-3 rounded-3xl p-8">
-        <Image src={logoSrc} alt={appName} width={104} height={104} className="mb-2" />
-        <h1 className="text-lg font-medium">{appName}</h1>
+      <form onSubmit={submit} className="liquid-glass flex w-full max-w-sm flex-col items-center gap-3 rounded-[28px] p-8">
+        <Image src={logoSrc} alt={appName} width={104} height={104} className="mb-2 rounded-[26px] shadow-[0_24px_48px_-28px_rgba(30,40,60,0.45)]" />
+        <h1 className="text-2xl font-bold tracking-[-0.02em]">{appName}</h1>
         <p className="text-center text-sm text-muted-foreground">
           Plateforme interne Archiaccess — accès réservé à l'équipe Archiaccess.
         </p>
@@ -125,7 +125,7 @@ function LoginForm({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="prenom.nom@archiaccess.com"
-          className="liquid-glass-inset w-full rounded-xl px-3 py-2 text-sm outline-none"
+          className="w-full rounded-xl border border-foreground/[0.08] bg-white/85 px-3.5 py-2.5 text-[14px] outline-none focus:border-foreground/25"
           autoFocus
           autoComplete="email"
         />
@@ -134,14 +134,14 @@ function LoginForm({
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Mot de passe"
-          className="liquid-glass-inset w-full rounded-xl px-3 py-2 text-sm outline-none"
+          className="w-full rounded-xl border border-foreground/[0.08] bg-white/85 px-3.5 py-2.5 text-[14px] outline-none focus:border-foreground/25"
           autoComplete="current-password"
         />
         {error && <p className="text-xs text-red-600">{error}</p>}
         <button
           type="submit"
           disabled={isSubmitting}
-          className="chrome-black w-full rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
+          className="chrome-black mt-1 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
         >
           Se connecter
         </button>
@@ -196,9 +196,9 @@ export function BootstrapForm({
 
   return (
     <main className="glass-scene flex min-h-screen items-center justify-center p-4">
-      <form onSubmit={submit} className="liquid-glass flex w-full max-w-sm flex-col items-center gap-3 rounded-3xl p-8">
-        <Image src={logoSrc} alt={appName} width={104} height={104} className="mb-2" />
-        <h1 className="text-lg font-medium">Premier compte administrateur</h1>
+      <form onSubmit={submit} className="liquid-glass flex w-full max-w-sm flex-col items-center gap-3 rounded-[28px] p-8">
+        <Image src={logoSrc} alt={appName} width={104} height={104} className="mb-2 rounded-[26px] shadow-[0_24px_48px_-28px_rgba(30,40,60,0.45)]" />
+        <h1 className="text-2xl font-bold tracking-[-0.02em]">Premier compte administrateur</h1>
         <p className="text-center text-sm text-muted-foreground">
           Aucun compte n'existe encore sur {appName}. Créez le premier — il aura les droits administrateur pour
           créer les comptes des autres employés.
@@ -207,7 +207,7 @@ export function BootstrapForm({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Nom complet"
-          className="liquid-glass-inset w-full rounded-xl px-3 py-2 text-sm outline-none"
+          className="w-full rounded-xl border border-foreground/[0.08] bg-white/85 px-3.5 py-2.5 text-[14px] outline-none focus:border-foreground/25"
           autoFocus
         />
         <input
@@ -215,7 +215,7 @@ export function BootstrapForm({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="prenom.nom@archiaccess.com"
-          className="liquid-glass-inset w-full rounded-xl px-3 py-2 text-sm outline-none"
+          className="w-full rounded-xl border border-foreground/[0.08] bg-white/85 px-3.5 py-2.5 text-[14px] outline-none focus:border-foreground/25"
           autoComplete="email"
         />
         <input
@@ -223,7 +223,7 @@ export function BootstrapForm({
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Mot de passe (8 caractères min.)"
-          className="liquid-glass-inset w-full rounded-xl px-3 py-2 text-sm outline-none"
+          className="w-full rounded-xl border border-foreground/[0.08] bg-white/85 px-3.5 py-2.5 text-[14px] outline-none focus:border-foreground/25"
           autoComplete="new-password"
         />
         <input
@@ -231,14 +231,14 @@ export function BootstrapForm({
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           placeholder="Confirmer le mot de passe"
-          className="liquid-glass-inset w-full rounded-xl px-3 py-2 text-sm outline-none"
+          className="w-full rounded-xl border border-foreground/[0.08] bg-white/85 px-3.5 py-2.5 text-[14px] outline-none focus:border-foreground/25"
           autoComplete="new-password"
         />
         {error && <p className="text-xs text-red-600">{error}</p>}
         <button
           type="submit"
           disabled={isSubmitting}
-          className="chrome-black w-full rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
+          className="chrome-black mt-1 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
         >
           Créer le compte
         </button>
@@ -289,9 +289,9 @@ function ForcedPasswordChange({
 
   return (
     <main className="glass-scene flex min-h-screen items-center justify-center p-4">
-      <form onSubmit={submit} className="liquid-glass flex w-full max-w-sm flex-col items-center gap-3 rounded-3xl p-8">
-        <Image src={logoSrc} alt={appName} width={104} height={104} className="mb-2" />
-        <h1 className="text-lg font-medium">Nouveau mot de passe</h1>
+      <form onSubmit={submit} className="liquid-glass flex w-full max-w-sm flex-col items-center gap-3 rounded-[28px] p-8">
+        <Image src={logoSrc} alt={appName} width={104} height={104} className="mb-2 rounded-[26px] shadow-[0_24px_48px_-28px_rgba(30,40,60,0.45)]" />
+        <h1 className="text-2xl font-bold tracking-[-0.02em]">Nouveau mot de passe</h1>
         <p className="text-center text-sm text-muted-foreground">
           Première connexion : choisissez votre mot de passe définitif.
         </p>
@@ -300,7 +300,7 @@ function ForcedPasswordChange({
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
           placeholder="Mot de passe temporaire"
-          className="liquid-glass-inset w-full rounded-xl px-3 py-2 text-sm outline-none"
+          className="w-full rounded-xl border border-foreground/[0.08] bg-white/85 px-3.5 py-2.5 text-[14px] outline-none focus:border-foreground/25"
           autoFocus
           autoComplete="current-password"
         />
@@ -309,7 +309,7 @@ function ForcedPasswordChange({
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
           placeholder="Nouveau mot de passe (8 caractères min.)"
-          className="liquid-glass-inset w-full rounded-xl px-3 py-2 text-sm outline-none"
+          className="w-full rounded-xl border border-foreground/[0.08] bg-white/85 px-3.5 py-2.5 text-[14px] outline-none focus:border-foreground/25"
           autoComplete="new-password"
         />
         <input
@@ -317,14 +317,14 @@ function ForcedPasswordChange({
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           placeholder="Confirmer le nouveau mot de passe"
-          className="liquid-glass-inset w-full rounded-xl px-3 py-2 text-sm outline-none"
+          className="w-full rounded-xl border border-foreground/[0.08] bg-white/85 px-3.5 py-2.5 text-[14px] outline-none focus:border-foreground/25"
           autoComplete="new-password"
         />
         {error && <p className="text-xs text-red-600">{error}</p>}
         <button
           type="submit"
           disabled={isSubmitting}
-          className="chrome-black w-full rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
+          className="chrome-black mt-1 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
         >
           Valider
         </button>

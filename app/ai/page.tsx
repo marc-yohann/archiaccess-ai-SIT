@@ -4,10 +4,12 @@ import { useEffect, useRef, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Plus, Trash2, LogOut, Home, Menu, X, Settings, MapPin, Copy, Check, RefreshCw } from "lucide-react"
+import { Plus, Trash2, Menu, X, MapPin, Copy, Check, RefreshCw, ArrowRight } from "lucide-react"
 import { AuthGate, useUser } from "@/components/auth-gate"
 import { AutoGrowTextarea } from "@/components/auto-grow-textarea"
+import { BlocCompte } from "@/components/compte"
 import { formatReply } from "@/lib/format-reply"
+import logoPuce from "@/public/logo-ai-puce.png"
 
 interface ChatMessage {
   role: "user" | "assistant"
@@ -126,11 +128,6 @@ function Chat() {
     loadConversations()
   }
 
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" })
-    window.location.reload()
-  }
-
   // Toute panne (réseau, réponse non-JSON d'un plantage inattendu côté
   // serveur...) retombe sur ce message plutôt que de laisser l'appelant
   // planter en silence — voir CLAUDE.md, incident "l'IA ne répond plus"
@@ -207,14 +204,14 @@ function Chat() {
         />
       )}
       <aside
-        className={`liquid-glass-panel fixed inset-y-0 left-0 z-30 flex h-full w-72 shrink-0 flex-col gap-3 p-4 transition-transform duration-200 md:static md:z-auto md:w-64 md:translate-x-0 ${
+        className={`liquid-glass-panel fixed inset-y-0 left-0 z-30 flex h-full w-72 shrink-0 flex-col gap-3 p-4 transition-transform duration-200 md:static md:z-auto md:m-3 md:h-[calc(100%-1.5rem)] md:w-[270px] md:translate-x-0 md:rounded-[22px] ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Image src="/logo-ai.png" alt="Archiaccess AI" width={36} height={36} />
-            <span className="text-sm font-medium">Archiaccess AI</span>
+            <Image src="/logo-ai.png" alt="Archiaccess AI" width={36} height={36} className="rounded-[10px]" />
+            <span className="text-[15px] font-bold">Archiaccess AI</span>
           </div>
           <button onClick={() => setSidebarOpen(false)} className="md:hidden" aria-label="Fermer le menu">
             <X size={18} />
@@ -222,7 +219,7 @@ function Chat() {
         </div>
         <button
           onClick={newConversation}
-          className="chrome-black flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm text-white"
+          className="chrome-black flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-white"
         >
           <Plus size={16} />
           Nouvelle conversation
@@ -234,8 +231,8 @@ function Chat() {
               <div
                 key={c.id}
                 onClick={() => openConversation(c.id)}
-                className={`group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-sm hover:bg-black/5 ${
-                  c.id === conversationId ? "liquid-glass-soft" : ""
+                className={`group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-[13px] font-medium ${
+                  c.id === conversationId ? "glass-on font-semibold" : "hover:bg-white/60"
                 }`}
               >
                 <span className="flex min-w-0 items-center gap-1.5">
@@ -273,23 +270,7 @@ function Chat() {
             )
           })}
         </div>
-        <div className="flex flex-col gap-1 border-t border-black/10 pt-3 text-sm text-muted-foreground">
-          <span className="truncate px-1">{user.name}</span>
-          <Link href="/" className="flex items-center gap-2 rounded-lg px-1 py-1 hover:underline">
-            <Home size={14} />
-            Accueil
-          </Link>
-          {user.isAdmin && (
-            <Link href="/admin" className="flex items-center gap-2 rounded-lg px-1 py-1 hover:underline">
-              <Settings size={14} />
-              Administration
-            </Link>
-          )}
-          <button onClick={logout} className="flex items-center gap-2 rounded-lg px-1 py-1 text-left hover:underline">
-            <LogOut size={14} />
-            Déconnexion
-          </button>
-        </div>
+        <BlocCompte />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -302,9 +283,9 @@ function Chat() {
         </div>
         {messages.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
-            <Image src="/logo-ai.png" alt="Archiaccess AI" width={112} height={112} />
+            <Image src="/logo-ai.png" alt="Archiaccess AI" width={112} height={112} className="rounded-[28px] shadow-[0_24px_48px_-28px_rgba(30,40,60,0.45)]" />
             <div>
-              <h1 className="text-xl font-medium">Prêt à vous aider, {user.name.split(" ")[0]} ?</h1>
+              <h1 className="text-2xl font-bold tracking-[-0.02em]">Prêt à vous aider, {user.name.split(" ")[0]} ?</h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 Posez une question sur vos études AMO/OPC ou vos tâches du quotidien.
               </p>
@@ -314,7 +295,7 @@ function Chat() {
                 <button
                   key={s}
                   onClick={(e) => send(e, s)}
-                  className="liquid-glass-soft rounded-full px-4 py-2 text-xs"
+                  className="liquid-glass-pill rounded-full px-4 py-2 text-[13px] font-medium"
                 >
                   {s}
                 </button>
@@ -326,22 +307,25 @@ function Chat() {
             {messages.map((m, i) =>
               m.role === "user" ? (
                 <div key={i} className="text-right">
-                  <span className="chrome-black inline-block max-w-[80%] rounded-2xl px-3 py-2 text-sm text-white">
+                  <span className="chrome-black inline-block max-w-[80%] rounded-[20px] rounded-br-md px-4 py-3 text-left text-[14.5px] text-white">
                     {m.content}
                   </span>
                 </div>
               ) : (
                 <div key={i} className="text-left">
-                  <span className="liquid-glass-soft inline-block max-w-[80%] rounded-2xl px-3 py-2 text-sm">
+                  <span className="liquid-glass-panel inline-flex max-w-[88%] gap-3 rounded-[22px] rounded-bl-lg px-5 py-4 text-[14.5px] leading-relaxed">
+                    <Image src={logoPuce} alt="" width={24} height={24} className="mt-0.5 hidden size-6 shrink-0 self-start object-contain sm:block" />
+                    <span className="min-w-0">
                     <span className="ai-msg-assistant" dangerouslySetInnerHTML={{ __html: formatReply(m.content) }} />
-                    <span className="mt-1 flex gap-1">
+                    <span className="mt-2 flex gap-1.5">
                       <button
                         type="button"
                         onClick={() => copyMessage(i, m.content)}
                         title="Copier la réponse"
-                        className="rounded-md p-1 text-muted-foreground/70 hover:bg-black/5 hover:text-foreground"
+                        className="liquid-glass-btn flex items-center gap-1.5 rounded-[10px] px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
                       >
-                        {copiedMsgIndex === i ? <Check size={11} /> : <Copy size={11} />}
+                        {copiedMsgIndex === i ? <Check size={13} /> : <Copy size={13} />}
+                        {copiedMsgIndex === i ? "Copié" : "Copier"}
                       </button>
                       {m.forText && (
                         <button
@@ -349,11 +333,13 @@ function Chat() {
                           onClick={() => regenerate(i)}
                           title="Régénérer la réponse"
                           disabled={isSending}
-                          className="rounded-md p-1 text-muted-foreground/70 hover:bg-black/5 hover:text-foreground disabled:opacity-40"
+                          className="liquid-glass-btn flex items-center gap-1.5 rounded-[10px] px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-40"
                         >
-                          <RefreshCw size={11} />
+                          <RefreshCw size={13} />
+                          Régénérer
                         </button>
                       )}
+                    </span>
                     </span>
                   </span>
                 </div>
@@ -361,7 +347,7 @@ function Chat() {
             )}
             {isSending && (
               <div className="text-left">
-                <span className="liquid-glass-soft inline-flex items-center gap-1 rounded-2xl px-3 py-2.5">
+                <span className="liquid-glass-panel inline-flex items-center gap-1 rounded-[22px] rounded-bl-lg px-4 py-3.5">
                   <span className="think-dot" />
                   <span className="think-dot" />
                   <span className="think-dot" />
@@ -371,24 +357,29 @@ function Chat() {
           </div>
         )}
 
-        <form ref={formRef} onSubmit={send} className="mx-auto flex w-full max-w-3xl items-end gap-2 p-4 pt-0">
-          <AutoGrowTextarea
-            ref={inputRef}
-            autoFocus
-            value={input}
-            onChange={setInput}
-            onSubmit={() => formRef.current?.requestSubmit()}
-            disabled={isSending}
-            placeholder="Poser une question… (Maj+Entrée pour une nouvelle ligne)"
-            className="liquid-glass-inset flex-1 resize-none rounded-xl px-3 py-2 text-sm outline-none"
-          />
-          <button
-            type="submit"
-            disabled={isSending}
-            className="chrome-black rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
-          >
-            Envoyer
-          </button>
+        <form ref={formRef} onSubmit={send} className="mx-auto w-full max-w-3xl p-4 pt-0">
+          <div className="flex items-end gap-2 rounded-[18px] border border-white bg-white/90 p-2 pl-4 shadow-[0_6px_18px_-10px_rgba(16,24,40,0.3)]">
+            <AutoGrowTextarea
+              ref={inputRef}
+              autoFocus
+              value={input}
+              onChange={setInput}
+              onSubmit={() => formRef.current?.requestSubmit()}
+              disabled={isSending}
+              placeholder="Poser une question… (Maj+Entrée pour une nouvelle ligne)"
+              className="flex-1 resize-none bg-transparent py-2 text-[14.5px] outline-none"
+            />
+            <button
+              type="submit"
+              disabled={isSending}
+              aria-label="Envoyer"
+              title="Envoyer"
+              className="chrome-black flex size-10 shrink-0 items-center justify-center rounded-xl text-white disabled:opacity-50"
+            >
+              <ArrowRight size={17} />
+            </button>
+          </div>
+          <p className="mt-2 text-center text-xs text-muted-foreground">Archiaccess AI prépare ; vous relisez et décidez.</p>
         </form>
       </div>
     </main>

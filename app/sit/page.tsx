@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ExternalLink, Plus, Search } from "lucide-react"
+import { CalendarDays, ExternalLink, Plus, Radar, Search, TriangleAlert } from "lucide-react"
 import { AuthGate, useUser } from "@/components/auth-gate"
 import { SitNav } from "@/components/sit-nav"
 import { PanneauIA } from "@/components/panneau-ia"
@@ -90,7 +90,7 @@ function TableauDeBord() {
         <section className="mt-2 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-[12.5px] font-medium text-muted-foreground">{aujourdhui}</p>
-            <h2 className="mt-1.5 text-2xl font-semibold leading-tight tracking-[-0.025em] sm:text-[30px]">Bonjour {prenom}, voici vos opérations.</h2>
+            <h2 className="mt-1.5 text-2xl font-bold leading-tight tracking-[-0.03em] sm:text-[30px]">Bonjour {prenom}, voici vos opérations.</h2>
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <form
@@ -120,7 +120,7 @@ function TableauDeBord() {
         {projets === null && !erreur && <p className="text-sm text-muted-foreground">Chargement…</p>}
 
         {projets?.length === 0 && (
-          <div className="liquid-glass-panel rounded-2xl p-6">
+          <div className="liquid-glass-panel rounded-[22px] p-6">
             <p className="font-medium">Aucune opération suivie pour l'instant.</p>
             <p className="mt-1 text-sm text-muted-foreground">
               Créez un projet : la méthode Archiaccess s'adapte à son maître d'ouvrage, à son montage et à son ouvrage.
@@ -148,9 +148,9 @@ function TableauDeBord() {
         )}
 
         <section className="grid items-start gap-4 xl:grid-cols-5">
-          <div className="liquid-glass-panel flex min-w-0 flex-col gap-2.5 rounded-[1.25rem] p-5 xl:col-span-3">
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-              <h2 className="text-[15px] font-semibold tracking-tight">À traiter</h2>
+          <div className="liquid-glass-panel flex min-w-0 flex-col gap-2.5 rounded-[22px] p-5 xl:col-span-3">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <h2 className="flex items-center gap-2.5 text-[15px] font-bold tracking-tight"><span className="glass-icon size-7 rounded-[9px]"><CalendarDays size={15} /></span>À traiter</h2>
               <span className="text-xs text-muted-foreground">Échéances des {HORIZON_JOURS} prochains jours et retards</span>
             </div>
             {aTraiter.length === 0 && (
@@ -189,8 +189,8 @@ function TableauDeBord() {
           </div>
 
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-2">
-            <div className="liquid-glass-panel flex flex-col gap-2.5 rounded-[1.25rem] p-5">
-              <h2 className="text-[15px] font-semibold tracking-tight">Points de vigilance</h2>
+            <div className="liquid-glass-panel flex flex-col gap-2.5 rounded-[22px] p-5">
+              <h2 className="flex items-center gap-2.5 text-[15px] font-bold tracking-tight"><span className="glass-icon size-7 rounded-[9px]"><TriangleAlert size={15} /></span>Points de vigilance</h2>
               {vigilance.length === 0 && <p className="text-sm text-muted-foreground">Rien à signaler.</p>}
               {vigilance.slice(0, 6).map((v) => (
                 <Link key={v.cle} href={`/sit/projets/${v.projet.id}`} className="flex items-start gap-2.5 text-[13px] hover:underline">
@@ -205,9 +205,9 @@ function TableauDeBord() {
               ))}
             </div>
 
-            <div className="liquid-glass-panel flex flex-col gap-2.5 rounded-[1.25rem] p-5">
+            <div className="liquid-glass-panel flex flex-col gap-2.5 rounded-[22px] p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                <h2 className="text-[15px] font-semibold tracking-tight">Veille marchés AMO / OPC</h2>
+                <h2 className="flex items-center gap-2.5 text-[15px] font-bold tracking-tight"><span className="glass-icon size-7 rounded-[9px]"><Radar size={15} /></span>Veille marchés AMO / OPC</h2>
                 <span className="text-xs text-muted-foreground">Publiés depuis {veille?.jours ?? 7} jours</span>
               </div>
               {veille === null && <p className="text-sm text-muted-foreground">Chargement…</p>}

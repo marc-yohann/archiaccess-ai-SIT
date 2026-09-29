@@ -738,13 +738,13 @@ function ResultGroups({ groups, onItemClick }: { groups: ResultGroup[]; onItemCl
                     key={i}
                     type="button"
                     onClick={() => onItemClick(it)}
-                    className="liquid-glass-panel rounded-2xl p-4 text-left transition-shadow hover:shadow-md"
+                    className="liquid-glass-panel rounded-[22px] p-4 text-left transition-shadow hover:shadow-md"
                   >
                     <h4 className="tile-head">{it.source}</h4>
                     <p className="tile-body">{it.body}</p>
                   </button>
                 ) : (
-                  <div key={i} className="liquid-glass-panel rounded-2xl p-4">
+                  <div key={i} className="liquid-glass-panel rounded-[22px] p-4">
                     <h4 className="tile-head">{it.source}</h4>
                     <p className="tile-body">{it.body}</p>
                   </div>
@@ -1402,7 +1402,7 @@ function Dashboard() {
             retour utilisateur — la barre n'avait pas assez de présence
             visuelle pour être vue/utilisée sur son écran. Fond plus
             opaque, contour plus marqué, mêmes couleurs du système. */}
-        <div className="liquid-glass liquid-glass-deep rounded-2xl">
+        <div className="liquid-glass liquid-glass-deep rounded-[22px]">
           <div className="mode-tabs">
             {SEARCH_MODE_META.map((m) => (
               <button
@@ -1716,7 +1716,7 @@ function Dashboard() {
             wrapper interne juste en dessous, qui garde overflow-hidden —
             diagnostiqué et vérifié en Chromium avant ce changement, voir
             conversation. */}
-        <div className="liquid-glass-panel ticker-fade overflow-visible rounded-2xl px-4 py-2.5">
+        <div className="liquid-glass-panel ticker-fade overflow-visible rounded-[22px] px-4 py-2.5">
           {vaultStats && vaultStats.recentSearches.length > 0 ? (
             <div className="overflow-hidden">
               <div className="ticker-track flex w-max items-center gap-8 whitespace-nowrap">
@@ -1747,7 +1747,7 @@ function Dashboard() {
         {/* overflow-visible : même bug/même correctif que le bandeau
             d'activité ci-dessus — sans clipping horizontal à préserver ici,
             rien d'autre à garder intact. */}
-        <div className="liquid-glass-panel overflow-visible flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
+        <div className="liquid-glass-panel overflow-visible flex flex-wrap items-center justify-between gap-3 rounded-[22px] px-4 py-3">
           <div className="flex items-center gap-2">
             <span className="status-dot" />
             <h2 className="text-xs font-medium text-muted-foreground">Système d'Information Technique Fédéré — actif</h2>
@@ -1781,7 +1781,7 @@ function Dashboard() {
             )}
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <div className="liquid-glass-panel rounded-2xl p-4">
+              <div className="liquid-glass-panel rounded-[22px] p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <h2 className="text-xs font-medium text-muted-foreground">Corpus réglementaire</h2>
                 </div>
@@ -1862,7 +1862,7 @@ function Dashboard() {
                 </p>
               </div>
 
-              <div className="liquid-glass-panel rounded-2xl p-4">
+              <div className="liquid-glass-panel rounded-[22px] p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <h2 className="text-xs font-medium text-muted-foreground">Sources fédérées</h2>
                   <span className="font-mono text-xs text-muted-foreground">
@@ -1907,7 +1907,7 @@ function Dashboard() {
                 dans l'onglet "Discipline" de la barre de recherche pour
                 rester contextuelle plutôt que visible en permanence hors
                 sujet (voir ce bloc dans SEARCH_MODE "discipline" ci-dessus). */}
-            <div className="liquid-glass-panel rounded-2xl p-4">
+            <div className="liquid-glass-panel rounded-[22px] p-4">
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-xs font-medium text-muted-foreground">Aperçu carte</h2>
                 <button type="button" onClick={() => setSearchMode("carte")} className="text-xs text-muted-foreground hover:underline">
@@ -1925,7 +1925,7 @@ function Dashboard() {
         )}
 
         {addresses.length > 0 && !selectedAddress && (
-          <div className="liquid-glass-panel rounded-2xl p-4">
+          <div className="liquid-glass-panel rounded-[22px] p-4">
             <h2 className="mb-2 text-xs font-medium text-muted-foreground">Adresses trouvées — sélectionnez-en une</h2>
             <div className="space-y-2">
               {addresses.map((a) => (
@@ -1943,7 +1943,7 @@ function Dashboard() {
         )}
 
         {projetResults.length > 0 && (
-          <div className="liquid-glass-panel rounded-2xl p-4">
+          <div className="liquid-glass-panel rounded-[22px] p-4">
             <h2 className="mb-2 text-xs font-medium text-muted-foreground">Projets trouvés</h2>
             <div className="space-y-2">
               {projetResults.map((p) => (
@@ -1963,7 +1963,7 @@ function Dashboard() {
         )}
 
         {documentResults.length > 0 && (
-          <div className="liquid-glass-panel rounded-2xl p-4">
+          <div className="liquid-glass-panel rounded-[22px] p-4">
             <h2 className="mb-2 text-xs font-medium text-muted-foreground">Documents trouvés</h2>
             <div className="space-y-2">
               {documentResults.map((d) => (
@@ -1983,7 +1983,7 @@ function Dashboard() {
         )}
 
         {(referenceResults.avisMarches.length > 0 || referenceResults.unites.length > 0 || referenceResults.parcelles.length > 0) && (
-          <div className="liquid-glass-panel rounded-2xl p-4">
+          <div className="liquid-glass-panel rounded-[22px] p-4">
             <h2 className="mb-2 text-xs font-medium text-muted-foreground">Références trouvées</h2>
             <div className="space-y-2">
               {[...referenceResults.avisMarches, ...referenceResults.unites, ...referenceResults.parcelles].map((r) => (
@@ -2003,7 +2003,7 @@ function Dashboard() {
         )}
 
         {besoinResults.length > 0 && (
-          <div className="liquid-glass-panel rounded-2xl p-4">
+          <div className="liquid-glass-panel rounded-[22px] p-4">
             <h2 className="mb-2 text-xs font-medium text-muted-foreground">Besoins trouvés</h2>
             <div className="space-y-2">
               {besoinResults.map((b) => (
@@ -2053,7 +2053,7 @@ function Dashboard() {
 
         {secteurResult && (
           <div className="space-y-3">
-            <div className="liquid-glass-panel rounded-2xl p-4">
+            <div className="liquid-glass-panel rounded-[22px] p-4">
               <h2 className="text-sm font-medium">{secteurResult.commune.city}</h2>
               <p className="text-xs text-muted-foreground">
                 {secteurResult.commune.postcode}
@@ -2081,7 +2081,7 @@ function Dashboard() {
         {lotResults && (
           <div className="space-y-4">
             {lotResults.map((row, i) => (
-              <div key={i} className="liquid-glass-panel rounded-2xl p-4">
+              <div key={i} className="liquid-glass-panel rounded-[22px] p-4">
                 {row.bundle ? (
                   <>
                     <div className="mb-2 flex items-center justify-between">

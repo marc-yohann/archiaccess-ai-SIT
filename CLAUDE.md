@@ -32,9 +32,12 @@ trace de ça dans le code actuel, ne pas la réintroduire.
 - **Prisma 7** (`@prisma/adapter-pg`, driver `pg`) contre **PostgreSQL 16**
   avec l'extension **pgvector** (recherche par similarité pour le corpus
   réglementaire).
-- **Tailwind v4** (`@tailwindcss/postcss`), polices Geist + Geist Mono
-  auto-hébergées (`app/fonts/*.woff2`, licence OFL `Geist-OFL.txt` ;
-  Geist remplace Inter depuis la modernisation du 2026-09-29).
+- **Tailwind v4** (`@tailwindcss/postcss`), polices **Plus Jakarta Sans**
+  (texte, fichier variable 200-800, sous-ensemble latin) + Geist Mono
+  (chiffres, codes) auto-hébergées (`app/fonts/*.woff2`, licences OFL
+  `PlusJakartaSans-OFL.txt` / `Geist-OFL.txt`). Historique du
+  2026-09-29 : Inter → Geist → Plus Jakarta Sans (direction « Verre
+  dépoli » validée par l'utilisateur).
 - **Mistral AI** — chat (`mistral-medium-latest` actuellement, voir
   "Pièges" plus bas pour pourquoi ce n'est pas `large`) et embeddings
   (`mistral-embed`, dimension 1024).
@@ -328,15 +331,20 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   `claude/archiaccess-sit-build-kunkji` (`main` est très en retard,
   quasiment au premier squelette — ne pas s'y fier comme référence de
   l'état du projet). Pas de workflow de PR/review établi à ce jour.
-- **CSS** : système de design "verre liquide", **modernisé le
-  2026-09-29** à la demande de l'utilisateur (« garder le même design
-  mais le moderniser ») : mêmes noms de classes, même fond
-  (`.glass-scene`, `--background` d'origine), mais panneaux de verre
-  allégés (blanc translucide, flou doux, liseré fin, plus de reflets ni
-  de grain), libellés en casse normale (plus de petites majuscules
-  espacées). Seul `.chrome-black` garde son dégradé chromé (demande
-  explicite : « chrome juste les boutons noirs ») ; `.chrome-white` est
-  plat. Il peut donc
+- **CSS** : système de design **« Verre dépoli »** (2026-09-29, choisi
+  par l'utilisateur parmi quatre variantes sur artefact, puis validé
+  page par page — artefact « SIT en verre dépoli ») : même fond
+  (`.glass-scene`, `--background` d'origine), mêmes noms de classes,
+  mais modules très translucides (`rgba(255,255,255,.52)`, flou 28 px
+  saturé, liseré blanc, reflet fin en haut, ombre portée douce), rayon
+  des modules 22 px, titres en gras, libellés en casse normale.
+  Éléments actifs posés sur un rail : `.glass-on` (blanc) ; pastille
+  d'icône en tête de module : `.glass-icon`. Menu du compte partagé
+  (`components/compte.tsx` : avatar aux initiales dans l'en-tête du SIT,
+  bloc en bas de la barre latérale d'Archiaccess AI). Sur téléphone, la
+  barre d'onglets est une barre de verre flottante. Seul `.chrome-black`
+  est chromé (demande explicite : « chrome juste les boutons noirs »).
+  Il peut donc
   désormais différer visuellement d'`archiaccess-pro`. Entièrement dans
   `app/globals.css`
   (`@layer components`) — classes `.liquid-glass` / `.liquid-glass-panel`
@@ -428,7 +436,9 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   leur créateur. **Modernisation du design** (police Geist, verre
   allégé, fond d'origine et boutons noirs chromés conservés, validée par
   l'utilisateur sur artefact avant/après) **déployée le 2026-09-29**
-  (commit `f96f07b`, sans migration). Lots suivants validés sur maquette, pas commencés :
+  (commit `f96f07b`, sans migration), puis jugée encore trop ancienne
+  par l'utilisateur : direction **« Verre dépoli »** (voir « CSS »)
+  construite le même jour, **pas encore déployée**. Lots suivants validés sur maquette, pas commencés :
   fils d'étape + dossier + « Joindre au projet » depuis Archiaccess AI ;
   notifications, mentions, circuit de validation ; discussion du projet
   (rafraîchie par interrogation périodique — **pas** de nouveau service

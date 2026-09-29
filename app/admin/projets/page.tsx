@@ -94,9 +94,9 @@ function GestionProjets() {
     <Cadre>
       {erreur && <p className="text-sm text-red-600">{erreur}</p>}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-        <section className="liquid-glass-panel flex flex-col gap-2.5 rounded-2xl p-4 lg:w-[26rem] lg:shrink-0">
+        <section className="liquid-glass-panel flex flex-col gap-2.5 rounded-[22px] p-4 lg:w-[26rem] lg:shrink-0">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-[15px] font-semibold">Projets collaboratifs</h2>
+            <h2 className="text-[15px] font-bold">Projets collaboratifs</h2>
             <Link href="/sit/projets/nouveau?espace=collaboratif" className="chrome-black flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-medium text-white">
               <Plus size={14} />
               Nouveau
@@ -126,14 +126,14 @@ function GestionProjets() {
           })}
         </section>
 
-        <section className="liquid-glass-panel flex min-w-0 flex-1 flex-col gap-4 rounded-2xl p-5">
+        <section className="liquid-glass-panel flex min-w-0 flex-1 flex-col gap-4 rounded-[22px] p-5">
           {!projet && <p className="text-sm text-muted-foreground">Choisissez un projet pour gérer ses accès, ou créez-en un.</p>}
           {projet && (
             <>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[12.5px] font-medium text-muted-foreground">Projet collaboratif</p>
-                  <h2 className="mt-1 text-xl font-semibold tracking-tight">{projet.nom}</h2>
+                  <h2 className="mt-1 text-[22px] font-bold tracking-[-0.025em]">{projet.nom}</h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Link href={`/sit/equipe/${projet.id}`} className="liquid-glass-pill rounded-xl px-3.5 py-2 text-[13px]">

@@ -47,7 +47,7 @@ export function CarteProjet({ projet, href, equipe = false }: { projet: ProjetRe
   return (
     <Link
       href={href ?? `/sit/projets/${projet.id}`}
-      className="liquid-glass-panel group flex flex-col gap-4 rounded-[1.25rem] p-5 transition-shadow hover:shadow-lg"
+      className="liquid-glass-panel group flex flex-col gap-4 rounded-[22px] p-5 transition-shadow hover:shadow-lg"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">

@@ -76,14 +76,14 @@ export function EtapeDetail({
   }
 
   return (
-    <article className="liquid-glass-panel custom-scrollbar flex flex-col gap-5 rounded-2xl p-5 sm:p-6 lg:h-full lg:min-h-0 lg:overflow-y-auto">
+    <article className="liquid-glass-panel custom-scrollbar flex flex-col gap-5 rounded-[22px] p-5 sm:p-6 lg:h-full lg:min-h-0 lg:overflow-y-auto">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[12.5px] font-medium text-muted-foreground">
             Étape {etape.code}
             {admin && ` · ${STATUTS_VALIDATION[etape.statut]}`}
           </p>
-          <h2 className="mt-1 text-xl font-semibold leading-tight tracking-tight sm:text-[22px]">{etape.titre}</h2>
+          <h2 className="mt-1 text-xl font-bold leading-tight tracking-[-0.025em] sm:text-[26px]">{etape.titre}</h2>
           <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">{etape.objectif}</p>
         </div>
         <div className="liquid-glass-inset flex w-full shrink-0 gap-0.5 rounded-xl p-1 sm:w-auto" role="group" aria-label="Avancement de l'étape">

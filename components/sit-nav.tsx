@@ -6,10 +6,11 @@ import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { BookOpen, FolderKanban, LayoutDashboard, Search, Settings, Users } from "lucide-react"
 import { useUser } from "@/components/auth-gate"
+import { MenuCompte } from "@/components/compte"
 
-// En-tête commun aux écrans du SIT centrés sur les projets (tableau de
-// bord, projets, méthode) : même logo et mêmes pilules en verre que la
-// recherche de données (/sit/recherche).
+// En-tête commun aux écrans du SIT (tableau de bord, projets, espace
+// collaboratif, recherche, méthode) : logo et titre, bascule d'espace,
+// avatar du compte ; en dessous, la navigation dans un rail de verre.
 // `court` : libellé affiché sur téléphone, où les cinq entrées tiennent
 // en une rangée d'onglets sans rien couper ni faire défiler.
 const OUTILS = [
@@ -52,27 +53,27 @@ export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.
   return (
     <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
       <div className="flex min-w-0 items-center gap-3">
-        <Image src="/logo-sit.png" alt="Archiaccess SIT" width={36} height={36} className="shrink-0" />
+        <Image src="/logo-sit.png" alt="Archiaccess SIT" width={38} height={38} className="shrink-0 rounded-[10px]" />
         <div className="min-w-0">
-          {sousTitre && <div className="text-xs text-muted-foreground">{sousTitre}</div>}
-          <h1 className="line-clamp-2 text-[17px] font-semibold leading-snug tracking-[-0.015em] md:line-clamp-1">{titre}</h1>
+          {sousTitre && <div className="text-xs font-medium text-muted-foreground">{sousTitre}</div>}
+          <h1 className="line-clamp-2 text-[17px] font-bold leading-snug tracking-[-0.015em] md:line-clamp-1">{titre}</h1>
         </div>
       </div>
       {/* Bascule entre les deux espaces : mon espace (projets personnels)
           et l'espace collaboratif (projets d'équipe). */}
       <div className="order-first flex w-full items-center gap-2 md:order-none md:w-auto">
-      <div className="liquid-glass-inset flex flex-1 gap-0.5 rounded-xl p-1 md:flex-none" role="group" aria-label="Changer d'espace">
+      <div className="liquid-glass-inset flex flex-1 gap-0.5 rounded-xl p-[3px] md:flex-none" role="group" aria-label="Changer d'espace">
         <Link
           href="/sit"
           aria-current={!equipe ? "true" : undefined}
-          className={`flex-1 whitespace-nowrap rounded-lg px-3.5 py-1.5 text-center text-[13px] font-medium transition-colors md:flex-none ${!equipe ? "bg-white text-foreground shadow-[0_1px_2px_rgba(16,24,40,0.08),0_2px_8px_-2px_rgba(16,24,40,0.1)]" : "text-muted-foreground hover:text-foreground"}`}
+          className={`flex-1 whitespace-nowrap rounded-[9px] px-3.5 py-1.5 text-center text-[13px] font-semibold transition-colors md:flex-none ${!equipe ? "glass-on" : "text-muted-foreground hover:text-foreground"}`}
         >
           Mon espace
         </Link>
         <Link
           href="/sit/equipe"
           aria-current={equipe ? "true" : undefined}
-          className={`flex-1 whitespace-nowrap rounded-lg px-3.5 py-1.5 text-center text-[13px] font-medium transition-colors md:flex-none ${equipe ? "bg-white text-foreground shadow-[0_1px_2px_rgba(16,24,40,0.08),0_2px_8px_-2px_rgba(16,24,40,0.1)]" : "text-muted-foreground hover:text-foreground"}`}
+          className={`flex-1 whitespace-nowrap rounded-[9px] px-3.5 py-1.5 text-center text-[13px] font-semibold transition-colors md:flex-none ${equipe ? "glass-on" : "text-muted-foreground hover:text-foreground"}`}
         >
           Espace collaboratif
         </Link>
@@ -84,19 +85,23 @@ export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.
           href="/admin"
           aria-label="Administration"
           aria-current={pathname.startsWith("/admin") ? "page" : undefined}
-          className={`flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 text-[13px] font-medium md:h-auto md:py-1.5 ${pathname.startsWith("/admin") ? "chrome-black text-white" : "liquid-glass-pill text-foreground/80 hover:text-foreground"}`}
+          className={`flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 text-[13px] font-semibold md:h-[34px] ${pathname.startsWith("/admin") ? "chrome-black text-white" : "liquid-glass-pill text-foreground/80 hover:text-foreground"}`}
         >
           <Settings size={15} className="shrink-0 md:size-3.5" />
           <span className="hidden md:inline">Administration</span>
         </Link>
       )}
+      <MenuCompte />
       </div>
+      {/* À partir de la tablette, la navigation passe sur sa propre ligne,
+          dans un rail de verre (direction « Verre dépoli »). */}
+      <div className="hidden h-0 basis-full md:block" aria-hidden="true" />
       {/* Téléphone : barre d'onglets fixée en bas de l'écran (demande
           utilisateur), icône + libellé court, à portée de pouce. À partir
           de la tablette : les pilules habituelles dans l'en-tête. Les pages
           réservent la hauteur de la barre en bas (pb-40 / pb-28 < md). */}
       <nav
-        className={`fixed inset-x-0 bottom-0 z-30 grid ${equipe ? "grid-cols-4" : "grid-cols-5"} gap-1 border-t border-foreground/[0.07] bg-white/[0.97] px-2 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1.5 backdrop-blur-xl md:static md:z-auto md:flex md:w-auto md:flex-wrap md:items-center md:gap-0.5 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none`}
+        className={`liquid-glass-pill-deep fixed inset-x-2.5 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-30 grid ${equipe ? "grid-cols-4" : "grid-cols-5"} gap-1 rounded-[24px] p-1.5 backdrop-blur-2xl backdrop-saturate-150 md:static md:z-auto md:flex md:w-auto md:flex-wrap md:items-center md:gap-0.5 md:rounded-[14px] md:border-white/60 md:bg-white/40 md:p-1 md:shadow-none`}
         aria-label="Navigation principale"
       >
         {LIENS.map(({ href, label, court, icon: Icon, exact }) => {
@@ -106,7 +111,7 @@ export function SitNav({ titre, sousTitre }: { titre: string; sousTitre?: React.
               key={href}
               href={href}
               aria-current={actif ? "page" : undefined}
-              className={`flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-medium transition-colors md:flex-row md:gap-1.5 md:whitespace-nowrap md:rounded-lg md:px-3 md:py-1.5 md:text-[13.5px] ${actif ? "text-foreground md:bg-foreground/[0.07]" : "text-muted-foreground hover:text-foreground md:hover:bg-white/60"}`}
+              className={`flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 text-[11px] font-semibold transition-colors md:flex-row md:gap-1.5 md:whitespace-nowrap md:rounded-[10px] md:px-3 md:py-[7px] md:text-[13.5px] ${actif ? "glass-on" : "text-muted-foreground hover:text-foreground md:hover:bg-white/60"}`}
             >
               {Icon ? (
                 <Icon size={20} strokeWidth={actif ? 2.2 : 1.8} className="shrink-0 md:size-3.5" />

@@ -214,7 +214,7 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
       </div>
 
       {edition && (
-        <div className="liquid-glass-panel space-y-3 rounded-2xl p-4">
+        <div className="liquid-glass-panel space-y-3 rounded-[22px] p-4">
           <ProfilChamps valeur={edition} onChange={setEdition} />
           <button type="button" onClick={() => void enregistrerProfil()} className="chrome-black rounded-xl px-4 py-2 text-sm text-white">
             Enregistrer le profil
@@ -228,14 +228,14 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
         <button
           type="button"
           onClick={() => setListeOuverte((o) => !o)}
-          className="liquid-glass-panel flex items-center gap-3 rounded-2xl px-4 py-3 text-left lg:hidden"
+          className="liquid-glass-panel flex items-center gap-3 rounded-[22px] px-4 py-3 text-left lg:hidden"
           aria-expanded={listeOuverte}
         >
           <span className="text-[12.5px] font-medium text-muted-foreground">Étapes</span>
           <span className="min-w-0 flex-1 truncate text-sm font-medium">{etapeOuverte ? `${etapeOuverte.code} ${etapeOuverte.titre}` : "Choisir une étape"}</span>
           {listeOuverte ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </button>
-        <nav className={`liquid-glass-panel custom-scrollbar ${listeOuverte ? "flex" : "hidden"} shrink-0 flex-col gap-0.5 rounded-2xl p-3 lg:flex lg:w-[19rem] lg:overflow-y-auto`} aria-label="Phases et étapes">
+        <nav className={`liquid-glass-panel custom-scrollbar ${listeOuverte ? "flex" : "hidden"} shrink-0 flex-col gap-0.5 rounded-[22px] p-3 lg:flex lg:w-[19rem] lg:overflow-y-auto`} aria-label="Phases et étapes">
           {phases.map(({ phase, total, traitees, complete }) => {
             const ouverte = phasesOuvertes.has(phase.numero)
             return (

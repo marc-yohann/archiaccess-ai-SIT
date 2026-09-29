@@ -2,17 +2,14 @@ import type { Metadata } from "next"
 import localFont from "next/font/local"
 import "./globals.css"
 
-// Geist (SIL Open Font License, app/fonts/Geist-OFL.txt), auto-hébergée
-// comme les autres polices : modernisation du design du 2026-09-29,
-// décidée par l'utilisateur (remplace Inter).
-const geist = localFont({
-  variable: "--font-geist",
-  src: [
-    { path: "./fonts/Geist-Regular.woff2", weight: "400", style: "normal" },
-    { path: "./fonts/Geist-Medium.woff2", weight: "500", style: "normal" },
-    { path: "./fonts/Geist-SemiBold.woff2", weight: "600", style: "normal" },
-    { path: "./fonts/Geist-Bold.woff2", weight: "700", style: "normal" },
-  ],
+// Plus Jakarta Sans (SIL Open Font License, app/fonts/PlusJakartaSans-OFL.txt),
+// police variable (graisses 200 à 800) auto-hébergée comme les autres :
+// direction « Verre dépoli » validée par l'utilisateur le 2026-09-29
+// (remplace Geist, qui remplaçait Inter). Sous-ensemble latin, qui couvre
+// le français (accents, œ, guillemets, espaces fines, €).
+const jakarta = localFont({
+  variable: "--font-jakarta",
+  src: [{ path: "./fonts/PlusJakartaSans-Variable.woff2", weight: "200 800", style: "normal" }],
 })
 
 const geistMono = localFont({
@@ -30,7 +27,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={`${geist.variable} ${geistMono.variable} bg-background`}>
+    <html lang="fr" className={`${jakarta.variable} ${geistMono.variable} bg-background`}>
       <body>{children}</body>
     </html>
   )
