@@ -438,7 +438,24 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   l'utilisateur sur artefact avant/après) **déployée le 2026-09-29**
   (commit `f96f07b`, sans migration), puis jugée encore trop ancienne
   par l'utilisateur : direction **« Verre dépoli »** (voir « CSS »)
-  construite le même jour, **pas encore déployée**. Lots suivants validés sur maquette, pas commencés :
+  construite et **déployée le 2026-09-29** (commit `fcb8f44`, sans
+  migration). **Décision du 2026-09-29 : joindre Archiaccess AI au SIT**
+  (un seul outil ; maquette validée, artefact « Navigation SIT et
+  Archiaccess AI ») : Archiaccess AI devient un onglet du SIT avec la même
+  navigation ; un seul Archiaccess AI (panneau et plein écran partagent les
+  conversations, rattachées à leur projet et à leur étape, le contexte du
+  projet suit partout) ; accueil « Sur quoi travaillez-vous ? » (Travailler
+  sur un projet, Reprendre, Dans vos projets) ; dans le SIT, un « projet
+  suivi » dans la navigation, fil d'Ariane, projet/recherche/Méthode reliés,
+  « Ajouter au projet » depuis la recherche. Le sous-domaine
+  `ai.archiaccess.com` est abandonné : l'utilisateur le retire du DNS
+  (Hostinger) ; prévoir une redirection vers `sit.archiaccess.com/ai` dans
+  `proxy.ts` tant qu'il répond (la session est un cookie sans `domain`,
+  donc non partagée entre les deux sous-domaines), puis retirer l'alias
+  CloudFront et le nom du certificat. **Pas encore construit** ; ordre
+  prévu : (1) navigation unifiée + accueil + bandeau de contexte, (2)
+  conversations rattachées aux projets (migration), (3) liens internes du
+  SIT, (4) « Ajouter au projet ». Lots suivants validés sur maquette, pas commencés :
   fils d'étape + dossier + « Joindre au projet » depuis Archiaccess AI ;
   notifications, mentions, circuit de validation ; discussion du projet
   (rafraîchie par interrogation périodique — **pas** de nouveau service
