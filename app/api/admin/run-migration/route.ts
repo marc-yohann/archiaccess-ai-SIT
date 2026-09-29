@@ -966,6 +966,27 @@ WHERE b.id = sdu."batimentId" AND b."sourcePartition" IS NULL`,
       `ALTER TABLE "ProjetMembre" ADD CONSTRAINT "ProjetMembre_ajouteParId_fkey" FOREIGN KEY ("ajouteParId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE`,
     ],
   },
+  {
+    name: "20260929200000_conversation_projet",
+    checksum: "ff369dad9db89b9d86d7fa7d3f041314790d362e86ede4c42e2416922154a17e",
+    statements: [
+      `ALTER TABLE "Conversation" ADD COLUMN "projetId" TEXT`,
+      `ALTER TABLE "Conversation" ADD COLUMN "etapeCode" TEXT`,
+      `CREATE INDEX "Conversation_userId_projetId_idx" ON "Conversation"("userId", "projetId")`,
+      `ALTER TABLE "Conversation" ADD CONSTRAINT "Conversation_projetId_fkey" FOREIGN KEY ("projetId") REFERENCES "Projet"("id") ON DELETE SET NULL ON UPDATE CASCADE`,
+      `UPDATE "Conversation" c SET "projetId" = p."id"
+FROM "Projet" p
+WHERE c."projetId" IS NULL
+  AND (c."title" = 'SIT · ' || p."nom" OR c."title" = 'Équipe · ' || p."nom")
+  AND (
+    (p."espace" = 'PERSONNEL' AND p."createdById" = c."userId")
+    OR (p."espace" = 'COLLABORATIF' AND (
+      EXISTS (SELECT 1 FROM "ProjetMembre" m WHERE m."projetId" = p."id" AND m."userId" = c."userId")
+      OR EXISTS (SELECT 1 FROM "User" u WHERE u."id" = c."userId" AND u."isAdmin")
+    ))
+  )`,
+    ],
+  },
 ]
 
 export async function POST(request: Request) {

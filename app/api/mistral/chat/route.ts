@@ -4,6 +4,7 @@ import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
 import { chatCompletion, MistralApiError, type MistralMessage } from "@/lib/mistral"
 import { searchSimilarChunks } from "@/lib/rag"
+import { contexteDeConversation, etapeValide, projetDeConversation } from "@/lib/conversation-projet"
 
 // Retranscrit du document "Consignes pour Archiaccess AI" fourni par
 // l'utilisateur (responsable : Marc-Yohann N'doumi Fofana, 30/08/2026) —
@@ -53,9 +54,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
   }
 
-  const { conversationId, message, context, title } = (await request.json()) as {
+  const { conversationId, message, context, title, projetId, etapeCode } = (await request.json()) as {
     conversationId?: string
     message?: string
+    // Jonction au SIT (2026-09-29) : projet et étape sur lesquels porte la
+    // conversation. Absent = inchangé ; null = conversation détachée
+    // (« Sans projet »). Un projet inaccessible est ignoré.
+    projetId?: string | null
+    etapeCode?: string | null
     // Données actuellement affichées dans le SIT (adresse/cadastre/risques/
     // DVF/entreprise sélectionnés) — envoyé par le panneau IA intégré à
     // /sit pour que le copilote réponde avec ce contexte en tête, sans
@@ -76,6 +82,10 @@ export async function POST(request: Request) {
 
   const prisma = await getPrisma()
 
+  const projetDemande =
+    projetId === undefined ? undefined : projetId ? await projetDeConversation(user, projetId) : null
+  const etapeDemandee = projetDemande ? etapeValide(etapeCode) : null
+
   // findUnique scopé par userId (pas juste l'id) : un employé ne doit pas
   // pouvoir continuer la conversation d'un autre en devinant/rejouant un id.
   const conversation = conversationId
@@ -84,13 +94,38 @@ export async function POST(request: Request) {
         include: { messages: true },
       })
     : await prisma.conversation.create({
-        data: { userId: user.id, title: (title?.trim() || message.trim()).slice(0, 80) },
+        data: {
+          userId: user.id,
+          title: (title?.trim() || message.trim()).slice(0, 80),
+          projetId: projetDemande?.id ?? null,
+          etapeCode: etapeDemandee,
+        },
         include: { messages: true },
       })
 
   if (!conversation) {
     return NextResponse.json({ success: false, error: "Conversation introuvable." }, { status: 404 })
   }
+
+  // Rattachement de la conversation au projet choisi (ou détachement), et
+  // projet dont Archiaccess AI reçoit le contexte : celui de la demande,
+  // sinon celui déjà rattaché, s'il est toujours accessible.
+  if (
+    projetDemande !== undefined &&
+    (conversation.projetId !== (projetDemande?.id ?? null) || conversation.etapeCode !== etapeDemandee)
+  ) {
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { projetId: projetDemande?.id ?? null, etapeCode: etapeDemandee },
+    })
+  }
+  const projetFinal =
+    projetDemande !== undefined
+      ? projetDemande
+      : conversation.projetId
+        ? await projetDeConversation(user, conversation.projetId)
+        : null
+  const etapeFinale = projetDemande !== undefined ? etapeDemandee : projetFinal ? conversation.etapeCode : null
 
   await prisma.message.create({
     data: { conversationId: conversation.id, role: "USER", content: message },
@@ -117,8 +152,12 @@ export async function POST(request: Request) {
     contextMessage = undefined
   }
 
-  const sitContextMessage: MistralMessage | undefined = context?.trim()
-    ? { role: "system", content: `Données actuellement affichées dans le SIT :\n\n${context.trim()}` }
+  // Contexte explicite de la page (panneau du SIT : données d'une adresse,
+  // tableau de bord, étape ouverte) ; à défaut, celui du projet rattaché,
+  // reconstruit depuis la base.
+  const contexteSit = context?.trim() || (projetFinal ? contexteDeConversation(projetFinal, etapeFinale) : "")
+  const sitContextMessage: MistralMessage | undefined = contexteSit
+    ? { role: "system", content: `Données actuellement affichées dans le SIT :\n\n${contexteSit}` }
     : undefined
 
   const history: MistralMessage[] = [
@@ -158,5 +197,11 @@ export async function POST(request: Request) {
   // dans la barre latérale (voir GET /api/mistral/conversations).
   await prisma.conversation.update({ where: { id: conversation.id }, data: { updatedAt: new Date() } })
 
-  return NextResponse.json({ success: true, conversationId: conversation.id, reply })
+  return NextResponse.json({
+    success: true,
+    conversationId: conversation.id,
+    reply,
+    projetId: projetFinal?.id ?? null,
+    etapeCode: etapeFinale,
+  })
 }

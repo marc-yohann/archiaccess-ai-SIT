@@ -11,7 +11,6 @@ import { SitNav } from "@/components/sit-nav"
 import { AccueilAI, BandeauProjet, lienProjet, type EspaceProjet, type ProjetAI } from "@/components/ai/accueil"
 import type { ProjetResume } from "@/components/projet/carte-projet"
 import { trouverEtape } from "@/lib/referentiel"
-import { contexteProjet } from "@/lib/referentiel/contexte-ia"
 import type { Etape } from "@/lib/referentiel/types"
 import { formatReply } from "@/lib/format-reply"
 import logoPuce from "@/public/logo-ai-puce.png"
@@ -29,6 +28,10 @@ interface ConversationSummary {
   id: string
   title: string | null
   updatedAt: string
+  // Projet et étape de rattachement (jonction au SIT), seulement si le
+  // projet est encore accessible.
+  projet: { id: string; nom: string; espace: EspaceProjet } | null
+  etapeCode: string | null
 }
 
 // Convention posée côté /sit (voir app/sit/page.tsx::sendAiMessage) pour
@@ -155,6 +158,10 @@ function Chat() {
     if (data.success) {
       setConversationId(data.conversation.id)
       setMessages(data.conversation.messages)
+      // La conversation garde son projet et son étape : ils reviennent en
+      // contexte à l'ouverture.
+      setProjetId(data.conversation.projetId ?? null)
+      setEtapeCode(data.conversation.etapeCode ?? null)
       setSidebarOpen(false)
     }
   }
@@ -178,21 +185,24 @@ function Chat() {
     loadConversations()
   }
 
-  // Contexte transmis avec chaque question quand un projet est choisi —
-  // le même que celui du panneau de l'espace projet.
-  const contexteCourant = projet ? contexteProjet(projet, etape) : undefined
+  // Projet et étape transmis avec chaque question : la conversation y est
+  // rattachée en base, et le serveur reconstruit le contexte du projet (le
+  // même que celui du panneau de l'espace projet). « Sans projet » (null)
+  // détache la conversation.
+  type Rattachement = { projetId: string | null; etapeCode: string | null }
+  const rattachementCourant: Rattachement = { projetId: projet?.id ?? null, etapeCode: projet ? etapeCode : null }
 
   // Toute panne (réseau, réponse non-JSON d'un plantage inattendu côté
   // serveur...) retombe sur ce message plutôt que de laisser l'appelant
   // planter en silence — voir CLAUDE.md, incident "l'IA ne répond plus"
   // (2026-09-07) : un rejet de promesse non rattrapé ne montrait
   // strictement rien à l'employé.
-  async function fetchReply(text: string, context = contexteCourant, idConversation = conversationId) {
+  async function fetchReply(text: string, rattachement = rattachementCourant, idConversation = conversationId) {
     try {
       const res = await fetch("/api/mistral/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId: idConversation, message: text, context }),
+        body: JSON.stringify({ conversationId: idConversation, message: text, ...rattachement }),
       })
       return await res.json()
     } catch {
@@ -200,14 +210,14 @@ function Chat() {
     }
   }
 
-  async function envoyer(text: string, context = contexteCourant, idConversation = conversationId) {
+  async function envoyer(text: string, rattachement = rattachementCourant, idConversation = conversationId) {
     text = text.trim()
     if (!text || isSending) return
     setInput("")
     setMessages((prev) => [...prev, { role: "user", content: text }])
     setIsSending(true)
     try {
-      const data = await fetchReply(text, context, idConversation)
+      const data = await fetchReply(text, rattachement, idConversation)
       if (data.success) {
         setConversationId(data.conversationId)
         setMessages((prev) => [...prev, { role: "assistant", content: data.reply, forText: text }])
@@ -235,7 +245,7 @@ function Chat() {
     setMessages([])
     void envoyer(
       `Aide-moi à préparer l'étape ${et.code} « ${et.titre} » pour ce projet : propose une trame pour les livrables attendus et les points à vérifier. Je relirai et déciderai.`,
-      contexteProjet(p, et),
+      { projetId: p.id, etapeCode: et.code },
       undefined,
     )
   }
@@ -267,17 +277,14 @@ function Chat() {
     }
   }
 
-  // Une conversation née sur un projet (panneau de l'espace projet) est
-  // reliée à ce projet : l'ouvrir remet le projet en contexte, et son lien
-  // ramène au projet plutôt qu'à une recherche d'adresse.
+  // Liste rangée par projet (rattachement en base). Chaque conversation
+  // garde un lien vers l'endroit du SIT d'où elle vient : son projet, le
+  // tableau de bord d'un des deux espaces, ou la recherche (adresse,
+  // entreprise).
   const listeConversations = conversations.map((c) => {
     const t = parseConversationTitle(c.title)
-    const projetLie = t.sitSubject ? projets?.find((p) => p.nom === t.sitSubject) ?? null : null
-    // Retour vers l'endroit du SIT d'où vient la conversation : le projet,
-    // le tableau de bord d'un des deux espaces, ou la recherche (adresse,
-    // entreprise).
-    const retour = projetLie
-      ? { href: lienProjet(projetLie), titre: "Ouvrir le projet" }
+    const retour = c.projet
+      ? { href: lienProjet(c.projet, c.etapeCode), titre: c.etapeCode ? "Ouvrir l'étape" : "Ouvrir le projet" }
       : t.sitSubject === "Tableau de bord"
         ? { href: "/sit", titre: "Ouvrir le tableau de bord" }
         : t.sitSubject === "Projets collaboratifs"
@@ -285,15 +292,26 @@ function Chat() {
           : t.sitSubject
             ? { href: `/sit/recherche?resume=${encodeURIComponent(t.sitSubject)}`, titre: "Reprendre dans le SIT" }
             : null
-    return { ...c, ...t, projetLie, retour }
+    // Dans un groupe de projet, le titre répète le nom du projet : on
+    // affiche plutôt l'étape quand elle est connue.
+    const etapeConv = c.etapeCode ? trouverEtape(c.etapeCode) : undefined
+    const label = c.projet && t.sitSubject === c.projet.nom ? (etapeConv ? `${etapeConv.code} ${etapeConv.titre}` : "Tout le projet") : t.label
+    return { ...c, ...t, label, retour }
   })
+  const groupes: { cle: string; titre: string; conversations: typeof listeConversations }[] = []
+  for (const c of listeConversations) {
+    const cle = c.projet?.id ?? "general"
+    let g = groupes.find((x) => x.cle === cle)
+    if (!g) {
+      g = { cle, titre: c.projet?.nom ?? "Général", conversations: [] }
+      groupes.push(g)
+    }
+    g.conversations.push(c)
+  }
+  // « Général » en dernier, les projets par conversation la plus récente.
+  groupes.sort((x, y) => Number(x.cle === "general") - Number(y.cle === "general"))
 
   function ouvrir(id: string) {
-    const c = listeConversations.find((x) => x.id === id)
-    if (c?.projetLie) {
-      setProjetId(c.projetLie.id)
-      setEtapeCode(null)
-    }
     void openConversation(id)
   }
 
@@ -328,41 +346,44 @@ function Chat() {
           </button>
           <div className="custom-scrollbar flex-1 space-y-1 overflow-y-auto pt-1">
             {listeConversations.length === 0 && <p className="px-2 py-2 text-[13px] text-muted-foreground">Aucune conversation pour l'instant.</p>}
-            {listeConversations.map((c) => (
-              <div
-                key={c.id}
-                onClick={() => ouvrir(c.id)}
-                className={`group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-[13px] font-medium ${
-                  c.id === conversationId ? "glass-on font-semibold" : "hover:bg-white/60"
-                }`}
-              >
-                <span className="flex min-w-0 items-center gap-1.5">
-                  {c.sitSubject && (
-                    <span
-                      className="inline-flex shrink-0 items-center rounded-full bg-black/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
-                      title={c.projetLie ? "Conversation sur un projet" : "Conversation démarrée depuis le SIT"}
-                    >
-                      {c.projetLie ? "Projet" : "SIT"}
+            {groupes.map((g) => (
+              <div key={g.cle} className="flex flex-col gap-0.5">
+                <div className="flex items-center justify-between px-2 pb-1 pt-2 text-xs font-bold text-muted-foreground">
+                  <span className="truncate">{g.titre}</span>
+                  <span className="font-mono font-medium">{g.conversations.length}</span>
+                </div>
+                {g.conversations.map((c) => (
+                  <div
+                    key={c.id}
+                    onClick={() => ouvrir(c.id)}
+                    className={`group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-[13px] font-medium ${
+                      c.id === conversationId ? "glass-on font-semibold" : "hover:bg-white/60"
+                    }`}
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate">{c.label}</span>
+                      <span className="block text-[11.5px] font-normal text-muted-foreground">
+                        {new Date(c.updatedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
+                      </span>
                     </span>
-                  )}
-                  <span className="truncate">{c.label}</span>
-                </span>
-                <span className="ml-2 flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-60">
-                  {c.retour && (
-                    <Link
-                      href={c.retour.href}
-                      onClick={(e) => e.stopPropagation()}
-                      className="hover:!opacity-100"
-                      aria-label={c.retour.titre}
-                      title={c.retour.titre}
-                    >
-                      {c.projetLie ? <FolderKanban size={14} /> : <MapPin size={14} />}
-                    </Link>
-                  )}
-                  <button onClick={(e) => deleteConversation(c.id, e)} className="hover:!opacity-100" aria-label="Supprimer la conversation">
-                    <Trash2 size={14} />
-                  </button>
-                </span>
+                    <span className="ml-2 flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-60">
+                      {c.retour && (
+                        <Link
+                          href={c.retour.href}
+                          onClick={(e) => e.stopPropagation()}
+                          className="hover:!opacity-100"
+                          aria-label={c.retour.titre}
+                          title={c.retour.titre}
+                        >
+                          {c.projet ? <FolderKanban size={14} /> : <MapPin size={14} />}
+                        </Link>
+                      )}
+                      <button onClick={(e) => deleteConversation(c.id, e)} className="hover:!opacity-100" aria-label="Supprimer la conversation">
+                        <Trash2 size={14} />
+                      </button>
+                    </span>
+                  </div>
+                ))}
               </div>
             ))}
           </div>

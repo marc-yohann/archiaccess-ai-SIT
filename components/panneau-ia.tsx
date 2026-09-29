@@ -9,6 +9,7 @@ import Image from "next/image"
 import logoPuce from "@/public/logo-ai-puce.png"
 import { Check, Copy, Maximize2, PanelRightClose, Plus, Send, X } from "lucide-react"
 import { formatReply } from "@/lib/format-reply"
+import { trouverEtape } from "@/lib/referentiel"
 
 // Panneau Archiaccess AI intégré (tableau de bord, espace projet). Même
 // route que /ai et que le panneau de la recherche (/api/mistral/chat),
@@ -29,6 +30,16 @@ import { formatReply } from "@/lib/format-reply"
 // `demande` permet à la page d'envoyer une question depuis un bouton
 // (« Préparer avec Archiaccess AI ») : chaque nouvel `id` déclenche un
 // envoi, et rouvre le panneau s'il était replié.
+
+// Libellé d'une conversation du projet : sa première question ; pour les
+// conversations antérieures au rattachement (titre « SIT · <projet> » ou
+// « Équipe · <projet> »), le nom de l'étape.
+const anciennement = (titre: string | null) => /^(SIT|Équipe) · /.test(titre ?? "")
+function libelleConversation(c: { title: string | null; etapeCode: string | null }) {
+  if (c.title && !anciennement(c.title)) return c.title
+  const etape = c.etapeCode ? trouverEtape(c.etapeCode) : undefined
+  return etape ? `${etape.code} ${etape.titre}` : "Tout le projet"
+}
 
 interface MessageIA {
   role: "user" | "assistant"
@@ -77,8 +88,13 @@ export function PanneauIA({
   suggestions,
   demande,
   suiteLien,
+  projetId,
+  etapeCode,
 }: {
-  titreConversation: string
+  // Titre d'une nouvelle conversation ; absent, c'est la première
+  // question qui sert de titre (conversations rattachées à un projet, que
+  // la liste range déjà sous leur projet).
+  titreConversation?: string
   contexte: string
   intro: string
   suggestions: string[]
@@ -86,6 +102,11 @@ export function PanneauIA({
   // Paramètres ajoutés au lien « Continuer dans Archiaccess AI » (projet,
   // étape) : Archiaccess AI garde ainsi le même contexte en plein écran.
   suiteLien?: string
+  // Projet et étape de rattachement de la conversation (espace projet) :
+  // enregistrés avec elle, et ses conversations précédentes sur le même
+  // projet sont proposées pour être reprises.
+  projetId?: string
+  etapeCode?: string | null
 }) {
   const [messages, setMessages] = useState<MessageIA[]>([])
   const [conversationId, setConversationId] = useState<string | null>(null)
@@ -104,6 +125,31 @@ export function PanneauIA({
   contexteRef.current = contexte
   const conversationRef = useRef<string | null>(null)
   conversationRef.current = conversationId
+  const rattachementRef = useRef({ projetId, etapeCode })
+  rattachementRef.current = { projetId, etapeCode }
+  const [precedentes, setPrecedentes] = useState<{ id: string; title: string | null; etapeCode: string | null; updatedAt: string }[]>([])
+
+  // Conversations déjà menées sur ce projet (un seul Archiaccess AI : les
+  // mêmes que dans la page Archiaccess AI, rangées sous ce projet).
+  useEffect(() => {
+    if (!projetId) return
+    fetch(`/api/mistral/conversations?projet=${encodeURIComponent(projetId)}`)
+      .then((r) => r.json())
+      .then((d) => d.success && setPrecedentes(d.conversations))
+      .catch(() => {})
+  }, [projetId, conversationId])
+
+  async function reprendre(id: string) {
+    try {
+      const d = await (await fetch(`/api/mistral/conversations/${id}`)).json()
+      if (!d.success) return
+      setConversationId(d.conversation.id)
+      setMessages(d.conversation.messages)
+      setErreur(null)
+    } catch {
+      setErreur("Impossible d'ouvrir cette conversation.")
+    }
+  }
 
   useEffect(() => {
     const l = Number(lire(CLE_LARGEUR))
@@ -152,6 +198,9 @@ export function PanneauIA({
           message,
           context: contexteRef.current,
           title: titreConversation,
+          ...(rattachementRef.current.projetId
+            ? { projetId: rattachementRef.current.projetId, etapeCode: rattachementRef.current.etapeCode ?? null }
+            : {}),
         }),
       })
       const d = await r.json()
@@ -328,6 +377,25 @@ export function PanneauIA({
                 </button>
               ))}
             </div>
+            {precedentes.length > 0 && (
+              <div className="mt-2 flex flex-col gap-1.5">
+                <p className="text-xs font-bold text-muted-foreground">Conversations sur ce projet</p>
+                {precedentes.slice(0, 3).map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => void reprendre(c.id)}
+                    className="liquid-glass-soft flex flex-col rounded-xl px-3 py-2 text-left text-[13px] transition-shadow hover:shadow-md"
+                  >
+                    <span className="truncate font-semibold">{libelleConversation(c)}</span>
+                    <span className="text-[11.5px] text-muted-foreground">
+                      {c.etapeCode && !anciennement(c.title) ? `Étape ${c.etapeCode} · ` : ""}
+                      {new Date(c.updatedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </>
         )}
         {messages.map((m, i) =>

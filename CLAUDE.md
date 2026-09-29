@@ -156,7 +156,12 @@ trace de ça dans le code actuel, ne pas la réintroduire.
 ### Modèles Prisma (`prisma/schema.prisma`)
 
 - `User` / `Session` / `Conversation` / `Message` — comptes employés et
-  historique de chat, scopés par `userId`.
+  historique de chat, scopés par `userId`. `Conversation.projetId` /
+  `etapeCode` (migration `20260929200000_conversation_projet`) : projet et
+  étape de rattachement ; `/api/mistral/chat` les enregistre (`projetId`
+  absent = inchangé, `null` = détaché, projet inaccessible ignoré) et
+  reconstruit le contexte du projet côté serveur quand la page n'en envoie
+  pas (`lib/conversation-projet.ts`, accès revérifié à chaque question).
 - `Document` / `DocumentChunk` — corpus indexé pour le copilote
   (`DocumentChunk.embedding` est `Unsupported("vector(1024)")`,
   insertion/recherche via `$executeRaw`/`$queryRaw`).
@@ -452,9 +457,14 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   (Hostinger) ; prévoir une redirection vers `sit.archiaccess.com/ai` dans
   `proxy.ts` tant qu'il répond (la session est un cookie sans `domain`,
   donc non partagée entre les deux sous-domaines), puis retirer l'alias
-  CloudFront et le nom du certificat. **Pas encore construit** ; ordre
-  prévu : (1) navigation unifiée + accueil + bandeau de contexte, (2)
-  conversations rattachées aux projets (migration), (3) liens internes du
+  CloudFront et le nom du certificat. Ordre prévu : (1) navigation
+  unifiée + accueil + bandeau de contexte — **construite** (commits
+  `e3e8c30`, `eb700d4`, vérifiée ordinateur/tablette/téléphone), (2)
+  conversations rattachées aux projets — **construite** (migration
+  `20260929200000_conversation_projet`, qui rattache aussi les
+  conversations existantes titrées « SIT · <projet> » / « Équipe ·
+  <projet> » ; liste rangée par projet, panneau « Conversations sur ce
+  projet »), **pas encore déployées ni migrées** ; (3) liens internes du
   SIT, (4) « Ajouter au projet ». Lots suivants validés sur maquette, pas commencés :
   fils d'étape + dossier + « Joindre au projet » depuis Archiaccess AI ;
   notifications, mentions, circuit de validation ; discussion du projet

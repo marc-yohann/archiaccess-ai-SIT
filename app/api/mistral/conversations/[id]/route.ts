@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
+import { projetDeConversation } from "@/lib/conversation-projet"
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const store = await cookies()
@@ -20,12 +21,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!conversation) {
     return NextResponse.json({ success: false, error: "Conversation introuvable." }, { status: 404 })
   }
+  // Projet rattaché, seulement s'il est toujours accessible.
+  const projet = conversation.projetId ? await projetDeConversation(user, conversation.projetId) : null
 
   return NextResponse.json({
     success: true,
     conversation: {
       id: conversation.id,
       title: conversation.title,
+      projetId: projet?.id ?? null,
+      etapeCode: projet ? conversation.etapeCode : null,
       messages: conversation.messages.map((m) => ({ role: m.role.toLowerCase(), content: m.content })),
     },
   })

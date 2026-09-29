@@ -21,7 +21,7 @@ export interface ProjetAI extends ProjetResume {
   espace: EspaceProjet
 }
 
-export function lienProjet(p: ProjetAI, etapeCode?: string | null) {
+export function lienProjet(p: Pick<ProjetAI, "id" | "espace">, etapeCode?: string | null) {
   const base = p.espace === "COLLABORATIF" ? `/sit/equipe/${p.id}` : `/sit/projets/${p.id}`
   return etapeCode ? `${base}?etape=${encodeURIComponent(etapeCode)}` : base
 }
@@ -106,7 +106,7 @@ export function AccueilAI({
   projets: ProjetAI[] | null
   projetId: string | null
   onChoisirProjet: (id: string | null) => void
-  conversations: { id: string; label: string; updatedAt: string }[]
+  conversations: { id: string; label: string; updatedAt: string; projet: { nom: string } | null }[]
   onOuvrirConversation: (id: string) => void
   onPreparer: (projet: ProjetAI, etape: Etape) => void
   suggestions: string[]
@@ -159,7 +159,8 @@ export function AccueilAI({
             >
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[13.5px] font-medium">{c.label}</span>
-                <span className="block text-xs text-muted-foreground">
+                <span className="block truncate text-xs text-muted-foreground">
+                  {c.projet ? `${c.projet.nom} · ` : ""}
                   {new Date(c.updatedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
                 </span>
               </span>

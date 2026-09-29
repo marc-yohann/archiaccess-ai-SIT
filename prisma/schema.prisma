@@ -72,9 +72,19 @@ model Conversation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Jonction d'Archiaccess AI au SIT (2026-09-29) : projet et étape sur
+  // lesquels porte la conversation. Le contexte du projet est reconstruit
+  // côté serveur à chaque question ; l'accès est revérifié à chaque fois
+  // (lib/projet-acces.ts). Projet supprimé → conversation conservée,
+  // simplement détachée.
+  projetId  String?
+  projet    Projet?  @relation(fields: [projetId], references: [id], onDelete: SetNull)
+  etapeCode String?
+
   messages Message[]
 
   @@index([userId])
+  @@index([userId, projetId])
 }
 
 model Message {
@@ -955,6 +965,7 @@ model Projet {
   espace     ProjetEspace   @default(PERSONNEL)
   archivedAt DateTime?
   membres    ProjetMembre[]
+  conversations Conversation[]
 }
 
 enum ProjetEspace {

@@ -304,7 +304,6 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
 
         <PanneauIA
           key={projet.id}
-          titreConversation={`${collaboratif ? "Équipe" : "SIT"} · ${projet.nom}`}
           contexte={contexteProjet(projet, etapeOuverte)}
           intro={`Je connais ce projet et l'étape que vous consultez${etapeOuverte ? ` (${etapeOuverte.code} ${etapeOuverte.titre})` : ""}. Je peux préparer une trame, un courrier ou une analyse ; vous relisez et décidez.`}
           suggestions={[
@@ -314,6 +313,8 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
           ]}
           demande={demandeIA}
           suiteLien={`projet=${projet.id}${etapeOuverte ? `&etape=${encodeURIComponent(etapeOuverte.code)}` : ""}`}
+          projetId={projet.id}
+          etapeCode={etapeOuverte?.code ?? null}
         />
       </div>
     </Cadre>
