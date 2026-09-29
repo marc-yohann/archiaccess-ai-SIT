@@ -464,8 +464,13 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   `20260929200000_conversation_projet`, qui rattache aussi les
   conversations existantes titrées « SIT · <projet> » / « Équipe ·
   <projet> » ; liste rangée par projet, panneau « Conversations sur ce
-  projet »), **pas encore déployées ni migrées** ; (3) liens internes du
-  SIT, (4) « Ajouter au projet ». Lots suivants validés sur maquette, pas commencés :
+  projet »), **déployées le 2026-09-29** (commit `fac5512`, avec
+  l'accord de l'utilisateur) et migration
+  `20260929200000_conversation_projet` appliquée juste après via
+  `/api/admin/run-migration` ; redirection `ai.` → `sit.archiaccess.com/ai`
+  vérifiée en production (308). Reste à retirer l'alias `ai.` de
+  CloudFront et du certificat une fois le DNS supprimé ; (3) liens
+  internes du SIT, (4) « Ajouter au projet ». Lots suivants validés sur maquette, pas commencés :
   fils d'étape + dossier + « Joindre au projet » depuis Archiaccess AI ;
   notifications, mentions, circuit de validation ; discussion du projet
   (rafraîchie par interrogation périodique — **pas** de nouveau service
