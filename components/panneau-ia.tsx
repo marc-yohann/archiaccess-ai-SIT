@@ -7,8 +7,10 @@ import Image from "next/image"
 // couvert par CloudFront. Un chemin /logo-ai-puce.png tomberait sur la
 // Lambda (pas de comportement CloudFront pour ce nom) et renverrait 404.
 import logoPuce from "@/public/logo-ai-puce.png"
-import { Check, Copy, Maximize2, PanelRightClose, Plus, Send, X } from "lucide-react"
+import { Check, Copy, Maximize2, PanelRightClose, Paperclip, Plus, Send, X } from "lucide-react"
 import { formatReply } from "@/lib/format-reply"
+import { JoindreAuProjet } from "@/components/projet/joindre-projet"
+import type { ElementProjet } from "@/components/projet/elements"
 import { trouverEtape } from "@/lib/referentiel"
 
 // Panneau Archiaccess AI intégré (tableau de bord, espace projet). Même
@@ -90,6 +92,7 @@ export function PanneauIA({
   suiteLien,
   projetId,
   etapeCode,
+  onJoint,
 }: {
   // Titre d'une nouvelle conversation ; absent, c'est la première
   // question qui sert de titre (conversations rattachées à un projet, que
@@ -107,6 +110,8 @@ export function PanneauIA({
   // projet sont proposées pour être reprises.
   projetId?: string
   etapeCode?: string | null
+  // Une réponse vient d'être jointe à un projet (« Joindre au projet »).
+  onJoint?: (projetId: string, element: ElementProjet) => void
 }) {
   const [messages, setMessages] = useState<MessageIA[]>([])
   const [conversationId, setConversationId] = useState<string | null>(null)
@@ -114,6 +119,7 @@ export function PanneauIA({
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
   const [copie, setCopie] = useState<number | null>(null)
+  const [aJoindre, setAJoindre] = useState<string | null>(null)
   const [largeur, setLargeur] = useState(360)
   const [replie, setReplie] = useState(false)
   const [ouvertMobile, setOuvertMobile] = useState(false)
@@ -409,15 +415,26 @@ export function PanneauIA({
             <div key={i} className="text-left">
               <div className="liquid-glass-soft inline-block max-w-[96%] rounded-[18px] rounded-bl-md px-3.5 py-2.5 text-[13px]">
                 <div className="ai-msg-assistant" dangerouslySetInnerHTML={{ __html: formatReply(m.content) }} />
-                <button
-                  type="button"
-                  onClick={() => void copier(i, m.content)}
-                  title="Copier la réponse"
-                  aria-label="Copier la réponse"
-                  className="mt-1 rounded-md p-1 text-muted-foreground/70 hover:bg-black/5 hover:text-foreground"
-                >
-                  {copie === i ? <Check size={11} /> : <Copy size={11} />}
-                </button>
+                <div className="mt-2 flex flex-wrap gap-1.5 border-t border-foreground/[0.06] pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setAJoindre(m.content)}
+                    title="Joindre une copie de cette réponse au dossier d'un projet"
+                    className="chrome-black flex items-center gap-1.5 rounded-[10px] px-2.5 py-1 text-xs font-medium text-white"
+                  >
+                    <Paperclip size={12} />
+                    Joindre au projet
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void copier(i, m.content)}
+                    title="Copier la réponse"
+                    className="liquid-glass-btn flex items-center gap-1.5 rounded-[10px] px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                  >
+                    {copie === i ? <Check size={12} /> : <Copy size={12} />}
+                    {copie === i ? "Copié" : "Copier"}
+                  </button>
+                </div>
               </div>
             </div>
           ),
@@ -450,6 +467,9 @@ export function PanneauIA({
           <Send size={13} />
         </button>
       </form>
+      {aJoindre !== null && (
+        <JoindreAuProjet texte={aJoindre} projetId={projetId} etapeCode={etapeCode} onFermer={() => setAJoindre(null)} onJoint={onJoint} />
+      )}
     </aside>
     </>
   )

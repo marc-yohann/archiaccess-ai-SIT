@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Plus, Trash2, Menu, X, MapPin, Copy, Check, RefreshCw, ArrowRight, FolderKanban } from "lucide-react"
+import { Plus, Trash2, Menu, X, MapPin, Copy, Check, RefreshCw, ArrowRight, FolderKanban, Paperclip } from "lucide-react"
+import { JoindreAuProjet } from "@/components/projet/joindre-projet"
 import { AuthGate, useUser } from "@/components/auth-gate"
 import { AutoGrowTextarea } from "@/components/auto-grow-textarea"
 import { SitNav } from "@/components/sit-nav"
@@ -89,6 +90,8 @@ function Chat() {
   const [isSending, setIsSending] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [copiedMsgIndex, setCopiedMsgIndex] = useState<number | null>(null)
+  // « Joindre au projet » : réponse dont une copie va au dossier d'un projet.
+  const [aJoindre, setAJoindre] = useState<string | null>(null)
   // Jonction au SIT (2026-09-29) : projet et étape sur lesquels on
   // travaille. Archiaccess AI reçoit leur contexte à chaque question, comme
   // le panneau du SIT ; « Continuer dans Archiaccess AI » les transmet
@@ -438,7 +441,16 @@ function Chat() {
                       <Image src={logoPuce} alt="" width={24} height={24} className="mt-0.5 hidden size-6 shrink-0 self-start object-contain sm:block" />
                       <span className="min-w-0">
                         <span className="ai-msg-assistant" dangerouslySetInnerHTML={{ __html: formatReply(m.content) }} />
-                        <span className="mt-2 flex gap-1.5">
+                        <span className="mt-2 flex flex-wrap gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setAJoindre(m.content)}
+                            title="Joindre une copie de cette réponse au dossier d'un projet"
+                            className="chrome-black flex items-center gap-1.5 rounded-[10px] px-2.5 py-1 text-xs font-medium text-white"
+                          >
+                            <Paperclip size={13} />
+                            Joindre au projet
+                          </button>
                           <button
                             type="button"
                             onClick={() => copyMessage(i, m.content)}
@@ -465,6 +477,9 @@ function Chat() {
                     </span>
                   </div>
                 ),
+              )}
+              {aJoindre !== null && (
+                <JoindreAuProjet texte={aJoindre} projetId={projet?.id ?? null} etapeCode={projet ? etapeCode : null} onFermer={() => setAJoindre(null)} />
               )}
               {isSending && (
                 <div className="text-left">
@@ -501,7 +516,7 @@ function Chat() {
               </button>
             </div>
             <p className="mt-2 hidden text-center text-xs text-muted-foreground sm:block">
-              Le corpus réglementaire est consulté à chaque question. Archiaccess AI prépare ; vous relisez et décidez.
+              Le corpus du SIT est consulté à chaque question. Archiaccess AI prépare ; vous relisez et décidez.
             </p>
           </form>
         </section>

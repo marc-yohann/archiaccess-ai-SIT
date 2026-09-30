@@ -9,7 +9,7 @@ import Image from "next/image"
 // couvert par CloudFront. Un chemin /logo-ai-puce.png tomberait sur la
 // Lambda (pas de comportement CloudFront pour ce nom) et renverrait 404.
 import logoPuce from "@/public/logo-ai-puce.png"
-import { Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Layers, Map, LayoutGrid, ListChecks, PanelRightClose, PanelRightOpen, MapPin, Building2, FolderKanban, FileText, Hash } from "lucide-react"
+import { Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Layers, Map, LayoutGrid, ListChecks, PanelRightClose, PanelRightOpen, MapPin, Building2, FolderKanban, FileText, Hash, Paperclip } from "lucide-react"
 import { AuthGate } from "@/components/auth-gate"
 import { SitNav } from "@/components/sit-nav"
 import { lienProjet, lireProjetSuivi, suivreProjet, useProjetSuivi, type ProjetSuivi } from "@/lib/projet-suivi"
@@ -29,6 +29,8 @@ import type { PublicMarket } from "@/lib/data-sources/boamp"
 import { departmentCodeFromCityCode } from "@/lib/insee"
 import { formatReply } from "@/lib/format-reply"
 import type { SitMapMarker } from "@/components/sit-map"
+import { CorpusSit } from "@/components/corpus-sit"
+import { JoindreAuProjet } from "@/components/projet/joindre-projet"
 
 // mapbox-gl touche `window` dès son import — chargé uniquement côté
 // client, jamais pendant la génération statique de /sit (voir
@@ -327,11 +329,9 @@ const TAXONOMY: TaxonomyCategory[] = [
   },
 ]
 
-// Chips de filtre du panneau "Corpus réglementaire" — même principe que
-// le badge "Corpus" de TAXONOMY : jamais un id de document codé en dur,
-// une étiquette de discipline associée à des mots-clés, vérifiée à
-// l'affichage contre les vrais titres indexés (vaultStats.documentTitles).
-// Une chip n'apparaît que si au moins un document réel correspond.
+// Étiquettes de discipline associées à des mots-clés — jamais un id de
+// document codé en dur, vérifiées à l'affichage contre les vrais titres
+// indexés (vaultStats.documentTitles). Servent aux questions suggérées.
 // Questions suggérées du panneau Archiaccess AI — mêmes 3 disciplines que
 // l'artéfact, mais jamais liées à un id de document en dur : résolues à
 // l'affichage contre les vrais titres indexés (voir suggestedQuestions()
@@ -1135,8 +1135,6 @@ function Dashboard() {
   // pour une recherche entreprise seule (résultat synchrone).
   const [resultsLoading, setResultsLoading] = useState(false)
 
-  const [docFilter, setDocFilter] = useState("")
-  const [docTagFilter, setDocTagFilter] = useState<string | null>(null)
 
   // Panneau Archiaccess AI redimensionnable/repliable (retour : "rend le
   // chat AI modulaire") — largeur ajustable par glisser sur le bord
@@ -1225,6 +1223,9 @@ function Dashboard() {
   const aiFormRef = useRef<HTMLFormElement>(null)
   const [isAiSending, setIsAiSending] = useState(false)
   const [copiedMsgIndex, setCopiedMsgIndex] = useState<number | null>(null)
+  // « Joindre au projet » : réponse dont une copie va au dossier d'un projet
+  // (le projet suivi est proposé d'office).
+  const [aJoindre, setAJoindre] = useState<string | null>(null)
 
   // Toute panne (réseau, réponse non-JSON d'un plantage inattendu côté
   // serveur...) retombe sur ce message plutôt que de laisser l'appelant
@@ -2070,90 +2071,14 @@ function Dashboard() {
             )}
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <div className="liquid-glass-panel rounded-[22px] p-4">
-                <div className="mb-2 flex items-center justify-between">
-                  <h2 className="text-xs font-medium text-muted-foreground">Corpus réglementaire</h2>
-                </div>
-                <div className="mb-2 flex items-center gap-2 border-b border-border/40 pb-2 text-muted-foreground">
-                  <Search size={13} />
-                  <input
-                    value={docFilter}
-                    onChange={(e) => {
-                      setDocFilter(e.target.value)
-                      if (e.target.value.trim()) setDocTagFilter(null)
-                    }}
-                    placeholder="Filtrer par discipline ou mot-clé…"
-                    className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
-                  />
-                </div>
-                {(() => {
-                  const titles = vaultStats?.documentTitles ?? []
-                  const availableTags = DOCUMENT_TAGS.filter((dt) =>
-                    titles.some((t) => dt.keywords.some((k) => t.toLowerCase().includes(k.toLowerCase()))),
-                  )
-                  return availableTags.length > 0 ? (
-                    <div className="mb-2.5 flex flex-wrap gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setDocTagFilter(null)}
-                        className={`tag-chip${docTagFilter === null ? " active" : ""}`}
-                        style={{ fontWeight: 600 }}
-                      >
-                        Tous
-                      </button>
-                      {availableTags.map((dt) => (
-                        <button
-                          key={dt.tag}
-                          type="button"
-                          onClick={() => {
-                            setDocTagFilter(dt.tag)
-                            setDocFilter("")
-                          }}
-                          className={`tag-chip${docTagFilter === dt.tag ? " active" : ""}`}
-                        >
-                          {dt.tag}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null
-                })()}
-                {vaultStats && vaultStats.documentTitles.length === 0 && (
-                  <p className="text-xs text-muted-foreground">Aucun document indexé pour l'instant.</p>
-                )}
-                <ul className="custom-scrollbar max-h-72 divide-y divide-border/40 overflow-y-auto text-xs">
-                  {(vaultStats?.documentTitles ?? [])
-                    .filter((t) => {
-                      if (docTagFilter) {
-                        const dt = DOCUMENT_TAGS.find((d) => d.tag === docTagFilter)
-                        return dt ? dt.keywords.some((k) => t.toLowerCase().includes(k.toLowerCase())) : true
-                      }
-                      return t.toLowerCase().includes(docFilter.trim().toLowerCase())
-                    })
-                    .map((title, i) => (
-                      <li key={i}>
-                        <button
-                          type="button"
-                          onClick={() => askAboutDocument(title)}
-                          className="-mx-1.5 flex w-full items-baseline gap-2 rounded-lg px-1.5 py-1.5 text-left hover:bg-black/5"
-                        >
-                          <span className="shrink-0 font-mono text-muted-foreground/60">{String(i + 1).padStart(2, "0")}</span>
-                          <span className="truncate text-foreground" title={title}>
-                            {title}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                </ul>
-                <p className="coverage-note mt-2.5 border-t border-border/40 pt-2.5 text-[0.68rem] leading-relaxed text-muted-foreground">
-                  Domaine public uniquement — Eurocodes, DTU et normes EN (structures, thermique, acoustique de salle…) sont
-                  protégés AFNOR/CEN et non indexables ici ; le copilote s'appuie sur ses connaissances générales pour ces
-                  sujets.
-                </p>
-              </div>
+              <CorpusSit disciplines={TAXONOMY.map((t) => t.cat)} onDemander={askAboutDocument} />
 
               <div className="liquid-glass-panel rounded-[22px] p-4">
-                <div className="mb-2 flex items-center justify-between">
-                  <h2 className="text-xs font-medium text-muted-foreground">Sources fédérées</h2>
+                <div className="mb-2.5 flex items-center gap-2.5">
+                  <span className="glass-icon size-8 rounded-[10px]">
+                    <LayoutGrid size={15} />
+                  </span>
+                  <h2 className="flex-1 text-[15px] font-bold">Sources fédérées</h2>
                   <span className="font-mono text-xs text-muted-foreground">
                     {vaultStats?.sourceCounts.filter((s) => s.count > 0).length ?? 0}/{vaultStats?.sourceCounts.length ?? 14} actives
                   </span>
@@ -2428,8 +2353,6 @@ function Dashboard() {
             ))}
           </div>
         )}
-
-        <DocumentUpload />
       </div>
 
       <aside
@@ -2537,6 +2460,15 @@ function Dashboard() {
                   <span className="mt-1 flex gap-1">
                     <button
                       type="button"
+                      onClick={() => setAJoindre(m.content)}
+                      title="Joindre une copie de cette réponse au dossier d'un projet"
+                      className="chrome-black flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[0.68rem] font-medium text-white"
+                    >
+                      <Paperclip size={10} />
+                      Joindre au projet
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => copyMessage(i, m.content)}
                       title="Copier la réponse"
                       className="rounded-md p-1 text-muted-foreground/70 hover:bg-black/5 hover:text-foreground"
@@ -2558,6 +2490,9 @@ function Dashboard() {
                 </span>
               </div>
             ),
+          )}
+          {aJoindre !== null && (
+            <JoindreAuProjet texte={aJoindre} projetId={projetCible?.id ?? null} onFermer={() => setAJoindre(null)} />
           )}
           {isAiSending && (
             <div className="text-left">
@@ -2612,68 +2547,3 @@ function Dashboard() {
   )
 }
 
-
-function DocumentUpload() {
-  const [title, setTitle] = useState("")
-  const [content, setContent] = useState("")
-  const [isSaving, setIsSaving] = useState(false)
-  const [feedback, setFeedback] = useState("")
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!title.trim() || !content.trim() || isSaving) return
-    setIsSaving(true)
-    setFeedback("")
-    try {
-      const res = await fetch("/api/sit/documents", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, sourceType: "etude", content }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        setFeedback("Étude indexée — le copilote Archiaccess AI peut s'en servir de contexte.")
-        setTitle("")
-        setContent("")
-      } else {
-        setFeedback(`Erreur : ${data.error}`)
-      }
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  return (
-    <div className="liquid-glass-panel rounded-3xl p-6">
-      <h2 className="mb-1 text-sm font-medium text-muted-foreground">Ajouter une étude (Markdown)</h2>
-      <p className="mb-3 text-xs text-muted-foreground">
-        Indexée pour que le copilote Archiaccess AI puisse s'en servir comme contexte (recherche par similarité, pgvector).
-      </p>
-      <form onSubmit={submit} className="flex flex-col gap-2">
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Titre de l'étude"
-          className="liquid-glass-inset rounded-xl px-3 py-2 text-sm outline-none"
-        />
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Contenu en Markdown…"
-          rows={6}
-          className="liquid-glass-inset custom-scrollbar rounded-xl px-3 py-2 text-sm outline-none"
-        />
-        <div className="flex items-center justify-between">
-          {feedback && <p className="text-xs text-muted-foreground">{feedback}</p>}
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="chrome-black ml-auto rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
-          >
-            {isSaving ? "Indexation…" : "Ajouter au SIT"}
-          </button>
-        </div>
-      </form>
-    </div>
-  )
-}
