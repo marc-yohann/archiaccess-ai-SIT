@@ -3,9 +3,10 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Plus } from "lucide-react"
+import { Archive, ArrowUpRight, FolderKanban, Plus, UserPlus, Users } from "lucide-react"
 import { AuthGate, useUser } from "@/components/auth-gate"
-import { SitNav } from "@/components/sit-nav"
+import { Avatar } from "@/components/compte"
+import { CadreAdmin, ModuleAdmin, Pastille } from "@/components/admin/cadre-admin"
 
 // Administration de l'espace collaboratif (2026-09-28) : l'administrateur
 // crée les projets d'équipe (création guidée /sit/projets/nouveau
@@ -68,13 +69,7 @@ function GestionProjets() {
     [comptes, projet],
   )
 
-  if (!user.isAdmin) {
-    return (
-      <Cadre>
-        <p className="text-sm">Réservé aux administrateurs.</p>
-      </Cadre>
-    )
-  }
+  if (!user.isAdmin) return <Cadre>{null}</Cadre>
 
   async function action(url: string, init: RequestInit) {
     setEnCours(true)
@@ -92,16 +87,15 @@ function GestionProjets() {
 
   return (
     <Cadre>
-      {erreur && <p className="text-sm text-red-600">{erreur}</p>}
+      {erreur && <p className="text-sm text-destructive">{erreur}</p>}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-        <section className="liquid-glass-panel flex flex-col gap-2.5 rounded-[22px] p-4 lg:w-[26rem] lg:shrink-0">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-[15px] font-bold">Projets collaboratifs</h2>
-            <Link href="/sit/projets/nouveau?espace=collaboratif" className="chrome-black flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-medium text-white">
-              <Plus size={14} />
-              Nouveau
-            </Link>
-          </div>
+        <ModuleAdmin
+          icone={FolderKanban}
+          titre="Projets d'équipe"
+          aside={projets ? `${projets.filter((p) => !p.archivedAt).length} en cours${projets.some((p) => p.archivedAt) ? ` · ${projets.filter((p) => p.archivedAt).length} archivé${projets.filter((p) => p.archivedAt).length > 1 ? "s" : ""}` : ""}` : undefined}
+          className="lg:w-[24rem] lg:shrink-0"
+        >
+          <div className="flex flex-col gap-1.5">
           {projets === null && <p className="text-sm text-muted-foreground">Chargement…</p>}
           {projets?.length === 0 && <p className="text-sm text-muted-foreground">Aucun projet collaboratif pour l'instant.</p>}
           {projets?.map((p) => {
@@ -113,21 +107,41 @@ function GestionProjets() {
                 type="button"
                 onClick={() => router.replace(`/admin/projets?projet=${p.id}`)}
                 aria-pressed={actif}
-                className={`liquid-glass-soft flex flex-col gap-0.5 rounded-xl px-3.5 py-3 text-left ${actif ? "outline outline-2 -outline-offset-1 outline-foreground" : ""}`}
+                className={`flex items-center gap-3 rounded-[16px] px-3.5 py-3 text-left transition-colors ${actif ? "glass-on" : "liquid-glass-soft hover:bg-white/80"} ${p.archivedAt ? "opacity-70" : ""}`}
               >
-                <span className="text-sm font-semibold">{p.nom}</span>
-                <span className="text-xs text-muted-foreground">
-                  {p.membres.length} membre{p.membres.length > 1 ? "s" : ""}
-                  {chef ? ` · Chef de projet : ${chef.user.name}` : ""}
-                  {p.archivedAt ? " · Archivé" : ""}
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2 text-sm font-semibold">
+                    <span className="truncate">{p.nom}</span>
+                    {p.archivedAt && <Pastille>Archivé</Pastille>}
+                  </span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {p.membres.length} membre{p.membres.length > 1 ? "s" : ""}
+                    {chef ? ` · Chef de projet : ${chef.user.name}` : " · Pas de chef de projet"}
+                  </span>
+                </span>
+                <span className="flex shrink-0">
+                  {p.membres.slice(0, 3).map((m, i) => (
+                    <span key={m.user.id} className={`rounded-full ring-2 ring-white/90 ${i > 0 ? "-ml-2" : ""}`}>
+                      <Avatar nom={m.user.name} taille={24} />
+                    </span>
+                  ))}
                 </span>
               </button>
             )
           })}
-        </section>
+          </div>
+        </ModuleAdmin>
 
-        <section className="liquid-glass-panel flex min-w-0 flex-1 flex-col gap-4 rounded-[22px] p-5">
-          {!projet && <p className="text-sm text-muted-foreground">Choisissez un projet pour gérer ses accès, ou créez-en un.</p>}
+        <section className="liquid-glass-panel flex min-w-0 flex-1 flex-col gap-4 rounded-[22px] p-4 sm:p-5">
+          {!projet && (
+            <div className="flex flex-col items-center gap-2 py-10 text-center">
+              <span className="glass-icon size-10 rounded-xl">
+                <Users size={18} />
+              </span>
+              <p className="text-sm font-semibold">Choisissez un projet pour gérer ses accès</p>
+              <p className="text-sm text-muted-foreground">ou créez-en un avec « Nouveau projet ».</p>
+            </div>
+          )}
           {projet && (
             <>
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -136,33 +150,41 @@ function GestionProjets() {
                   <h2 className="mt-1 text-[22px] font-bold tracking-[-0.025em]">{projet.nom}</h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Link href={`/sit/equipe/${projet.id}`} className="liquid-glass-pill rounded-xl px-3.5 py-2 text-[13px]">
+                  <Link href={`/sit/equipe/${projet.id}`} className="liquid-glass-btn flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[13px] font-semibold">
                     Ouvrir le projet
+                    <ArrowUpRight size={14} />
                   </Link>
                   <button
                     type="button"
                     disabled={enCours}
                     onClick={() => void action(`/api/sit/projets/${projet.id}`, { method: "PATCH", body: JSON.stringify({ archive: !projet.archivedAt }) })}
-                    className="liquid-glass-pill rounded-xl px-3.5 py-2 text-[13px] disabled:opacity-50"
+                    className="liquid-glass-btn flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[13px] font-semibold disabled:opacity-50"
                   >
+                    <Archive size={14} />
                     {projet.archivedAt ? "Désarchiver" : "Archiver"}
                   </button>
                 </div>
               </div>
               {projet.archivedAt && (
-                <p className="text-sm text-muted-foreground">Archivé : le projet n'apparaît plus dans l'espace collaboratif des membres.</p>
+                <p className="liquid-glass-soft rounded-xl px-3.5 py-2.5 text-sm text-muted-foreground">Archivé : le projet n'apparaît plus dans l'espace collaboratif des membres.</p>
               )}
 
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h3 className="text-[15px] font-semibold">Qui a accès</h3>
+                <h3 className="flex items-center gap-2.5 text-[15px] font-bold">
+                  <span className="glass-icon size-7 rounded-[9px]">
+                    <Users size={15} />
+                  </span>
+                  Qui a accès
+                </h3>
                 <span className="text-xs text-muted-foreground">Seuls ces collaborateurs voient le projet dans leur espace collaboratif.</span>
               </div>
 
               <div className="flex flex-col gap-2">
                 {projet.membres.length === 0 && <p className="text-sm text-muted-foreground">Personne pour l'instant.</p>}
                 {projet.membres.map((m) => (
-                  <div key={m.user.id} className="liquid-glass-soft flex flex-wrap items-center gap-3 rounded-xl px-3.5 py-2.5">
-                    <span className="min-w-0 flex-1 text-sm font-medium">{m.user.name}</span>
+                  <div key={m.user.id} className="liquid-glass-soft flex flex-wrap items-center gap-3 rounded-[16px] px-3.5 py-2.5">
+                    <Avatar nom={m.user.name} taille={32} />
+                    <span className="min-w-0 flex-1 text-sm font-semibold">{m.user.name}</span>
                     <label className="sr-only" htmlFor={`role-${m.user.id}`}>
                       Rôle de {m.user.name}
                     </label>
@@ -173,7 +195,7 @@ function GestionProjets() {
                       onChange={(e) =>
                         void action(`/api/sit/projets/${projet.id}/membres/${m.user.id}`, { method: "PATCH", body: JSON.stringify({ role: e.target.value }) })
                       }
-                      className="liquid-glass-inset rounded-lg px-2 py-1.5 text-sm outline-none"
+                      className="liquid-glass-inset rounded-lg px-2.5 py-1.5 text-[13px] font-medium outline-none"
                     >
                       {Object.entries(ROLES).map(([v, l]) => (
                         <option key={v} value={v}>
@@ -185,7 +207,7 @@ function GestionProjets() {
                       type="button"
                       disabled={enCours}
                       onClick={() => void action(`/api/sit/projets/${projet.id}/membres/${m.user.id}`, { method: "DELETE" })}
-                      className="liquid-glass-pill rounded-lg px-3 py-1.5 text-[13px] disabled:opacity-50"
+                      className="liquid-glass-btn rounded-lg px-3 py-1.5 text-[13px] font-semibold text-destructive disabled:opacity-50"
                     >
                       Retirer l'accès
                     </button>
@@ -201,10 +223,13 @@ function GestionProjets() {
                     setAjout({ userId: "", role: "MEMBRE" }),
                   )
                 }}
-                className="liquid-glass-inset flex flex-col gap-3 rounded-xl p-3.5 sm:flex-row sm:items-end"
+                className="liquid-glass-inset flex flex-col gap-3 rounded-[16px] p-3.5 sm:flex-row sm:items-end"
               >
                 <label className="flex min-w-0 flex-1 flex-col gap-1">
-                  <span className="text-[12.5px] font-medium text-muted-foreground">Donner accès à un collaborateur</span>
+                  <span className="flex items-center gap-1.5 text-[12.5px] font-medium text-muted-foreground">
+                    <UserPlus size={13} />
+                    Donner accès à un collaborateur
+                  </span>
                   <select
                     value={ajout.userId}
                     onChange={(e) => setAjout((a) => ({ ...a, userId: e.target.value }))}
@@ -232,7 +257,7 @@ function GestionProjets() {
                     ))}
                   </select>
                 </label>
-                <button type="submit" disabled={enCours || !ajout.userId} className="chrome-black rounded-xl px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50">
+                <button type="submit" disabled={enCours || !ajout.userId} className="chrome-black rounded-xl px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
                   Donner accès
                 </button>
               </form>
@@ -257,10 +282,18 @@ function GestionProjets() {
 
 function Cadre({ children }: { children: React.ReactNode }) {
   return (
-    <main className="glass-scene flex min-h-screen w-full flex-col gap-4 p-4 pb-28 md:pb-10">
-      <SitNav titre="Projets collaboratifs et accès" sousTitre={<Link href="/admin" className="hover:underline">Administration</Link>} />
+    <CadreAdmin
+      titre="Projets collaboratifs"
+      description="Les projets d'équipe, qui y a accès et avec quel rôle. Un projet terminé s'archive."
+      actions={
+        <Link href="/sit/projets/nouveau?espace=collaboratif" className="chrome-black flex items-center gap-1.5 rounded-xl px-3.5 py-2.5 text-[13px] font-semibold text-white">
+          <Plus size={15} />
+          Nouveau projet
+        </Link>
+      }
+    >
       {children}
-    </main>
+    </CadreAdmin>
   )
 }
 

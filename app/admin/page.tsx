@@ -1,8 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
+import { useEffect, useMemo, useState } from "react"
+import { Check, Copy, KeyRound, Search, UserPlus, Users } from "lucide-react"
 import { AuthGate, BootstrapForm, useUser } from "@/components/auth-gate"
+import { Avatar } from "@/components/compte"
+import { CadreAdmin, Chiffre, ModuleAdmin, Pastille } from "@/components/admin/cadre-admin"
 
 interface AdminUser {
   id: string
@@ -45,41 +47,30 @@ export default function AdminPage() {
   }
 
   if (bootstrapNeeded) {
-    return <BootstrapForm logoSrc="/logo-ai.png" appName="Archiaccess" onDone={checkBootstrap} />
+    return <BootstrapForm logoSrc="/logo-sit.png" appName="Archiaccess SIT" onDone={checkBootstrap} />
   }
 
   return (
-    <AuthGate logoSrc="/logo-ai.png" appName="Archiaccess">
-      <AdminGuard />
+    <AuthGate logoSrc="/logo-sit.png" appName="Archiaccess SIT">
+      <CadreAdmin titre="Comptes des collaborateurs" description="Seul endroit où un compte se crée. Un compte n'est jamais supprimé : on le désactive, et il peut être réactivé.">
+        <AdminPanel />
+      </CadreAdmin>
     </AuthGate>
   )
 }
 
-function AdminGuard() {
-  const user = useUser()
-  if (!user.isAdmin) {
-    return (
-      <main className="glass-scene flex min-h-screen items-center justify-center p-4">
-        <div className="liquid-glass w-full max-w-md rounded-3xl p-8 text-center">
-          <p className="text-sm">Réservé aux administrateurs.</p>
-          <Link href="/" className="mt-3 inline-block text-sm text-muted-foreground hover:underline">
-            Retour à l'accueil
-          </Link>
-        </div>
-      </main>
-    )
-  }
-  return <AdminPanel />
-}
-
 function AdminPanel() {
-  const [users, setUsers] = useState<AdminUser[]>([])
+  const moi = useUser()
+  const [users, setUsers] = useState<AdminUser[] | null>(null)
   const [email, setEmail] = useState("")
   const [name, setName] = useState("")
   const [isAdmin, setIsAdmin] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [createdInfo, setCreatedInfo] = useState<{ email: string; tempPassword: string } | null>(null)
+  const [copie, setCopie] = useState(false)
+  const [filtre, setFiltre] = useState("")
+  const [enCours, setEnCours] = useState<string | null>(null)
 
   function loadUsers() {
     fetch("/api/admin/users")
@@ -110,6 +101,7 @@ function AdminPanel() {
         return
       }
       setCreatedInfo({ email: data.user.email, tempPassword: data.tempPassword })
+      setCopie(false)
       setEmail("")
       setName("")
       setIsAdmin(false)
@@ -120,105 +112,159 @@ function AdminPanel() {
   }
 
   async function toggleActive(u: AdminUser) {
-    await fetch(`/api/admin/users/${u.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !u.active }),
-    })
-    loadUsers()
+    setEnCours(u.id)
+    try {
+      await fetch(`/api/admin/users/${u.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: !u.active }),
+      })
+      loadUsers()
+    } finally {
+      setEnCours(null)
+    }
   }
 
-  return (
-    <main className="glass-scene flex min-h-screen justify-center p-4">
-      <div className="flex w-full max-w-3xl flex-col gap-4 py-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg font-medium">Administration — comptes employés</h1>
-          <div className="flex items-center gap-3">
-            <Link href="/admin/projets" className="text-sm text-muted-foreground hover:underline">
-              Projets collaboratifs
-            </Link>
-            <Link href="/admin/ingestion" className="text-sm text-muted-foreground hover:underline">
-              Ingestion
-            </Link>
-            <Link href="/" className="text-sm text-muted-foreground hover:underline">
-              Accueil
-            </Link>
-          </div>
-        </div>
+  async function copierMotDePasse() {
+    if (!createdInfo) return
+    try {
+      await navigator.clipboard.writeText(createdInfo.tempPassword)
+      setCopie(true)
+    } catch {
+      // presse-papiers indisponible : le mot de passe reste affiché
+    }
+  }
 
-        <div className="liquid-glass rounded-3xl p-6">
-          <h2 className="mb-3 font-medium">Créer un compte</h2>
-          <form onSubmit={createUser} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="flex-1">
-              <label className="mb-1 block text-xs text-muted-foreground">Nom</label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="liquid-glass-inset w-full rounded-xl px-3 py-2 text-sm outline-none"
-                required
-              />
-            </div>
-            <div className="flex-1">
-              <label className="mb-1 block text-xs text-muted-foreground">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="liquid-glass-inset w-full rounded-xl px-3 py-2 text-sm outline-none"
-                required
-              />
-            </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={isAdmin} onChange={(e) => setIsAdmin(e.target.checked)} />
-              Admin
+  // Chiffres calculés sur la liste réellement chargée.
+  const chiffres = useMemo(() => {
+    const liste = users ?? []
+    return {
+      actifs: liste.filter((u) => u.active).length,
+      admins: liste.filter((u) => u.active && u.isAdmin).length,
+      attente: liste.filter((u) => u.active && u.mustChangePassword).length,
+      desactives: liste.filter((u) => !u.active).length,
+    }
+  }, [users])
+
+  const affiches = useMemo(() => {
+    const q = filtre.trim().toLowerCase()
+    const liste = [...(users ?? [])].sort((a, b) => Number(b.active) - Number(a.active) || a.name.localeCompare(b.name, "fr"))
+    return q ? liste.filter((u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)) : liste
+  }, [users, filtre])
+
+  const champ = "liquid-glass-inset w-full rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-foreground/15"
+
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+        <Chiffre valeur={users ? chiffres.actifs : "–"} libelle="Comptes actifs" accent />
+        <Chiffre valeur={users ? chiffres.admins : "–"} libelle="Administrateurs" />
+        <Chiffre valeur={users ? chiffres.attente : "–"} libelle="Première connexion en attente" />
+        <Chiffre valeur={users ? chiffres.desactives : "–"} libelle="Comptes désactivés" />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start">
+        <ModuleAdmin icone={UserPlus} titre="Créer un compte">
+          <form onSubmit={createUser} className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[12.5px] font-medium text-muted-foreground">Nom et prénom</span>
+              <input value={name} onChange={(e) => setName(e.target.value)} className={champ} autoComplete="off" required />
             </label>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="chrome-black rounded-xl px-4 py-2 text-sm text-white disabled:opacity-50"
-            >
-              Créer
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[12.5px] font-medium text-muted-foreground">Adresse e-mail</span>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={champ} autoComplete="off" required />
+            </label>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[12.5px] font-medium text-muted-foreground">Rôle</span>
+              <div className="liquid-glass-inset flex gap-0.5 rounded-xl p-[3px]" role="radiogroup" aria-label="Rôle du compte">
+                {[
+                  [false, "Collaborateur"],
+                  [true, "Administrateur"],
+                ].map(([valeur, libelle]) => (
+                  <button
+                    key={String(valeur)}
+                    type="button"
+                    role="radio"
+                    aria-checked={isAdmin === valeur}
+                    onClick={() => setIsAdmin(valeur as boolean)}
+                    className={`flex-1 rounded-[9px] px-3 py-1.5 text-[13px] font-semibold transition-colors ${isAdmin === valeur ? "glass-on" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {libelle as string}
+                  </button>
+                ))}
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {isAdmin ? "Gère les comptes, les projets collaboratifs et leurs accès." : "Travaille sur ses projets et ceux de l'équipe auxquels il a accès."}
+              </span>
+            </div>
+            <button type="submit" disabled={isSubmitting} className="chrome-black mt-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
+              {isSubmitting ? "Création…" : "Créer le compte"}
             </button>
+            {error && <p className="text-xs text-destructive">{error}</p>}
           </form>
-          {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+
           {createdInfo && (
-            <div className="liquid-glass-soft mt-3 rounded-xl p-3 text-sm">
-              <p>
-                Compte créé pour <strong>{createdInfo.email}</strong>. Mot de passe temporaire (à transmettre à
-                l'employé, il devra le changer à sa première connexion) :
+            <div className="flex flex-col gap-2 rounded-[18px] border border-white/80 bg-white/75 p-3.5 text-[13px] shadow-[0_1px_2px_rgba(16,24,40,0.06)]">
+              <p className="flex items-center gap-2 font-semibold">
+                <KeyRound size={15} />
+                Compte créé pour {createdInfo.email}
               </p>
-              <p className="mt-1 font-mono text-base">{createdInfo.tempPassword}</p>
+              <p className="text-muted-foreground">Mot de passe temporaire, à transmettre au collaborateur. Il le changera à sa première connexion ; il ne sera plus affiché ensuite.</p>
+              <div className="flex items-center gap-2">
+                <code className="liquid-glass-inset min-w-0 flex-1 truncate rounded-lg px-3 py-2 font-mono text-[15px]">{createdInfo.tempPassword}</code>
+                <button
+                  type="button"
+                  onClick={() => void copierMotDePasse()}
+                  className="liquid-glass-btn flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold"
+                >
+                  {copie ? <Check size={13} /> : <Copy size={13} />}
+                  {copie ? "Copié" : "Copier"}
+                </button>
+              </div>
             </div>
           )}
-        </div>
+        </ModuleAdmin>
 
-        <div className="liquid-glass rounded-3xl p-6">
-          <h2 className="mb-3 font-medium">Comptes existants</h2>
-          <div className="flex flex-col divide-y divide-black/10">
-            {users.map((u) => (
-              <div key={u.id} className="flex items-center justify-between gap-3 py-2 text-sm">
-                <div className="min-w-0">
-                  <p className="truncate font-medium">
-                    {u.name} {u.isAdmin && <span className="text-xs text-muted-foreground">(admin)</span>}
+        <ModuleAdmin icone={Users} titre="Comptes existants" aside={users ? `${users.length} compte${users.length > 1 ? "s" : ""}` : undefined}>
+          <label className="liquid-glass-inset flex items-center gap-2 rounded-xl px-3 py-2">
+            <Search size={15} className="shrink-0 text-muted-foreground" />
+            <span className="sr-only">Rechercher un compte</span>
+            <input value={filtre} onChange={(e) => setFiltre(e.target.value)} placeholder="Rechercher par nom ou e-mail…" className="w-full bg-transparent text-sm outline-none" />
+          </label>
+          {users === null && <p className="text-sm text-muted-foreground">Chargement…</p>}
+          {users && affiches.length === 0 && <p className="text-sm text-muted-foreground">Aucun compte ne correspond.</p>}
+          <div className="flex flex-col">
+            {affiches.map((u) => (
+              <div key={u.id} className={`flex flex-wrap items-center gap-3 border-t border-foreground/[0.06] py-3 first:border-t-0 ${u.active ? "" : "opacity-60"}`}>
+                <Avatar nom={u.name} taille={36} />
+                <div className="min-w-0 flex-1">
+                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold">
+                    <span className="truncate">{u.name}</span>
+                    {u.email === moi.email && <span className="text-xs font-normal text-muted-foreground">(vous)</span>}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">{u.email}</p>
                 </div>
-                <div className="flex shrink-0 items-center gap-3">
-                  {u.mustChangePassword && (
-                    <span className="text-xs text-muted-foreground">1ère connexion en attente</span>
-                  )}
-                  <span className={`text-xs ${u.active ? "text-green-700" : "text-red-600"}`}>
-                    {u.active ? "Actif" : "Désactivé"}
-                  </span>
-                  <button onClick={() => toggleActive(u)} className="liquid-glass-soft rounded-lg px-3 py-1 text-xs">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {u.isAdmin && <Pastille ton="sombre">Administrateur</Pastille>}
+                  {u.active && u.mustChangePassword && <Pastille>Première connexion en attente</Pastille>}
+                  {!u.active && <Pastille ton="alerte">Désactivé</Pastille>}
+                  <span className="text-xs text-muted-foreground">depuis le {new Date(u.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}</span>
+                </div>
+                {u.email !== moi.email && (
+                  <button
+                    type="button"
+                    onClick={() => void toggleActive(u)}
+                    disabled={enCours === u.id}
+                    className={`shrink-0 rounded-[10px] px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${u.active ? "liquid-glass-btn" : "chrome-black text-white"}`}
+                  >
                     {u.active ? "Désactiver" : "Réactiver"}
                   </button>
-                </div>
+                )}
               </div>
             ))}
           </div>
-        </div>
+        </ModuleAdmin>
       </div>
-    </main>
+    </>
   )
 }
