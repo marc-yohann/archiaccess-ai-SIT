@@ -126,6 +126,13 @@ trace de ça dans le code actuel, ne pas la réintroduire.
 - `app/admin/page.tsx` — gestion des comptes employés (création,
   désactivation), et **seul** endroit où un compte peut être créé
   (bootstrap du tout premier compte compris — voir "Pièges").
+  Administration en « Verre dépoli » (**déployée le 2026-09-30**, commit
+  `abe7ef9`, validée par l'utilisateur sur artefact avant/après) : cadre
+  commun `components/admin/cadre-admin.tsx` (en-tête du SIT, rubriques
+  Comptes / Projets collaboratifs / Données publiques — ex-« Ingestion »,
+  `/admin/ingestion`), chiffres clés calculés sur les données chargées.
+  Le compte connecté n'a pas de bouton « Désactiver » (la route serveur
+  reste inchangée).
 - `app/page.tsx` — accueil générique (liens vers `/sit` et `/ai`).
 - `components/auth-gate.tsx` — garde d'authentification partagée par
   `/`, `/sit`, `/ai` (formulaire de connexion classique, changement de
