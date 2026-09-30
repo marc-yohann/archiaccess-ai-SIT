@@ -116,10 +116,40 @@ trace de ça dans le code actuel, ne pas la réintroduire.
   la recherche est alors rattachée au projet et `/api/mistral/chat`
   croise le contexte de la page et celui du projet (le panneau d'une étape
   n'envoie plus de contexte à lui). Vue projet : fil d'Ariane
-  (`SitNav filAriane`), blocs Site/Acteurs/Marchés/Documents
-  (`components/projet/rattachements.tsx`), « Voir dans la Méthode »
+  (`SitNav filAriane`), « Voir dans la Méthode »
   (`/sit/referentiel?etape=`) et « Utile pour cette étape ». Méthode :
   « Dans vos projets » sur chaque étape.
+- **Fil, dossier et études** (2026-09-30, maquette validée « Fil,
+  dossier et études ») : vue projet en deux vues, Étapes / Dossier
+  (`?vue=dossier`). Chaque étape a un **fil** (`FilEtape`,
+  `components/projet/elements.tsx`) — notes, fichiers, réponses
+  d'Archiaccess AI jointes, liens, signés et datés — qui remplace
+  l'ancienne note unique (`ProjetEtape.note`, reprise par la migration en
+  première entrée du fil, plus écrite par l'interface), et un
+  **responsable** (`ProjetEtape.responsableId`, parmi
+  `personnesDuProjet`). Le **dossier** (`components/projet/dossier.tsx`)
+  réunit les `ProjetElement` et les rattachements (site, acteurs, avis,
+  lots, documents = « Données du SIT », avec `ajouteParId`). Routes
+  `/api/sit/projets/[id]/elements` (+ `/fichier` : dépôt multipart 4 Mo
+  max, charge utile Lambda 6 Mo ; `[elementId]` : retrait ;
+  `[elementId]/fichier` : téléchargement, bucket documents privé, clé
+  `projets/<id>/<uuid>`). Règle de retrait `peutRetirerElement` : son
+  auteur, ou propriétaire / chef de projet / administrateur — appliquée
+  aussi aux DELETE de site/acteur/avis/lot. **« Joindre au projet »**
+  (`components/projet/joindre-projet.tsx`) sur chaque réponse
+  d'Archiaccess AI (panneau, `/ai`, panneau de la recherche) : copie
+  dans le dossier et le fil, la conversation reste privée. Le contexte
+  d'Archiaccess AI inclut les 10 derniers éléments du fil de l'étape
+  (`lib/conversation-projet.ts`). **Corpus du SIT**
+  (`components/corpus-sit.tsx`, bas de l'accueil de la recherche) :
+  textes réglementaires + études (`Document.sourceType = "etude"`,
+  `auteurId`, `discipline`), fenêtre « Ajouter une étude à la base de
+  données du SIT » ; `GET/POST /api/sit/documents`,
+  `DELETE /api/sit/documents/[id]` (auteur ou administrateur ; les
+  études antérieures, sans auteur, par un administrateur). Les études
+  restent partagées avec tout le SIT (décision utilisateur). Fenêtres :
+  `components/dialogue.tsx` (volet depuis le bas sur téléphone, rendue
+  dans `<body>` car un parent `backdrop-filter` casse `position: fixed`).
 - `lib/referentiel/` — **source unique** du référentiel de méthode
   (données TS pures, importables côté client) : alimente l'espace projet
   et le PDF (`npm run referentiel:pdf`, voir `docs/referentiel/README.md`).
@@ -507,9 +537,12 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   par (`source`, `sourceId` = `idweb`, désormais exposé par
   `lib/data-sources/boamp.ts`), rien n'est créé. Les autres tuiles
   (cadastre, risques, urbanisme…) suivent le site. Les blocs du projet
-  ont « Retirer » (lien seulement, routes DELETE existantes). Lots suivants validés sur maquette, pas commencés :
-  fils d'étape + dossier + « Joindre au projet » depuis Archiaccess AI ;
-  notifications, mentions, circuit de validation ; discussion du projet
+  ont « Retirer » (lien seulement, routes DELETE existantes). Lot
+  **fil / dossier / études** (voir « Fil, dossier et études » plus
+  haut) construit et testé en local le 2026-09-30 (commits `9270fea` à
+  `2d2a4a4`), **pas encore déployé** ; migration
+  `20260930140000_fil_dossier_etudes` à appliquer juste après le code.
+  Lots suivants validés sur maquette, pas commencés : notifications, mentions, circuit de validation ; discussion du projet
   (rafraîchie par interrogation périodique — **pas** de nouveau service
   AWS, décision utilisateur) et actions ; photos de chantier et ajout
   depuis la recherche. L'équipe n'est pas
@@ -532,9 +565,6 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   conversation) pour savoir exactement où en est la décision — ce
   fichier ne reflète que le code, pas les allers-retours de design en
   cours.
-- Renommage "coffre RAG" → "Corpus réglementaire" dans l'UI, décidé
-  mais pas encore appliqué dans `app/sit/page.tsx` (ligne contenant
-  encore `Corpus réglementaire (coffre RAG)`).
 
 **Explicitement pas fait** :
 - Pas de CI/CD (build/déploiement 100 % manuels).
