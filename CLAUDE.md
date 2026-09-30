@@ -496,7 +496,8 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   internes du SIT — **construite** (voir « Projet suivi » ci-dessous),
   vérifiée ordinateur/tablette/téléphone, **déployée le 2026-09-30**
   (commit `fe54549`, avec l'accord de l'utilisateur, aucune migration) ; (4) « Ajouter au projet » —
-  **construite** (aucune migration, pas encore déployée) : sur la
+  **construite et déployée le 2026-09-30** (commit `bbeb23a`, avec
+  l'accord de l'utilisateur, aucune migration) : sur la
   recherche, avec un projet suivi, les tuiles Adresse (site), Entreprise
   (acteur) et Marchés publics, ainsi que les avis trouvés par
   « Référence », ont « Ajouter au projet » / « Dans le projet », par les
