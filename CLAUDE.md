@@ -487,8 +487,8 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   vérifiée en production (308). Reste à retirer l'alias `ai.` de
   CloudFront et du certificat une fois le DNS supprimé ; (3) liens
   internes du SIT — **construite** (voir « Projet suivi » ci-dessous),
-  vérifiée ordinateur/tablette/téléphone, **pas encore déployée** (aucune
-  migration) ; (4) « Ajouter au projet ». Lots suivants validés sur maquette, pas commencés :
+  vérifiée ordinateur/tablette/téléphone, **déployée le 2026-09-30**
+  (commit `fe54549`, avec l'accord de l'utilisateur, aucune migration) ; (4) « Ajouter au projet ». Lots suivants validés sur maquette, pas commencés :
   fils d'étape + dossier + « Joindre au projet » depuis Archiaccess AI ;
   notifications, mentions, circuit de validation ; discussion du projet
   (rafraîchie par interrogation périodique — **pas** de nouveau service
