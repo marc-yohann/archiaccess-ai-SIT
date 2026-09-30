@@ -38,20 +38,29 @@ model User {
   mustChangePassword Boolean  @default(true)
   createdAt          DateTime @default(now())
 
-  sessions        Session[]
-  conversations   Conversation[]
+  sessions           Session[]
+  conversations      Conversation[]
   // Phase 10 — traçabilité de création uniquement (voir Projet plus bas),
   // jamais une notion de propriété exclusive : un Projet reste visible et
   // modifiable par tout employé authentifié, même principe que Site/
   // Acteur (aucune donnée du SIT n'est aujourd'hui cloisonnée par
   // utilisateur, à l'exception de Conversation).
-  projetsCrees    Projet[]
+  projetsCrees       Projet[]
   // Espace projet — traçabilité de la dernière modification d'une étape.
-  etapesModifiees ProjetEtape[]
+  etapesModifiees    ProjetEtape[]      @relation("ProjetEtapeModifiePar")
   // Espace collaboratif (2026-09-28) — projets d'équipe auxquels
   // l'administrateur a donné accès, et accès qu'il a lui-même donnés.
-  projetsMembre   ProjetMembre[] @relation("ProjetMembreUser")
-  accesDonnes     ProjetMembre[] @relation("ProjetMembreAjoutePar")
+  projetsMembre      ProjetMembre[]     @relation("ProjetMembreUser")
+  accesDonnes        ProjetMembre[]     @relation("ProjetMembreAjoutePar")
+  // Fil de l'étape et dossier du projet (2026-09-30) : éléments joints,
+  // étapes dont on est responsable, rattachements ajoutés, études du SIT.
+  elementsJoints     ProjetElement[]    @relation("ProjetElementAuteur")
+  etapesResponsable  ProjetEtape[]      @relation("ProjetEtapeResponsable")
+  sitesAjoutes       ProjetSite[]       @relation("ProjetSiteAjoutePar")
+  acteursAjoutes     ProjetActeur[]     @relation("ProjetActeurAjoutePar")
+  avisMarchesAjoutes ProjetAvisMarche[] @relation("ProjetAvisMarcheAjoutePar")
+  lotsAjoutes        ProjetLot[]        @relation("ProjetLotAjoutePar")
+  etudesAjoutees     Document[]         @relation("DocumentAuteur")
 }
 
 model Session {
@@ -78,7 +87,7 @@ model Conversation {
   // (lib/projet-acces.ts). Projet supprimé → conversation conservée,
   // simplement détachée.
   projetId  String?
-  projet    Projet?  @relation(fields: [projetId], references: [id], onDelete: SetNull)
+  projet    Projet? @relation(fields: [projetId], references: [id], onDelete: SetNull)
   etapeCode String?
 
   messages Message[]
@@ -115,6 +124,12 @@ model Document {
   s3Key      String // chemin du fichier Markdown source dans le bucket documents
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  // Études du SIT (2026-09-30) : qui l'a ajoutée (nul pour les textes
+  // réglementaires chargés en lot et les études ajoutées avant cette
+  // date) et sa discipline, facultative.
+  auteurId   String?
+  auteur     User?    @relation("DocumentAuteur", fields: [auteurId], references: [id], onDelete: SetNull)
+  discipline String?
 
   chunks DocumentChunk[]
 }
@@ -962,10 +977,12 @@ model Projet {
   // restent PERSONNEL (valeur par défaut). archivedAt : projet
   // collaboratif retiré des espaces des membres, conservé pour
   // l'administrateur.
-  espace     ProjetEspace   @default(PERSONNEL)
-  archivedAt DateTime?
-  membres    ProjetMembre[]
+  espace        ProjetEspace    @default(PERSONNEL)
+  archivedAt    DateTime?
+  membres       ProjetMembre[]
   conversations Conversation[]
+  // Fil des étapes et dossier du projet (2026-09-30).
+  elements      ProjetElement[]
 }
 
 enum ProjetEspace {
@@ -1009,22 +1026,65 @@ enum ProjetEtapeStatut {
 // Le contenu de l'étape (objectif, rôles, vigilances...) n'est jamais
 // copié ici : il vit dans lib/referentiel, source unique.
 model ProjetEtape {
-  id          String            @id @default(cuid())
-  projetId    String
-  projet      Projet            @relation(fields: [projetId], references: [id], onDelete: Cascade)
-  etapeCode   String
-  statut      ProjetEtapeStatut @default(A_FAIRE)
-  note        String?
+  id            String            @id @default(cuid())
+  projetId      String
+  projet        Projet            @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  etapeCode     String
+  statut        ProjetEtapeStatut @default(A_FAIRE)
+  note          String?
   // Échéance fixée par l'ingénieur pour l'étape (date seule, saisie
   // libre) — alimente « À traiter » et les retards du tableau de bord.
-  echeance    DateTime?
-  updatedById String?
-  updatedBy   User?             @relation(fields: [updatedById], references: [id], onDelete: SetNull)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  echeance      DateTime?
+  updatedById   String?
+  updatedBy     User?             @relation("ProjetEtapeModifiePar", fields: [updatedById], references: [id], onDelete: SetNull)
+  // Responsable de l'étape parmi les personnes qui ont accès au projet
+  // (2026-09-30). note n'est plus écrite : elle est devenue la première
+  // entrée du fil de l'étape (ProjetElement), colonne conservée.
+  responsableId String?
+  responsable   User?             @relation("ProjetEtapeResponsable", fields: [responsableId], references: [id], onDelete: SetNull)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
   @@unique([projetId, etapeCode])
   @@index([projetId])
+}
+
+enum ProjetElementType {
+  NOTE
+  FICHIER
+  REPONSE_IA
+  LIEN
+}
+
+// Élément du dossier d'un projet (2026-09-30, maquette validée « Fil,
+// dossier et études ») : note, fichier déposé, réponse d'Archiaccess AI
+// jointe (copie : la conversation reste privée) ou lien. Avec un
+// etapeCode, il apparaît aussi dans le fil de cette étape. Les
+// rattachements existants (site, acteur, avis, lot) restent dans leurs
+// tables et sont montrés avec ces éléments dans le dossier.
+model ProjetElement {
+  id           String            @id @default(cuid())
+  projetId     String
+  projet       Projet            @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  etapeCode    String?
+  type         ProjetElementType
+  titre        String?
+  texte        String?
+  // Message pour l'équipe accompagnant une réponse jointe.
+  message      String?
+  url          String?
+  // Fichier déposé : clé dans le bucket documents, nom d'origine.
+  storageKey   String?
+  nomFichier   String?
+  mimeType     String?
+  tailleOctets Int?
+  auteurId     String?
+  auteur       User?             @relation("ProjetElementAuteur", fields: [auteurId], references: [id], onDelete: SetNull)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([projetId, etapeCode])
+  @@index([projetId, createdAt])
 }
 
 // Rattachement Projet<->Site, action explicite uniquement (voir Projet
@@ -1032,12 +1092,15 @@ model ProjetEtape {
 // Site (contrairement à ProjetActeur ci-dessous) — jamais ajouté par
 // anticipation.
 model ProjetSite {
-  id        String   @id @default(cuid())
-  projetId  String
-  projet    Projet   @relation(fields: [projetId], references: [id], onDelete: Cascade)
-  siteId    String
-  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  projetId    String
+  projet      Projet   @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  siteId      String
+  site        Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  // Qui l'a ajouté (2026-09-30) ; nul pour les rattachements antérieurs.
+  ajouteParId String?
+  ajoutePar   User?    @relation("ProjetSiteAjoutePar", fields: [ajouteParId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
 
   @@unique([projetId, siteId])
   @@index([projetId])
@@ -1052,13 +1115,16 @@ model ProjetSite {
 // différents selon le projet — role reste donc propre à CETTE relation,
 // jamais copié depuis Acteur.type.
 model ProjetActeur {
-  id        String      @id @default(cuid())
-  projetId  String
-  projet    Projet      @relation(fields: [projetId], references: [id], onDelete: Cascade)
-  acteurId  String
-  acteur    Acteur      @relation(fields: [acteurId], references: [id], onDelete: Cascade)
-  role      ActeurType?
-  createdAt DateTime    @default(now())
+  id          String      @id @default(cuid())
+  projetId    String
+  projet      Projet      @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  acteurId    String
+  acteur      Acteur      @relation(fields: [acteurId], references: [id], onDelete: Cascade)
+  role        ActeurType?
+  // Qui l'a ajouté (2026-09-30) ; nul pour les rattachements antérieurs.
+  ajouteParId String?
+  ajoutePar   User?       @relation("ProjetActeurAjoutePar", fields: [ajouteParId], references: [id], onDelete: SetNull)
+  createdAt   DateTime    @default(now())
 
   @@unique([projetId, acteurId])
   @@index([projetId])
@@ -1076,6 +1142,9 @@ model ProjetAvisMarche {
   projet       Projet     @relation(fields: [projetId], references: [id], onDelete: Cascade)
   avisMarcheId String
   avisMarche   AvisMarche @relation(fields: [avisMarcheId], references: [id], onDelete: Cascade)
+  // Qui l'a ajouté (2026-09-30) ; nul pour les rattachements antérieurs.
+  ajouteParId  String?
+  ajoutePar    User?      @relation("ProjetAvisMarcheAjoutePar", fields: [ajouteParId], references: [id], onDelete: SetNull)
   createdAt    DateTime   @default(now())
 
   @@unique([projetId, avisMarcheId])
@@ -1085,12 +1154,15 @@ model ProjetAvisMarche {
 
 // Rattachement Projet<->Lot (Phase 9), même principe que ProjetAvisMarche.
 model ProjetLot {
-  id        String   @id @default(cuid())
-  projetId  String
-  projet    Projet   @relation(fields: [projetId], references: [id], onDelete: Cascade)
-  lotId     String
-  lot       Lot      @relation(fields: [lotId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  projetId    String
+  projet      Projet   @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  lotId       String
+  lot         Lot      @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  // Qui l'a ajouté (2026-09-30) ; nul pour les rattachements antérieurs.
+  ajouteParId String?
+  ajoutePar   User?    @relation("ProjetLotAjoutePar", fields: [ajouteParId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
 
   @@unique([projetId, lotId])
   @@index([projetId])
