@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { exigerAccesProjet, peutModifierProfil } from "@/lib/projet-acces"
+import { exigerAccesProjet, personnesDuProjet, peutModifierProfil } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
 import { serializeDocumentSit } from "@/lib/documents-sit"
 import { lireProfil } from "@/lib/referentiel/profil"
@@ -24,13 +24,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     where: { id },
     include: {
       createdBy: { select: { id: true, name: true } },
-      sites: { include: { site: true } },
-      acteurs: { include: { acteur: true } },
-      avisMarches: { include: { avisMarche: true } },
-      lots: { include: { lot: { include: { avisMarche: true } } } },
+      sites: { include: { site: true, ajoutePar: { select: { id: true, name: true } } } },
+      acteurs: { include: { acteur: true, ajoutePar: { select: { id: true, name: true } } } },
+      avisMarches: { include: { avisMarche: true, ajoutePar: { select: { id: true, name: true } } } },
+      lots: { include: { lot: { include: { avisMarche: true } }, ajoutePar: { select: { id: true, name: true } } } },
       documentSitLinks: { include: { documentSit: true } },
       besoinLinks: { include: { besoin: true } },
-      etapes: { include: { updatedBy: { select: { id: true, name: true } } } },
+      etapes: { include: { updatedBy: { select: { id: true, name: true } }, responsable: { select: { id: true, name: true } } } },
       membres: {
         select: { role: true, createdAt: true, user: { select: { id: true, name: true } } },
         orderBy: { createdAt: "asc" },
@@ -50,7 +50,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   // acces : ce que l'interface peut proposer à cet utilisateur (le
   // serveur revérifie à chaque modification).
   const acces = { niveau, modifierProfil: peutModifierProfil(niveau), administrer: user.isAdmin && projet.espace === "COLLABORATIF" }
-  return NextResponse.json({ success: true, projet: serialized, acces })
+  // personnes : responsables d'étape possibles.
+  const personnes = await personnesDuProjet(id)
+  return NextResponse.json({ success: true, projet: serialized, acces, personnes, moi: user.id })
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {

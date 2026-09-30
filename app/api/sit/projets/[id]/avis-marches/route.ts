@@ -25,7 +25,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const lien = await prisma.projetAvisMarche.upsert({
     where: { projetId_avisMarcheId: { projetId, avisMarcheId } },
-    create: { projetId, avisMarcheId },
+    create: { projetId, avisMarcheId, ajouteParId: garde.user.id },
     update: {},
     include: { avisMarche: true },
   })

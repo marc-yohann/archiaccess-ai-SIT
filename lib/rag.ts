@@ -17,13 +17,16 @@ export async function indexDocument(input: {
   title: string
   sourceType: string
   content: string
+  // Études du SIT (2026-09-30) : qui l'a ajoutée, et sa discipline.
+  auteurId?: string | null
+  discipline?: string | null
 }): Promise<string> {
   const prisma = await getPrisma()
   const s3Key = `documents/${randomUUID()}.md`
   await putDocument(s3Key, input.content)
 
   const document = await prisma.document.create({
-    data: { title: input.title, sourceType: input.sourceType, s3Key },
+    data: { title: input.title, sourceType: input.sourceType, s3Key, auteurId: input.auteurId ?? null, discipline: input.discipline ?? null },
   })
 
   const chunks = chunkText(input.content)

@@ -23,7 +23,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const lien = await prisma.projetLot.upsert({
     where: { projetId_lotId: { projetId, lotId } },
-    create: { projetId, lotId },
+    create: { projetId, lotId, ajouteParId: garde.user.id },
     update: {},
     include: { lot: true },
   })

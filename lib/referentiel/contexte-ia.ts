@@ -34,7 +34,10 @@ function enteteProjet(p: ProjetPourContexte): string[] {
   ]
 }
 
-export function contexteProjet(p: ProjetPourContexte, etape: Etape | null): string {
+// fil : lignes du fil de l'étape ouverte, déjà mises en forme côté
+// serveur (lib/conversation-projet.ts). Quand il est fourni, il remplace
+// l'ancienne note unique de l'étape, reprise en première entrée du fil.
+export function contexteProjet(p: ProjetPourContexte, etape: Etape | null, fil?: string[]): string {
   const lignes = [
     "Méthode Archiaccess : l'outil prépare, l'ingénieur analyse, le maître d'ouvrage décide. Ne jamais présenter une proposition comme une décision.",
     ...enteteProjet(p),
@@ -58,7 +61,9 @@ export function contexteProjet(p: ProjetPourContexte, etape: Etape | null): stri
     const variantes = profil ? variantesApplicables(etape, profil) : []
     if (variantes.length) lignes.push(`Particularités de cette opération : ${variantes.map((v) => v.texte).join(" ; ")}`)
     if (etape.textes.length) lignes.push(`Textes de référence : ${etape.textes.join(" ; ")}`)
-    if (etat?.note) lignes.push(`Notes de l'ingénieur : ${etat.note}`)
+    if (fil) {
+      if (fil.length) lignes.push("Fil de l'étape (du plus ancien au plus récent) :", ...fil.map((l) => `- ${l}`))
+    } else if (etat?.note) lignes.push(`Notes de l'ingénieur : ${etat.note}`)
   }
   return lignes.join("\n")
 }

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server"
-import { exigerAccesProjet } from "@/lib/projet-acces"
+import { exigerAccesProjet, personnesDuProjet } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
 import { trouverEtape } from "@/lib/referentiel"
 import { ETAPE_STATUTS, type EtapeStatut } from "@/lib/referentiel/profil"
 
 // Espace projet — avancement d'un Projet sur une étape du référentiel
-// Archiaccess (statut, note, échéance). Upsert : la ligne ProjetEtape n'existe
+// Archiaccess (statut, note, échéance, responsable). Upsert : la ligne ProjetEtape n'existe
 // qu'une fois l'étape renseignée. Le code d'étape est vérifié contre le
 // référentiel (lib/referentiel) : jamais d'étape inventée côté client.
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string; code: string }> }) {
@@ -17,8 +17,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ success: false, error: "Étape inconnue du référentiel." }, { status: 400 })
   }
 
-  const body = (await request.json().catch(() => ({}))) as { statut?: unknown; note?: unknown; echeance?: unknown }
-  const data: { statut?: EtapeStatut; note?: string | null; echeance?: Date | null } = {}
+  const body = (await request.json().catch(() => ({}))) as { statut?: unknown; note?: unknown; echeance?: unknown; responsableId?: unknown }
+  const data: { statut?: EtapeStatut; note?: string | null; echeance?: Date | null; responsableId?: string | null } = {}
   if ("statut" in body) {
     if (typeof body.statut !== "string" || !(ETAPE_STATUTS as readonly string[]).includes(body.statut)) {
       return NextResponse.json({ success: false, error: "Statut d'étape invalide." }, { status: 400 })
@@ -49,6 +49,18 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
   }
 
+  // Responsable de l'étape (2026-09-30) : une personne qui travaille sur
+  // le projet (voir personnesDuProjet), ou null pour l'effacer.
+  if ("responsableId" in body) {
+    if (body.responsableId === null || body.responsableId === "") {
+      data.responsableId = null
+    } else if (typeof body.responsableId === "string" && (await personnesDuProjet(id)).some((p) => p.id === body.responsableId)) {
+      data.responsableId = body.responsableId
+    } else {
+      return NextResponse.json({ success: false, error: "Ce responsable ne travaille pas sur le projet." }, { status: 400 })
+    }
+  }
+
   const prisma = await getPrisma()
   const projet = await prisma.projet.findUnique({ where: { id }, select: { id: true } })
   if (!projet) {
@@ -59,7 +71,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     where: { projetId_etapeCode: { projetId: id, etapeCode: code } },
     create: { projetId: id, etapeCode: code, ...data, updatedById: user.id },
     update: { ...data, updatedById: user.id },
-    include: { updatedBy: { select: { id: true, name: true } } },
+    include: { updatedBy: { select: { id: true, name: true } }, responsable: { select: { id: true, name: true } } },
   })
   // Le projet remonte en tête de liste quand son avancement change.
   await prisma.projet.update({ where: { id }, data: { updatedAt: new Date() } })

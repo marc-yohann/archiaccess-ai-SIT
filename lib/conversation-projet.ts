@@ -40,8 +40,12 @@ export function etapeValide(code: string | null | undefined): string | null {
 // Même contexte que celui que construit le panneau de l'espace projet
 // (lib/referentiel/contexte-ia.ts), reconstruit ici à partir de la base :
 // Archiaccess AI a le projet en tête où qu'on reprenne la conversation.
-export function contexteDeConversation(projet: ProjetDeConversation, etapeCode: string | null): string {
+// Avec une étape ouverte, les derniers éléments de son fil (notes,
+// réponses jointes, fichiers et liens, 2026-09-30) remplacent l'ancienne
+// note unique, qui en est devenue la première entrée.
+export async function contexteDeConversation(projet: ProjetDeConversation, etapeCode: string | null): Promise<string> {
   const etape = etapeCode ? trouverEtape(etapeCode) ?? null : null
+  const fil = etape ? await filPourContexte(projet.id, etape.code) : undefined
   return contexteProjet(
     {
       ...projet,
@@ -53,7 +57,36 @@ export function contexteDeConversation(projet: ProjetDeConversation, etapeCode: 
       })),
     },
     etape,
+    fil,
   )
+}
+
+const FIL_ELEMENTS = 10
+const FIL_EXTRAIT = 1200
+
+async function filPourContexte(projetId: string, etapeCode: string): Promise<string[]> {
+  const prisma = await getPrisma()
+  const elements = await prisma.projetElement.findMany({
+    where: { projetId, etapeCode },
+    orderBy: { createdAt: "desc" },
+    take: FIL_ELEMENTS,
+    select: { type: true, titre: true, texte: true, message: true, url: true, nomFichier: true, createdAt: true, auteur: { select: { name: true } } },
+  })
+  const extrait = (t: string) => (t.length > FIL_EXTRAIT ? `${t.slice(0, FIL_EXTRAIT)}…` : t)
+  return elements.reverse().map((e) => {
+    const qui = `${e.auteur?.name ?? "Auteur inconnu"}, ${e.createdAt.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })}`
+    const message = e.message ? ` — message : ${extrait(e.message)}` : ""
+    switch (e.type) {
+      case "NOTE":
+        return `Note (${qui}) : ${extrait(e.texte ?? "")}`
+      case "REPONSE_IA":
+        return `Réponse d'Archiaccess AI jointe (${qui}) « ${e.titre ?? ""} »${message} : ${extrait(e.texte ?? "")}`
+      case "FICHIER":
+        return `Fichier déposé (${qui}) : ${e.nomFichier ?? e.titre ?? ""}${e.texte ? ` — ${extrait(e.texte)}` : ""}`
+      case "LIEN":
+        return `Lien (${qui}) : ${e.titre ?? e.url ?? ""}${e.url && e.url !== e.titre ? ` (${e.url})` : ""}${e.texte ? ` — ${extrait(e.texte)}` : ""}`
+    }
+  })
 }
 
 // Identifiants des projets accessibles, pour filtrer les rattachements

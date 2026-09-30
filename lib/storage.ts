@@ -30,6 +30,20 @@ export async function getDocument(key: string): Promise<string> {
   return body
 }
 
+// Fichiers déposés dans le dossier d'un projet (2026-09-30) : contenu
+// binaire tel quel, type d'origine conservé. Le bucket reste privé : la
+// lecture passe toujours par une route qui revérifie l'accès au projet.
+export async function putFichier(key: string, contenu: Uint8Array, contentType: string): Promise<void> {
+  await client.send(new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: contenu, ContentType: contentType }))
+}
+
+export async function getFichier(key: string): Promise<Uint8Array> {
+  const res = await client.send(new GetObjectCommand({ Bucket: BUCKET, Key: key }))
+  const octets = await res.Body?.transformToByteArray()
+  if (!octets) throw new Error(`Fichier ${key} introuvable dans le bucket.`)
+  return octets
+}
+
 export async function deleteDocument(key: string): Promise<void> {
   await client.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }))
 }

@@ -31,7 +31,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const lien = await prisma.projetActeur.upsert({
     where: { projetId_acteurId: { projetId, acteurId } },
-    create: { projetId, acteurId, role: (role as ActeurType | null) ?? null },
+    create: { projetId, acteurId, role: (role as ActeurType | null) ?? null, ajouteParId: garde.user.id },
     // Un rattachement répété avec un rôle différent met à jour le rôle —
     // reste une action explicite de l'utilisateur, jamais une déduction.
     update: { role: (role as ActeurType | null) ?? null },

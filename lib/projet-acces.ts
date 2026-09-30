@@ -65,6 +65,30 @@ export async function exigerAccesProjet(projetId: string): Promise<Garde> {
   return { user, niveau }
 }
 
+// Personnes qui travaillent sur le projet (2026-09-30) : responsable
+// d'étape possible, auteurs affichés dans le dossier. Projet personnel :
+// son créateur ; projet collaboratif : ses membres.
+export async function personnesDuProjet(projetId: string): Promise<{ id: string; name: string }[]> {
+  const prisma = await getPrisma()
+  const projet = await prisma.projet.findUnique({
+    where: { id: projetId },
+    select: {
+      espace: true,
+      createdBy: { select: { id: true, name: true } },
+      membres: { select: { user: { select: { id: true, name: true } } }, orderBy: { createdAt: "asc" } },
+    },
+  })
+  if (!projet) return []
+  if (projet.espace === "PERSONNEL") return projet.createdBy ? [projet.createdBy] : []
+  return projet.membres.map((m) => m.user)
+}
+
+// Retirer un élément du dossier : celui qui l'a joint, ou le propriétaire
+// du projet personnel, le chef de projet et l'administrateur.
+export function peutRetirerElement(niveau: NiveauAcces, userId: string, auteurId: string | null): boolean {
+  return auteurId === userId || niveau !== "membre"
+}
+
 // Session d'administrateur, pour la gestion des projets collaboratifs.
 export async function exigerAdmin(): Promise<{ user: SessionUser } | { reponse: NextResponse }> {
   const store = await cookies()
