@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { BookOpen } from "lucide-react"
@@ -18,8 +18,8 @@ import type { EtatEtapeProjet } from "@/lib/referentiel/avancement"
 
 export interface MajEtape {
   statut?: EtapeStatut
-  note?: string | null
   echeance?: string | null
+  responsableId?: string | null
 }
 
 function Rubrique({ titre, children }: { titre: string; children: React.ReactNode }) {
@@ -49,21 +49,26 @@ export function EtapeDetail({
   onEnregistrer,
   onPreparer,
   utile,
+  fil,
+  personnes,
 }: {
   etape: Etape
   profil: ProfilOperation | null
-  etat: (EtatEtapeProjet & { updatedAt?: string; updatedBy?: { name: string } | null }) | undefined
+  etat: (EtatEtapeProjet & { responsable?: { id: string; name: string } | null }) | undefined
   admin: boolean
   onEnregistrer: (maj: MajEtape) => Promise<void>
   onPreparer: (texte: string) => void
   // « Utile pour cette étape » : ce que le SIT connaît déjà du projet et
   // qui sert ici (site, conversations Archiaccess AI de l'étape).
   utile?: React.ReactNode
+  // Fil de l'étape (2026-09-30) : remplace l'ancienne note unique, qui en
+  // est devenue la première entrée.
+  fil?: React.ReactNode
+  // Responsables possibles : les personnes qui travaillent sur le projet.
+  personnes: { id: string; name: string }[]
 }) {
-  const [note, setNote] = useState(etat?.note ?? "")
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
-  useEffect(() => setNote(etat?.note ?? ""), [etat?.note, etape.code])
 
   const statut = etat?.statut ?? "A_FAIRE"
   const variantes = profil ? variantesApplicables(etape, profil) : []
@@ -109,6 +114,24 @@ export function EtapeDetail({
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
+        {personnes.length > 0 && (
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            Responsable
+            <select
+              value={etat?.responsable?.id ?? ""}
+              disabled={enCours}
+              onChange={(e) => void enregistrer({ responsableId: e.target.value || null })}
+              className="liquid-glass-inset max-w-[12rem] rounded-lg px-2 py-1 text-sm text-foreground outline-none"
+            >
+              <option value="">Personne</option>
+              {personnes.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label className="flex items-center gap-2 text-xs text-muted-foreground">
           Échéance
           <input
@@ -139,7 +162,11 @@ export function EtapeDetail({
         </button>
       </div>
 
+      {erreur && <p className="-mt-2 text-xs text-red-600">{erreur}</p>}
+
       {utile}
+
+      {fil}
 
       <div className="grid gap-3 md:grid-cols-2">
         <div className="chrome-black rounded-xl p-3 text-white">
@@ -197,36 +224,6 @@ export function EtapeDetail({
         </Rubrique>
       )}
 
-      <div className="liquid-glass-inset flex flex-col gap-2 rounded-xl p-3">
-        <div className="flex items-baseline justify-between gap-2">
-          <h3 className="text-[12.5px] font-medium text-muted-foreground">Notes de l'ingénieur</h3>
-          {etat?.updatedAt && (
-            <span className="text-[11px] text-muted-foreground">
-              Modifié le {new Date(etat.updatedAt).toLocaleDateString("fr-FR")}
-              {etat.updatedBy ? ` par ${etat.updatedBy.name}` : ""}
-            </span>
-          )}
-        </div>
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          rows={4}
-          placeholder="Décisions, points ouverts, informations utiles…"
-          aria-label="Notes de l'ingénieur"
-          className="w-full resize-y bg-transparent text-[13px] outline-none"
-        />
-        <div className="flex items-center justify-between">
-          {erreur ? <p className="text-xs text-red-600">{erreur}</p> : <span />}
-          <button
-            type="button"
-            disabled={enCours || note === (etat?.note ?? "")}
-            onClick={() => void enregistrer({ note })}
-            className="chrome-black rounded-xl px-3 py-1.5 text-xs text-white disabled:opacity-40"
-          >
-            Enregistrer la note
-          </button>
-        </div>
-      </div>
     </article>
   )
 }

@@ -9,7 +9,9 @@ import { useUser } from "@/components/auth-gate"
 import { SitNav, type MailleAriane } from "@/components/sit-nav"
 import { PanneauIA } from "@/components/panneau-ia"
 import { EtapeDetail, type MajEtape } from "@/components/projet/etape-detail"
-import { BlocsRattaches, lienDonneesSite, type Rattachements, type TypeRetrait } from "@/components/projet/rattachements"
+import { lienDonneesSite, type Rattachements, type TypeRetrait } from "@/components/projet/rattachements"
+import { Avatar, FilEtape, type ElementProjet } from "@/components/projet/elements"
+import { Dossier } from "@/components/projet/dossier"
 import { ProfilChamps, profilVersRequete, type ProfilSaisi } from "@/components/referentiel/profil-champs"
 import { PHASES, trouverEtape } from "@/lib/referentiel"
 import { avancementPhases, estTraitee, indexEtats, phaseCourante, prochaineEtape, type EtatEtapeProjet } from "@/lib/referentiel/avancement"
@@ -22,10 +24,14 @@ import logoPuce from "@/public/logo-ai-puce.png"
 // Espace projet : la méthode Archiaccess appliquée à une opération, avec
 // Archiaccess AI à portée de main. À gauche les phases et leurs étapes, au
 // centre l'étape ouverte (actions, livrables, vigilances, particularités de
-// l'opération, notes, échéance), à droite le copilote, qui reçoit en
-// contexte le projet et l'étape ouverte. Les étapes viennent du
-// référentiel (lib/referentiel) ; seuls leur avancement, leur échéance et
-// les notes sont propres au projet (ProjetEtape).
+// l'opération, fil de l'étape, échéance, responsable), à droite le
+// copilote, qui reçoit en contexte le projet et l'étape ouverte. Les étapes
+// viennent du référentiel (lib/referentiel) ; seuls leur avancement, leur
+// échéance et leur responsable sont propres au projet (ProjetEtape).
+//
+// Deux vues (2026-09-30, maquette « Fil, dossier et études ») : Étapes, et
+// Dossier, qui réunit tout ce qui a été joint au projet (notes, fichiers,
+// réponses d'Archiaccess AI, données du SIT, liens). ?vue=dossier l'ouvre.
 //
 // Partagé par les deux espaces (2026-09-28) : /sit/projets/[id] (mon
 // espace, projets personnels) et /sit/equipe/[id] (espace collaboratif :
@@ -53,7 +59,7 @@ export function initiales(nom: string): string {
   return ((mots[0]?.[0] ?? "") + (mots.length > 1 ? mots[mots.length - 1][0] : "")).toUpperCase()
 }
 
-type EtapeProjet = EtatEtapeProjet & { updatedAt: string; updatedBy: { id: string; name: string } | null }
+type EtapeProjet = EtatEtapeProjet & { updatedAt: string; updatedBy: { id: string; name: string } | null; responsable: { id: string; name: string } | null }
 
 interface ConversationProjet {
   id: string
@@ -100,6 +106,10 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
   const [demandeIA, setDemandeIA] = useState<{ id: number; texte: string } | null>(null)
   const [listeOuverte, setListeOuverte] = useState(false)
   const [conversations, setConversations] = useState<ConversationProjet[]>([])
+  const [vue, setVue] = useState<"etapes" | "dossier">(params.get("vue") === "dossier" ? "dossier" : "etapes")
+  const [elements, setElements] = useState<ElementProjet[]>([])
+  const [personnes, setPersonnes] = useState<{ id: string; name: string }[]>([])
+  const [moi, setMoi] = useState<string | null>(null)
 
   useEffect(() => {
     fetch(`/api/sit/projets/${id}`)
@@ -115,6 +125,8 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
         }
         setProjet(p)
         setAcces(d.acces)
+        setPersonnes(d.personnes ?? [])
+        setMoi(d.moi ?? null)
         // Ouvrir un projet en fait le projet suivi : il accompagne
         // l'employé sur la recherche, la méthode et Archiaccess AI.
         suivreProjet({ id: p.id, nom: p.nom, espace: p.espace })
@@ -130,6 +142,15 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
+  // Dossier du projet : tous les éléments joints, du plus récent au plus
+  // ancien ; le fil d'une étape en est un extrait.
+  useEffect(() => {
+    fetch(`/api/sit/projets/${id}/elements`)
+      .then((r) => r.json())
+      .then((d) => d.success && setElements(d.elements))
+      .catch(() => {})
+  }, [id])
+
   // Conversations Archiaccess AI rattachées au projet, pour « Utile pour
   // cette étape » (mêmes règles d'accès côté serveur).
   useEffect(() => {
@@ -140,6 +161,11 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
   }, [id])
 
   const etats = useMemo(() => indexEtats(projet?.etapes ?? []), [projet])
+  const responsables = useMemo(() => new globalThis.Map((projet?.etapes ?? []).filter((e) => e.responsable).map((e) => [e.etapeCode, e.responsable!.name])), [projet])
+  const filOuvert = useMemo(
+    () => (codeOuvert ? elements.filter((e) => e.etapeCode === codeOuvert).sort((a, b) => a.createdAt.localeCompare(b.createdAt)) : []),
+    [elements, codeOuvert],
+  )
   const etapeOuverte = codeOuvert ? trouverEtape(codeOuvert) ?? null : null
 
   const collaboratif = espace === "collaboratif"
@@ -167,13 +193,33 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
   async function retirerRattachement(type: TypeRetrait, cible: string) {
     const r = await fetch(`/api/sit/projets/${id}/${type}/${encodeURIComponent(cible)}`, { method: "DELETE" })
     const d = await r.json().catch(() => ({}))
-    if (!d.success) return setErreur(d.error ?? "Retrait impossible.")
+    if (!d.success) throw new Error(d.error ?? "Retrait impossible.")
     const f = await fetch(`/api/sit/projets/${id}`).then((x) => x.json())
     if (f.success) {
       setProjet((p) =>
         p ? { ...p, sites: f.projet.sites, acteurs: f.projet.acteurs, avisMarches: f.projet.avisMarches, lots: f.projet.lots, documentSitLinks: f.projet.documentSitLinks } : p,
       )
     }
+  }
+
+  function ajouterElement(e: ElementProjet) {
+    setElements((l) => [e, ...l.filter((x) => x.id !== e.id)])
+  }
+  function retirerElementLocal(elementId: string) {
+    setElements((l) => l.filter((x) => x.id !== elementId))
+  }
+  function changerVue(v: "etapes" | "dossier") {
+    setVue(v)
+    const u = new URL(window.location.href)
+    if (v === "dossier") u.searchParams.set("vue", "dossier")
+    else u.searchParams.delete("vue")
+    window.history.replaceState(null, "", u.toString())
+  }
+  function ouvrirEtape(code: string) {
+    setCodeOuvert(code)
+    const phase = PHASES.find((ph) => ph.etapes.some((e) => e.code === code))
+    if (phase) setPhasesOuvertes((s) => new Set([...s, phase.numero]))
+    changerVue("etapes")
   }
 
   async function enregistrerProfil() {
@@ -202,8 +248,12 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
   const filAriane: MailleAriane[] = [
     { libelle: retour.libelle, href: retour.href },
     { libelle: projet.nom, href: collaboratif ? `/sit/equipe/${projet.id}` : `/sit/projets/${projet.id}` },
-    ...(etapeOuverte ? [{ libelle: `Étape ${etapeOuverte.code} ${etapeOuverte.titre}` }] : []),
+    ...(vue === "dossier" ? [{ libelle: "Dossier" }] : etapeOuverte ? [{ libelle: `Étape ${etapeOuverte.code} ${etapeOuverte.titre}` }] : []),
   ]
+  const nbMembres = projet.membres.length
+  const visibilite = collaboratif ? `Visible par ${nbMembres > 1 ? `les ${nbMembres} membres` : "les membres"} du projet` : "Projet personnel : visible par vous seul"
+  const nbDossier =
+    elements.length + projet.sites.length + projet.acteurs.length + projet.avisMarches.length + projet.lots.length + projet.documentSitLinks.length
   const siteProjet = projet.sites[0]?.site ?? null
   const conversationsEtape = etapeOuverte ? conversations.filter((c) => c.etapeCode === etapeOuverte.code) : []
   const utile =
@@ -269,6 +319,20 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
           {edition ? "Fermer" : "Modifier le profil"}
         </button>
         )}
+        <div className="liquid-glass-inset ml-auto flex shrink-0 gap-0.5 rounded-xl p-1 max-md:w-full" role="group" aria-label="Vue du projet">
+          {(["etapes", "dossier"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => changerVue(v)}
+              aria-pressed={vue === v}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3.5 py-1 text-[13px] md:flex-none ${vue === v ? "glass-on font-semibold text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {v === "etapes" ? "Étapes" : "Dossier"}
+              {v === "dossier" && <span className="font-mono text-xs text-muted-foreground">{nbDossier}</span>}
+            </button>
+          ))}
+        </div>
       </div>
 
       {edition && (
@@ -280,9 +344,22 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
         </div>
       )}
 
-      <BlocsRattaches r={projet} retirer={retirerRattachement} />
-
       <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1 lg:flex-row">
+        {vue === "dossier" ? (
+          <Dossier
+            projetId={projet.id}
+            elements={elements}
+            rattachements={projet}
+            peutToutRetirer={!!acces && acces.niveau !== "membre"}
+            moi={moi}
+            visibilite={visibilite}
+            onAjout={ajouterElement}
+            onRetraitElement={retirerElementLocal}
+            onRetraitRattachement={retirerRattachement}
+            onOuvrirEtape={ouvrirEtape}
+          />
+        ) : (
+        <>
         {/* Tablette et téléphone : la liste des étapes se replie au-dessus
             du détail, pour que l'étape ouverte reste immédiatement visible. */}
         <button
@@ -336,6 +413,11 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
                           <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${actif ? "border-2 border-foreground" : PUCE[etat?.statut ?? "A_FAIRE"]}`} />
                           <span className={`w-8 shrink-0 tabular-nums ${actif ? "text-foreground" : "text-muted-foreground"}`}>{e.code}</span>
                           <span className={`flex-1 ${estTraitee(etat?.statut) && !actif ? "text-muted-foreground" : ""}`}>{e.titre}</span>
+                          {responsables.has(e.code) && (
+                            <span title={`Responsable : ${responsables.get(e.code)}`}>
+                              <Avatar nom={responsables.get(e.code)} petit />
+                            </span>
+                          )}
                         </button>
                       )
                     })}
@@ -357,11 +439,24 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
               onEnregistrer={(maj) => enregistrerEtape(etapeOuverte.code, maj)}
               onPreparer={(texte) => setDemandeIA({ id: Date.now(), texte })}
               utile={utile}
+              personnes={personnes}
+              fil={
+                <FilEtape
+                  projetId={projet.id}
+                  etapeCode={etapeOuverte.code}
+                  elements={filOuvert}
+                  visibilite={visibilite}
+                  onAjout={ajouterElement}
+                  onRetrait={retirerElementLocal}
+                />
+              }
             />
           ) : (
             <p className="text-sm text-muted-foreground">Sélectionnez une étape.</p>
           )}
         </div>
+        </>
+        )}
 
         <PanneauIA
           key={projet.id}
@@ -376,6 +471,7 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
           suiteLien={`projet=${projet.id}${etapeOuverte ? `&etape=${encodeURIComponent(etapeOuverte.code)}` : ""}`}
           projetId={projet.id}
           etapeCode={etapeOuverte?.code ?? null}
+          onJoint={(pid, e) => pid === projet.id && ajouterElement(e)}
         />
       </div>
     </Cadre>
