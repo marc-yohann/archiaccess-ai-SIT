@@ -36,6 +36,10 @@ export interface Rattachements {
 
 type Bloc = "site" | "acteurs" | "marches" | "documents"
 
+// Rattachements qu'on peut retirer (routes DELETE
+// /api/sit/projets/[id]/sites|acteurs|avis-marches|lots/[id]).
+export type TypeRetrait = "sites" | "acteurs" | "avis-marches" | "lots"
+
 export function lienDonneesSite(label: string) {
   return `/sit/recherche?site=${encodeURIComponent(label)}`
 }
@@ -45,8 +49,25 @@ const pluriel = (n: number, un: string, plusieurs: string) => `${n} ${n > 1 ? pl
 const LIGNE = "flex items-start gap-3 border-t border-foreground/[0.06] py-2.5 first:border-t-0"
 const LIEN = "flex shrink-0 items-center gap-1 text-[12.5px] font-semibold hover:underline"
 
-export function BlocsRattaches({ r }: { r: Rattachements }) {
+export function BlocsRattaches({ r, retirer }: { r: Rattachements; retirer?: (type: TypeRetrait, id: string) => Promise<void> }) {
   const [ouvert, setOuvert] = useState<Bloc | null>(null)
+  const [enCours, setEnCours] = useState<string | null>(null)
+  // « Retirer du projet » : défait un ajout fait par erreur depuis la
+  // recherche. La donnée elle-même reste en base, seul le lien disparaît.
+  const boutonRetirer = (type: TypeRetrait, id: string) =>
+    retirer ? (
+      <button
+        type="button"
+        disabled={enCours !== null}
+        onClick={() => {
+          setEnCours(`${type}:${id}`)
+          void retirer(type, id).finally(() => setEnCours(null))
+        }}
+        className="shrink-0 text-[12.5px] font-medium text-muted-foreground hover:text-destructive disabled:opacity-50"
+      >
+        {enCours === `${type}:${id}` ? "Retrait…" : "Retirer"}
+      </button>
+    ) : null
   const nbMarches = r.avisMarches.length + r.lots.length
   const premierSite = r.sites[0]?.site
 
@@ -120,6 +141,7 @@ export function BlocsRattaches({ r }: { r: Rattachements }) {
                   Voir les données du site
                   <ArrowUpRight size={13} />
                 </Link>
+                {boutonRetirer("sites", site.id)}
               </div>
             ))}
           {ouvert === "acteurs" &&
@@ -133,15 +155,16 @@ export function BlocsRattaches({ r }: { r: Rattachements }) {
                   Voir la fiche
                   <ArrowUpRight size={13} />
                 </Link>
+                {boutonRetirer("acteurs", acteur.id)}
               </div>
             ))}
           {ouvert === "marches" && (
             <>
               {r.avisMarches.map(({ avisMarche: a }) => (
-                <LigneAvis key={a.id} avis={a} />
+                <LigneAvis key={a.id} avis={a} retrait={boutonRetirer("avis-marches", a.id)} />
               ))}
               {r.lots.map(({ lot }) => (
-                <LigneAvis key={lot.id} avis={lot.avisMarche} lot={lot} />
+                <LigneAvis key={lot.id} avis={lot.avisMarche} lot={lot} retrait={boutonRetirer("lots", lot.id)} />
               ))}
             </>
           )}
@@ -166,7 +189,7 @@ export function BlocsRattaches({ r }: { r: Rattachements }) {
   )
 }
 
-function LigneAvis({ avis, lot }: { avis: AvisRattache["avisMarche"]; lot?: LotRattache["lot"] }) {
+function LigneAvis({ avis, lot, retrait }: { avis: AvisRattache["avisMarche"]; lot?: LotRattache["lot"]; retrait?: React.ReactNode }) {
   const detail = [avis.natureAvis, avis.acheteurNom, avis.datePublication].filter(Boolean).join(" · ")
   return (
     <div className={LIGNE}>
@@ -184,6 +207,7 @@ function LigneAvis({ avis, lot }: { avis: AvisRattache["avisMarche"]; lot?: LotR
           <ArrowUpRight size={13} />
         </a>
       )}
+      {retrait}
     </div>
   )
 }

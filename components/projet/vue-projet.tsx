@@ -9,7 +9,7 @@ import { useUser } from "@/components/auth-gate"
 import { SitNav, type MailleAriane } from "@/components/sit-nav"
 import { PanneauIA } from "@/components/panneau-ia"
 import { EtapeDetail, type MajEtape } from "@/components/projet/etape-detail"
-import { BlocsRattaches, lienDonneesSite, type Rattachements } from "@/components/projet/rattachements"
+import { BlocsRattaches, lienDonneesSite, type Rattachements, type TypeRetrait } from "@/components/projet/rattachements"
 import { ProfilChamps, profilVersRequete, type ProfilSaisi } from "@/components/referentiel/profil-champs"
 import { PHASES, trouverEtape } from "@/lib/referentiel"
 import { avancementPhases, estTraitee, indexEtats, phaseCourante, prochaineEtape, type EtatEtapeProjet } from "@/lib/referentiel/avancement"
@@ -162,6 +162,20 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
     setProjet((p) => (p ? { ...p, etapes: [...p.etapes.filter((e) => e.etapeCode !== code), d.etape] } : p))
   }
 
+  // Retire un site, un acteur, un avis ou un lot du projet (le lien
+  // seulement), puis relit les rattachements.
+  async function retirerRattachement(type: TypeRetrait, cible: string) {
+    const r = await fetch(`/api/sit/projets/${id}/${type}/${encodeURIComponent(cible)}`, { method: "DELETE" })
+    const d = await r.json().catch(() => ({}))
+    if (!d.success) return setErreur(d.error ?? "Retrait impossible.")
+    const f = await fetch(`/api/sit/projets/${id}`).then((x) => x.json())
+    if (f.success) {
+      setProjet((p) =>
+        p ? { ...p, sites: f.projet.sites, acteurs: f.projet.acteurs, avisMarches: f.projet.avisMarches, lots: f.projet.lots, documentSitLinks: f.projet.documentSitLinks } : p,
+      )
+    }
+  }
+
   async function enregistrerProfil() {
     if (!edition) return
     const r = await fetch(`/api/sit/projets/${id}`, {
@@ -266,7 +280,7 @@ export function VueProjet({ espace }: { espace: EspaceVue }) {
         </div>
       )}
 
-      <BlocsRattaches r={projet} />
+      <BlocsRattaches r={projet} retirer={retirerRattachement} />
 
       <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1 lg:flex-row">
         {/* Tablette et téléphone : la liste des étapes se replie au-dessus

@@ -12,7 +12,7 @@ import logoPuce from "@/public/logo-ai-puce.png"
 import { Search, Send, Sparkles, Copy, Check, ExternalLink, RefreshCw, Plus, ChevronRight, Layers, Map, LayoutGrid, ListChecks, PanelRightClose, PanelRightOpen, MapPin, Building2, FolderKanban, FileText, Hash } from "lucide-react"
 import { AuthGate } from "@/components/auth-gate"
 import { SitNav } from "@/components/sit-nav"
-import { lienProjet, lireProjetSuivi, suivreProjet, type ProjetSuivi } from "@/lib/projet-suivi"
+import { lienProjet, lireProjetSuivi, suivreProjet, useProjetSuivi, type ProjetSuivi } from "@/lib/projet-suivi"
 import { AutoGrowTextarea } from "@/components/auto-grow-textarea"
 import type { AddressResult, CommuneResult } from "@/lib/data-sources/ban"
 import type { Parcel } from "@/lib/data-sources/cadastre"
@@ -574,6 +574,24 @@ interface ResultItem {
   source: string
   body?: string
   empty?: string
+  // « Ajouter au projet » (étape 4 de la jonction) : ce que la tuile
+  // permet de rattacher au projet suivi, quand la base sait le faire
+  // (site, entreprise, avis de marché déjà enregistré).
+  ajout?: CleAjout
+}
+
+interface ProjetCible extends ProjetSuivi {
+  siteLabels: string[]
+  sirens: string[]
+  avisIds: string[]
+}
+
+type CleAjout = { type: "site" } | { type: "acteur"; siren: string } | { type: "avis"; id?: string; idweb?: string | null }
+
+// idweb BOAMP d'un résultat en direct ; les résultats mis en cache avant
+// l'ajout du champ le portent seulement dans leur lien d'avis.
+function idwebDe(m: PublicMarket): string | null {
+  return m.idweb ?? m.urlAvis?.match(/idweb:([^&\s]+)/)?.[1] ?? null
 }
 interface ResultGroup {
   group: string
@@ -596,7 +614,7 @@ function resultItems(s: SitSnapshot): ResultGroup[] {
   }
 
   if (s.address) {
-    groups["Foncier & urbanisme"].push({ source: "Adresse", body: `Le site se situe au ${s.address.label}.` })
+    groups["Foncier & urbanisme"].push({ source: "Adresse", body: `Le site se situe au ${s.address.label}.`, ajout: { type: "site" } })
   }
   if (s.parcels) {
     groups["Foncier & urbanisme"].push(
@@ -660,6 +678,7 @@ function resultItems(s: SitSnapshot): ResultGroup[] {
       groups["Marché & acteurs"].push({
         source: "Entreprise",
         body: `${c.nom} (SIREN ${c.siren}) est enregistrée comme ${c.etatAdministratif ?? "statut inconnu"}.`,
+        ajout: { type: "acteur", siren: c.siren },
       })
       const announcements = s.bodaccBySiren?.[c.siren] ?? []
       groups["Marché & acteurs"].push(
@@ -675,7 +694,11 @@ function resultItems(s: SitSnapshot): ResultGroup[] {
   if (s.publicMarkets) {
     groups["Marché & acteurs"].push(
       s.publicMarkets.length > 0
-        ? { source: "Marchés publics", body: `${s.publicMarkets[0].acheteur} a publié : ${s.publicMarkets[0].objet} (${s.publicMarkets[0].datePublication}).` }
+        ? {
+            source: "Marchés publics",
+            body: `${s.publicMarkets[0].acheteur} a publié : ${s.publicMarkets[0].objet} (${s.publicMarkets[0].datePublication}).`,
+            ajout: { type: "avis", idweb: idwebDe(s.publicMarkets[0]) },
+          }
         : { source: "Marchés publics", empty: "Aucun marché public récent trouvé dans le département." },
     )
   }
@@ -720,7 +743,15 @@ function resultItems(s: SitSnapshot): ResultGroup[] {
 // question posée cite le texte réel affiché sur la tuile). Retour
 // utilisateur : "lorsqu'une recherche est faite on ne peut pas cliquer
 // dessus".
-function ResultGroups({ groups, onItemClick }: { groups: ResultGroup[]; onItemClick?: (item: ResultItem) => void }) {
+function ResultGroups({
+  groups,
+  onItemClick,
+  rendreAjout,
+}: {
+  groups: ResultGroup[]
+  onItemClick?: (item: ResultItem) => void
+  rendreAjout?: (cle: CleAjout) => React.ReactNode
+}) {
   return (
     <>
       {groups.map((g) => (
@@ -732,31 +763,35 @@ function ResultGroups({ groups, onItemClick }: { groups: ResultGroup[]; onItemCl
             </span>
           </div>
           <div className="results-grid">
-            {g.items.map((it, i) =>
-              it.body ? (
-                onItemClick ? (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => onItemClick(it)}
-                    className="liquid-glass-panel rounded-[22px] p-4 text-left transition-shadow hover:shadow-md"
-                  >
-                    <h4 className="tile-head">{it.source}</h4>
-                    <p className="tile-body">{it.body}</p>
-                  </button>
-                ) : (
-                  <div key={i} className="liquid-glass-panel rounded-[22px] p-4">
-                    <h4 className="tile-head">{it.source}</h4>
-                    <p className="tile-body">{it.body}</p>
+            {g.items.map((it, i) => {
+              if (!it.body) {
+                return (
+                  <div key={i} className="tile-empty">
+                    <span className="empty-dot" />
+                    <span className="empty-source">{it.source}</span> — {it.empty}
                   </div>
                 )
-              ) : (
-                <div key={i} className="tile-empty">
-                  <span className="empty-dot" />
-                  <span className="empty-source">{it.source}</span> — {it.empty}
+              }
+              const ajout = it.ajout && rendreAjout ? rendreAjout(it.ajout) : null
+              const contenu = (
+                <>
+                  <h4 className="tile-head">{it.source}</h4>
+                  <p className="tile-body">{it.body}</p>
+                </>
+              )
+              return (
+                <div key={i} className="liquid-glass-panel flex flex-col gap-2.5 rounded-[22px] p-4 transition-shadow hover:shadow-md">
+                  {onItemClick ? (
+                    <button type="button" onClick={() => onItemClick(it)} className="text-left">
+                      {contenu}
+                    </button>
+                  ) : (
+                    <div>{contenu}</div>
+                  )}
+                  {ajout}
                 </div>
-              ),
-            )}
+              )
+            })}
           </div>
         </div>
       ))}
@@ -894,14 +929,10 @@ function Dashboard() {
     let label = siteDemande
     let projet: ProjetSuivi | null = null
     if (suivi) {
-      const d = await fetch(`/api/sit/projets/${encodeURIComponent(suivi.id)}`)
-        .then((r) => (r.status === 404 ? { oublier: true } : r.json()))
-        .catch(() => null)
-      if (d?.oublier) suivreProjet(null)
-      else if (d?.success) {
-        const sites: string[] = (d.projet.sites as { site: { label: string } }[]).map((x) => x.site.label)
-        if (!label) label = sites[0] ?? null
-        if (label && sites.includes(label)) projet = suivi
+      const cible = await chargerProjetCible(suivi)
+      if (cible) {
+        if (!label) label = cible.siteLabels[0] ?? null
+        if (label && cible.siteLabels.includes(label)) projet = suivi
       }
     }
     if (!label) return
@@ -913,6 +944,179 @@ function Dashboard() {
     if (!exacte) return
     setSiteDuProjet({ label: exacte.label, projet })
     await selectAddress(exacte, { resumeIA: false })
+  }
+
+  // « Ajouter au projet » (étape 4 de la jonction, maquette validée le
+  // 2026-09-29) : chaque résultat que la base sait rattacher (le site, une
+  // entreprise, un avis de marché déjà enregistré) peut rejoindre le projet
+  // suivi, par les routes de rattachement existantes
+  // (/api/sit/projets/[id]/sites|acteurs|avis-marches, accès revérifié par
+  // lib/projet-acces.ts). Ce qui y est déjà est marqué. Sans projet suivi,
+  // rien n'est proposé.
+  const suivi = useProjetSuivi()
+  const [projetCible, setProjetCible] = useState<ProjetCible | null>(null)
+  const chargementsCible = useRef(new globalThis.Map<string, Promise<ProjetCible | null>>())
+  const [idsAvis, setIdsAvis] = useState<Record<string, string>>({})
+  const [ajoutEnCours, setAjoutEnCours] = useState<string | null>(null)
+  const [erreurAjout, setErreurAjout] = useState<string | null>(null)
+  const sitePersiste = useRef<Promise<string | null> | null>(null)
+
+  function chargerProjetCible(p: ProjetSuivi): Promise<ProjetCible | null> {
+    const enCours = chargementsCible.current.get(p.id)
+    if (enCours) return enCours
+    const promesse = fetch(`/api/sit/projets/${encodeURIComponent(p.id)}`)
+      .then((r) => (r.status === 404 ? { oublier: true } : r.json()))
+      .then((d) => {
+        if (d?.oublier) {
+          suivreProjet(null)
+          return null
+        }
+        if (!d?.success) return null
+        const cible: ProjetCible = {
+          ...p,
+          nom: d.projet.nom,
+          siteLabels: (d.projet.sites as { site: { label: string } }[]).map((x) => x.site.label),
+          sirens: (d.projet.acteurs as { acteur: { siren: string } }[]).map((x) => x.acteur.siren),
+          avisIds: (d.projet.avisMarches as { avisMarche: { id: string } }[]).map((x) => x.avisMarche.id),
+        }
+        return cible
+      })
+      .catch(() => null)
+      .then((cible) => {
+        // Un seul chargement à la fois par projet ; le suivant relit la base.
+        chargementsCible.current.delete(p.id)
+        setProjetCible((actuel) => (lireProjetSuivi()?.id === p.id ? cible : actuel))
+        return cible
+      })
+    chargementsCible.current.set(p.id, promesse)
+    return promesse
+  }
+
+  useEffect(() => {
+    if (!suivi) {
+      setProjetCible(null)
+      return
+    }
+    void chargerProjetCible(suivi)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suivi?.id])
+
+  // Avis BOAMP trouvés en direct : lesquels sont déjà enregistrés en base
+  // (seuls ceux-là peuvent rejoindre un projet).
+  useEffect(() => {
+    const idwebs = (publicMarkets ?? []).map(idwebDe).filter((x): x is string => Boolean(x) && !(x! in idsAvis))
+    if (idwebs.length === 0) return
+    fetch("/api/sit/avis-marches/resoudre", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idwebs }) })
+      .then((r) => r.json())
+      .then((d) => d.success && setIdsAvis((m) => ({ ...m, ...d.ids })))
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [publicMarkets])
+
+  function idAvis(cle: Extract<CleAjout, { type: "avis" }>): string | null {
+    return cle.id ?? (cle.idweb ? idsAvis[cle.idweb] ?? null : null)
+  }
+
+  function cleTexte(cle: CleAjout): string {
+    return cle.type === "site" ? `site:${selectedAddress?.label}` : cle.type === "acteur" ? `acteur:${cle.siren}` : `avis:${idAvis(cle)}`
+  }
+
+  function dansLeProjet(cle: CleAjout): boolean {
+    if (!projetCible) return false
+    if (cle.type === "site") return Boolean(selectedAddress && projetCible.siteLabels.includes(selectedAddress.label))
+    if (cle.type === "acteur") return projetCible.sirens.includes(cle.siren)
+    const id = idAvis(cle)
+    return Boolean(id && projetCible.avisIds.includes(id))
+  }
+
+  async function ajouterAuProjet(cle: CleAjout) {
+    if (!projetCible) return
+    const cible = projetCible
+    setAjoutEnCours(cleTexte(cle))
+    setErreurAjout(null)
+    const poster = (chemin: string, corps: object) =>
+      fetch(`/api/sit/projets/${encodeURIComponent(cible.id)}/${chemin}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(corps),
+      }).then((r) => r.json())
+    try {
+      if (cle.type === "site") {
+        const adresse = selectedAddress
+        if (!adresse) return
+        // Le site a été enregistré à la sélection de l'adresse ; à défaut
+        // (échec en tâche de fond), on l'enregistre maintenant.
+        let siteId = sitePersiste.current ? await sitePersiste.current : null
+        if (!siteId) {
+          const d = await fetch("/api/sit/sites", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ address: adresse, parcels: parcels ?? [], dpeRecords: dpeRecords ?? [] }),
+          }).then((r) => r.json())
+          siteId = d.success ? d.siteId : null
+        }
+        if (!siteId) throw new Error("Le site n'a pas pu être enregistré.")
+        const d = await poster("sites", { siteId })
+        if (!d.success) throw new Error(d.error)
+        setProjetCible((c) => (c && c.id === cible.id ? { ...c, siteLabels: [...c.siteLabels, adresse.label] } : c))
+        // Ce site est désormais celui du projet : Archiaccess AI reçoit le
+        // projet avec les données chargées, comme à l'ouverture depuis le projet.
+        setSiteDuProjet({ label: adresse.label, projet: { id: cible.id, nom: cible.nom, espace: cible.espace } })
+      } else if (cle.type === "acteur") {
+        const entreprise = companies.find((c) => c.siren === cle.siren)
+        if (!entreprise) return
+        const a = await fetch("/api/sit/acteurs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ companies: [entreprise] }),
+        }).then((r) => r.json())
+        const acteurId: string | undefined = a.success ? a.acteurIds?.[0] : undefined
+        if (!acteurId) throw new Error("L'entreprise n'a pas pu être enregistrée.")
+        const d = await poster("acteurs", { acteurId })
+        if (!d.success) throw new Error(d.error)
+        setProjetCible((c) => (c && c.id === cible.id ? { ...c, sirens: [...c.sirens, cle.siren] } : c))
+      } else {
+        const avisMarcheId = idAvis(cle)
+        if (!avisMarcheId) return
+        const d = await poster("avis-marches", { avisMarcheId })
+        if (!d.success) throw new Error(d.error)
+        setProjetCible((c) => (c && c.id === cible.id ? { ...c, avisIds: [...c.avisIds, avisMarcheId] } : c))
+      }
+    } catch (e) {
+      setErreurAjout(e instanceof Error && e.message ? e.message : "Ajout impossible.")
+    } finally {
+      setAjoutEnCours(null)
+    }
+  }
+
+  function rendreAjout(cle: CleAjout): React.ReactNode {
+    if (!projetCible) return null
+    if (cle.type === "avis" && !idAvis(cle)) return null
+    if (dansLeProjet(cle)) {
+      return (
+        <Link
+          href={lienProjet(projetCible)}
+          className="flex w-fit items-center gap-1.5 rounded-[9px] bg-foreground/90 px-2.5 py-1 text-xs font-semibold text-white"
+          title={`Dans le projet ${projetCible.nom}`}
+        >
+          <Check size={12} />
+          Dans le projet
+        </Link>
+      )
+    }
+    const enCours = ajoutEnCours === cleTexte(cle)
+    return (
+      <button
+        type="button"
+        disabled={ajoutEnCours !== null}
+        onClick={() => void ajouterAuProjet(cle)}
+        className="liquid-glass-btn flex w-fit items-center gap-1.5 rounded-[9px] px-2.5 py-1 text-xs font-semibold disabled:opacity-60"
+        title={`Ajouter au projet ${projetCible.nom}`}
+      >
+        <Plus size={12} />
+        {enCours ? "Ajout…" : "Ajouter au projet"}
+      </button>
+    )
   }
 
   function autreAdresse() {
@@ -1299,11 +1503,14 @@ function Dashboard() {
     // Bâtiment, voir prisma/schema.prisma et app/api/sit/sites) ce qui
     // vient d'être récupéré en direct. Tâche de fond : un échec ici ne
     // doit jamais affecter la recherche elle-même, déjà affichée.
-    void fetch("/api/sit/sites", {
+    sitePersiste.current = fetch("/api/sit/sites", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ address: addr, parcels: bundle.parcels, dpeRecords: bundle.dpeRecords }),
-    }).catch(() => {})
+    })
+      .then((r) => r.json())
+      .then((d) => (d.success ? (d.siteId as string) : null))
+      .catch(() => null)
 
     if (!resumeIA) return
     void sendAiMessage(
@@ -2069,16 +2276,19 @@ function Dashboard() {
             <h2 className="mb-2 text-xs font-medium text-muted-foreground">Références trouvées</h2>
             <div className="space-y-2">
               {[...referenceResults.avisMarches, ...referenceResults.unites, ...referenceResults.parcelles].map((r) => (
-                <button
-                  key={`${r.type}-${r.id}`}
-                  onClick={() => void sendAiMessage(`Peux-tu m'en dire plus sur cette référence (${r.type}) : "${r.titre}" (${r.identifiant ?? "identifiant non disponible"}) ?`, {})}
-                  className="liquid-glass-soft block w-full rounded-xl p-3 text-left text-sm transition-shadow hover:shadow-md"
-                >
-                  <p className="font-medium">{r.titre}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {r.identifiant ?? "Information non disponible"} · Source : {r.source}
-                  </p>
-                </button>
+                <div key={`${r.type}-${r.id}`} className="liquid-glass-soft flex flex-wrap items-center gap-2 rounded-xl p-3 transition-shadow hover:shadow-md">
+                  <button
+                    type="button"
+                    onClick={() => void sendAiMessage(`Peux-tu m'en dire plus sur cette référence (${r.type}) : "${r.titre}" (${r.identifiant ?? "identifiant non disponible"}) ?`, {})}
+                    className="min-w-0 flex-1 text-left text-sm"
+                  >
+                    <p className="font-medium">{r.titre}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {r.identifiant ?? "Information non disponible"} · Source : {r.source}
+                    </p>
+                  </button>
+                  {r.type === "avis-marche" && rendreAjout({ type: "avis", id: r.id })}
+                </div>
               ))}
             </div>
           </div>
@@ -2126,9 +2336,14 @@ function Dashboard() {
 
         {hasTiles && !resultsLoading && (
           <div>
+            {suivi === null && (
+              <p className="mb-3 text-[13px] text-muted-foreground">Suivez un projet (en haut de la page) pour y ajouter ces résultats.</p>
+            )}
+            {erreurAjout && <p className="mb-3 text-[13px] text-destructive">{erreurAjout}</p>}
             <ResultGroups
               groups={resultItems(currentSnapshot())}
               onItemClick={(it) => void sendAiMessage(`Peux-tu m'en dire plus sur "${it.source}" : ${it.body}`, currentSnapshot())}
+              rendreAjout={rendreAjout}
             />
           </div>
         )}

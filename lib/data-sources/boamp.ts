@@ -13,6 +13,11 @@ const BASE_URL = "https://boamp-datadila.opendatasoft.com/api/records/1.0/search
 
 export interface PublicMarket {
   id: string
+  // Identifiant d'avis BOAMP (idweb) : même clé que AvisMarche.sourceId,
+  // sert à retrouver l'avis s'il est déjà enregistré en base (« Ajouter au
+  // projet » depuis la recherche). Absent des résultats mis en cache avant
+  // son ajout : le client le relit alors dans urlAvis.
+  idweb?: string | null
   acheteur: string
   objet: string
   datePublication: string
@@ -28,6 +33,7 @@ interface RawRecord {
     dateparution: string
     famille_libelle: string
     url_avis: string | null
+    idweb?: string
   }
 }
 
@@ -54,6 +60,7 @@ async function fetchPublicMarketsLive(codeDepartement: string, limit: number): P
   const data = (await res.json()) as BoampResponse
   return data.records.map((r) => ({
     id: r.recordid,
+    idweb: r.fields.idweb ?? null,
     acheteur: r.fields.nomacheteur,
     objet: r.fields.objet,
     datePublication: r.fields.dateparution,

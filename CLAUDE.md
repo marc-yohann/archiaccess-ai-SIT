@@ -495,7 +495,18 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   CloudFront et du certificat une fois le DNS supprimé ; (3) liens
   internes du SIT — **construite** (voir « Projet suivi » ci-dessous),
   vérifiée ordinateur/tablette/téléphone, **déployée le 2026-09-30**
-  (commit `fe54549`, avec l'accord de l'utilisateur, aucune migration) ; (4) « Ajouter au projet ». Lots suivants validés sur maquette, pas commencés :
+  (commit `fe54549`, avec l'accord de l'utilisateur, aucune migration) ; (4) « Ajouter au projet » —
+  **construite** (aucune migration, pas encore déployée) : sur la
+  recherche, avec un projet suivi, les tuiles Adresse (site), Entreprise
+  (acteur) et Marchés publics, ainsi que les avis trouvés par
+  « Référence », ont « Ajouter au projet » / « Dans le projet », par les
+  routes existantes `/api/sit/projets/[id]/sites|acteurs|avis-marches`.
+  Un avis BOAMP trouvé en direct n'est rattachable que s'il est déjà
+  enregistré en base : `POST /api/sit/avis-marches/resoudre` le retrouve
+  par (`source`, `sourceId` = `idweb`, désormais exposé par
+  `lib/data-sources/boamp.ts`), rien n'est créé. Les autres tuiles
+  (cadastre, risques, urbanisme…) suivent le site. Les blocs du projet
+  ont « Retirer » (lien seulement, routes DELETE existantes). Lots suivants validés sur maquette, pas commencés :
   fils d'étape + dossier + « Joindre au projet » depuis Archiaccess AI ;
   notifications, mentions, circuit de validation ; discussion du projet
   (rafraîchie par interrogation périodique — **pas** de nouveau service
