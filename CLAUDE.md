@@ -540,8 +540,14 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   ont « Retirer » (lien seulement, routes DELETE existantes). Lot
   **fil / dossier / études** (voir « Fil, dossier et études » plus
   haut) construit et testé en local le 2026-09-30 (commits `9270fea` à
-  `2d2a4a4`), **pas encore déployé** ; migration
-  `20260930140000_fil_dossier_etudes` à appliquer juste après le code.
+  `2d2a4a4`), **déployé le 2026-09-30** (commit `a926c9f`, avec l'accord
+  de l'utilisateur) ; migration `20260930140000_fil_dossier_etudes`
+  appliquée juste après via `/api/admin/run-migration` (un premier appel
+  lancé par l'utilisateur **avant** le code n'avait rien appliqué : la
+  route ne connaît une migration qu'une fois le code qui l'enregistre
+  déployé). Rôle Lambda vérifié pour `projets/*` dans le bucket
+  documents ; dépôt de fichier et ajout d'étude réels pas encore
+  essayés en production (pas de session de test côté Claude).
   Lots suivants validés sur maquette, pas commencés : notifications, mentions, circuit de validation ; discussion du projet
   (rafraîchie par interrogation périodique — **pas** de nouveau service
   AWS, décision utilisateur) et actions ; photos de chantier et ajout
