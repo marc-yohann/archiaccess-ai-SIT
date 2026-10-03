@@ -6,7 +6,7 @@ import { getPrisma } from "@/lib/prisma"
 export async function GET() {
   const store = await cookies()
   const token = store.get(SESSION_COOKIE_NAME)?.value
-  const user = await getSessionUser(token)
+  const user = await getSessionUser(token, { motDePasseTemporaireAccepte: true })
   if (!user) {
     // Signale à l'écran de connexion qu'aucun compte n'existe encore, pour
     // afficher le formulaire de création du tout premier admin (voir

@@ -1032,6 +1032,23 @@ FROM "ProjetEtape" e
 WHERE e."note" IS NOT NULL AND btrim(e."note") <> ''`,
     ],
   },
+  {
+    // Audit du 2026-10-03 : limitation des tentatives de connexion.
+    name: "20261003100000_tentatives_connexion",
+    checksum: "91283110183a97d782c2e2295c34ac93e42c3fc46685a0e57db31226b21c7e15",
+    statements: [
+      `CREATE TABLE "TentativeConnexion" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "ip" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "TentativeConnexion_pkey" PRIMARY KEY ("id")
+)`,
+      `CREATE INDEX "TentativeConnexion_email_createdAt_idx" ON "TentativeConnexion"("email", "createdAt")`,
+      `CREATE INDEX "TentativeConnexion_ip_createdAt_idx" ON "TentativeConnexion"("ip", "createdAt")`,
+    ],
+  },
 ]
 
 export async function POST(request: Request) {

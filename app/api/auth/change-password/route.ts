@@ -9,7 +9,7 @@ import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
 export async function POST(request: Request) {
   const store = await cookies()
   const token = store.get(SESSION_COOKIE_NAME)?.value
-  const sessionUser = await getSessionUser(token)
+  const sessionUser = await getSessionUser(token, { motDePasseTemporaireAccepte: true })
   if (!sessionUser) {
     return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
   }

@@ -73,6 +73,18 @@ model Session {
   @@index([userId])
 }
 
+// Audit du 2026-10-03 : échecs de connexion, comptés sur une fenêtre
+// glissante par /api/auth/login (limitation des essais de mot de passe).
+model TentativeConnexion {
+  id        String   @id @default(cuid())
+  email     String
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+  @@index([ip, createdAt])
+}
+
 model Conversation {
   id        String   @id @default(cuid())
   userId    String
