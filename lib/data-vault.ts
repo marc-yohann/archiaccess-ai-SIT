@@ -7,7 +7,37 @@
 // d'une lecture/écriture du coffre lui-même (base indisponible) ne doit
 // jamais faire échouer la recherche — c'est un plus, pas une dépendance.
 
+import { randomUUID } from "node:crypto"
+import { after } from "next/server"
 import { getPrisma } from "@/lib/prisma"
+
+// Écriture dans le coffre (audit du 2026-10-03) :
+// - après la réponse (after()) : la recherche n'attend plus l'écriture ;
+//   hors d'une requête (script), écriture immédiate ;
+// - le contenu n'est réécrit que s'il a changé. fetchedAt est toujours mis
+//   à jour (« recherches récentes ») ; un contenu identique garde sa
+//   valeur stockée, sans nouvelle copie du JSON volumineux, ce qui ménage
+//   l'espace disque de la base (voir le garde-fou de stockage BOAMP).
+async function ecrireDansLeCoffre(source: string, cacheKey: string, result: unknown): Promise<void> {
+  try {
+    const prisma = await getPrisma()
+    const payload = JSON.stringify(result ?? null)
+    await prisma.$executeRaw`
+      INSERT INTO "DataCacheEntry" ("id", "source", "cacheKey", "payload", "fetchedAt", "createdAt")
+      VALUES (${randomUUID()}, ${source}, ${cacheKey}, ${payload}::jsonb, now(), now())
+      ON CONFLICT ("source", "cacheKey") DO UPDATE SET
+        "fetchedAt" = now(),
+        "payload" = CASE
+          WHEN "DataCacheEntry"."payload" IS DISTINCT FROM EXCLUDED."payload" THEN EXCLUDED."payload"
+          ELSE "DataCacheEntry"."payload"
+        END
+    `
+  } catch {
+    // L'écriture dans le coffre est un plus (mémoire permanente, repli
+    // futur) : un échec ne doit jamais empêcher de renvoyer un résultat
+    // fraîchement récupéré à l'appelant.
+  }
+}
 
 export async function withVault<T>(source: string, cacheKey: string, fetchLive: () => Promise<T>): Promise<T> {
   let result: T
@@ -26,16 +56,9 @@ export async function withVault<T>(source: string, cacheKey: string, fetchLive: 
   }
 
   try {
-    const prisma = await getPrisma()
-    await prisma.dataCacheEntry.upsert({
-      where: { source_cacheKey: { source, cacheKey } },
-      create: { source, cacheKey, payload: result as object, fetchedAt: new Date() },
-      update: { payload: result as object, fetchedAt: new Date() },
-    })
+    after(() => ecrireDansLeCoffre(source, cacheKey, result))
   } catch {
-    // L'écriture dans le coffre est un plus (mémoire permanente, repli
-    // futur) — un échec ne doit jamais empêcher de renvoyer un résultat
-    // fraîchement récupéré à l'appelant.
+    await ecrireDansLeCoffre(source, cacheKey, result)
   }
 
   return result

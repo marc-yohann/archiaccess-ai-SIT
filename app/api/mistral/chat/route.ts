@@ -46,6 +46,12 @@ Si un employé signale qu'une réponse est incorrecte, reconnais-le sans persist
 ## Valeurs Archiaccess
 Innovation, pilotage, collaboration, construire, structure — à refléter dans le fond de tes réponses, jamais comme un slogan récité.`
 
+// Plafonds (audit du 2026-10-03) : taille d'une question, du contexte
+// envoyé par la page et nombre de messages précédents transmis.
+const MESSAGE_MAX = 20_000
+const CONTEXTE_MAX = 40_000
+const HISTORIQUE_MAX = 20
+
 export async function POST(request: Request) {
   const store = await cookies()
   const token = store.get(SESSION_COOKIE_NAME)?.value
@@ -79,6 +85,12 @@ export async function POST(request: Request) {
   if (!message?.trim()) {
     return NextResponse.json({ success: false, error: "Message vide." }, { status: 400 })
   }
+  if (message.length > MESSAGE_MAX) {
+    return NextResponse.json(
+      { success: false, error: "Message trop long : découpez-le ou joignez le document au corpus du SIT." },
+      { status: 400 },
+    )
+  }
 
   const prisma = await getPrisma()
 
@@ -91,7 +103,7 @@ export async function POST(request: Request) {
   const conversation = conversationId
     ? await prisma.conversation.findFirst({
         where: { id: conversationId, userId: user.id },
-        include: { messages: true },
+        include: { messages: { orderBy: { createdAt: "asc" } } },
       })
     : await prisma.conversation.create({
         data: {
@@ -100,7 +112,7 @@ export async function POST(request: Request) {
           projetId: projetDemande?.id ?? null,
           etapeCode: etapeDemandee,
         },
-        include: { messages: true },
+        include: { messages: { orderBy: { createdAt: "asc" } } },
       })
 
   if (!conversation) {
@@ -136,28 +148,28 @@ export async function POST(request: Request) {
   // (pgvector pas encore branché, aucun document indexé) ne doit pas
   // faire échouer la conversation — le copilote répond alors sans ce
   // contexte, comme avant.
-  let contextMessage: MistralMessage | undefined
-  try {
-    const relevant = await searchSimilarChunks(message)
-    if (relevant.length > 0) {
-      const context = relevant
-        .map((r) => `### ${r.title}\n${r.content}`)
-        .join("\n\n---\n\n")
-      contextMessage = {
-        role: "system",
-        content: `Extraits du Système d'Information Technique pertinents pour la question :\n\n${context}`,
-      }
-    }
-  } catch {
-    contextMessage = undefined
-  }
-
+  //
   // Contexte explicite de la page (données d'une adresse, tableau de
   // bord), puis celui du projet rattaché, toujours reconstruit depuis la
   // base (accès revérifié) : la recherche ouverte sur le site du projet
   // suivi croise ainsi les deux. Le panneau d'une étape n'envoie plus de
   // contexte à lui : le projet et l'étape suffisent.
-  const contexteSit = [context?.trim(), projetFinal ? await contexteDeConversation(projetFinal, etapeFinale) : ""].filter(Boolean).join("\n\n")
+  //
+  // Les deux sont préparés en même temps (audit du 2026-10-03).
+  const [relevant, contexteProjet] = await Promise.all([
+    searchSimilarChunks(message).catch(() => []),
+    projetFinal ? contexteDeConversation(projetFinal, etapeFinale) : Promise.resolve(""),
+  ])
+  const contextMessage: MistralMessage | undefined =
+    relevant.length > 0
+      ? {
+          role: "system",
+          content: `Extraits du Système d'Information Technique pertinents pour la question :\n\n${relevant
+            .map((r) => `### ${r.title}\n${r.content}`)
+            .join("\n\n---\n\n")}`,
+        }
+      : undefined
+  const contexteSit = [context?.trim().slice(0, CONTEXTE_MAX), contexteProjet].filter(Boolean).join("\n\n")
   const sitContextMessage: MistralMessage | undefined = contexteSit
     ? { role: "system", content: `Données actuellement affichées dans le SIT :\n\n${contexteSit}` }
     : undefined
@@ -166,7 +178,10 @@ export async function POST(request: Request) {
     { role: "system", content: SYSTEM_PROMPT },
     ...(sitContextMessage ? [sitContextMessage] : []),
     ...(contextMessage ? [contextMessage] : []),
-    ...conversation.messages.map((m) => ({
+    // Seuls les derniers échanges sont renvoyés (audit du 2026-10-03) : le
+    // coût et la taille de la demande ne grossissent plus sans fin avec la
+    // conversation, qui reste entière en base et à l'écran.
+    ...conversation.messages.slice(-HISTORIQUE_MAX).map((m) => ({
       role: m.role === "USER" ? ("user" as const) : ("assistant" as const),
       content: m.content,
     })),

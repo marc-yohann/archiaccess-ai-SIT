@@ -15,6 +15,7 @@ const MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 // l'utilisateur vérifie/mette à niveau son plan sur la console Mistral —
 // voir CLAUDE.md.
 const MODEL = "mistral-medium-latest"
+const DELAI_MAX_MS = 22_000
 
 export interface MistralMessage {
   role: "system" | "user" | "assistant"
@@ -44,6 +45,10 @@ export async function chatCompletion(messages: MistralMessage[]): Promise<string
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({ model: MODEL, messages }),
+    // Coupé avant la limite de 30 s de la fonction serveur (audit du
+    // 2026-10-03) : l'employé reçoit le message « momentanément
+    // indisponible » au lieu d'une erreur brute.
+    signal: AbortSignal.timeout(DELAI_MAX_MS),
   })
 
   if (!res.ok) {
