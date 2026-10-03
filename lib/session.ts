@@ -4,6 +4,8 @@
 // révocation se fait en supprimant la ligne Session.
 
 import { createHash, randomBytes } from "node:crypto"
+import { cookies } from "next/headers"
+import { NextResponse } from "next/server"
 import { getPrisma } from "@/lib/prisma"
 
 export const SESSION_COOKIE_NAME = "aisit_session"
@@ -76,4 +78,16 @@ export async function deleteSession(token: string | undefined): Promise<void> {
   if (!token) return
   const prisma = await getPrisma()
   await prisma.session.deleteMany({ where: { id: empreinte(token) } })
+}
+
+// Garde commune des routes d'API (audit du 2026-10-03) : session valide ou
+// réponse 401 toute prête, au lieu de répéter la lecture du cookie dans
+// chaque route. Usage :
+//   const garde = await exigerSession()
+//   if ("reponse" in garde) return garde.reponse
+export async function exigerSession(): Promise<{ user: SessionUser } | { reponse: NextResponse }> {
+  const store = await cookies()
+  const user = await getSessionUser(store.get(SESSION_COOKIE_NAME)?.value)
+  if (!user) return { reponse: NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 }) }
+  return { user }
 }

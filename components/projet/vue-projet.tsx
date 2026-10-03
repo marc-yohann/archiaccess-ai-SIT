@@ -20,6 +20,7 @@ import { LIBELLES_COURTS } from "@/lib/referentiel/libelles"
 import { profilComplet } from "@/lib/referentiel/profil"
 import { suivreProjet } from "@/lib/projet-suivi"
 import logoPuce from "@/public/logo-ai-puce.png"
+import { initiales } from "@/lib/initiales"
 
 // Espace projet : la méthode Archiaccess appliquée à une opération, avec
 // Archiaccess AI à portée de main. À gauche les phases et leurs étapes, au
@@ -54,10 +55,6 @@ interface Acces {
 
 export const ROLE_LIBELLE: Record<Membre["role"], string> = { MEMBRE: "Membre", CHEF_DE_PROJET: "Chef de projet" }
 
-export function initiales(nom: string): string {
-  const mots = nom.trim().split(/\s+/)
-  return ((mots[0]?.[0] ?? "") + (mots.length > 1 ? mots[mots.length - 1][0] : "")).toUpperCase()
-}
 
 type EtapeProjet = EtatEtapeProjet & { updatedAt: string; updatedBy: { id: string; name: string } | null; responsable: { id: string; name: string } | null }
 

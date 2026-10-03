@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { exigerSession } from "@/lib/session"
 import { filtreProjetsAccessibles } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
 import { searchAddress } from "@/lib/data-sources/ban"
@@ -35,12 +34,9 @@ import { serializeDocumentSit } from "@/lib/documents-sit"
 const RESULT_LIMIT = 20
 
 export async function GET(request: Request) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  const user = await getSessionUser(token)
-  if (!user) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
+  const garde = await exigerSession()
+  if ("reponse" in garde) return garde.reponse
+  const { user } = garde
   // Espace collaboratif : la recherche ne remonte que les projets accessibles.
   const projetsAccessibles = filtreProjetsAccessibles(user)
 

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { exigerSession } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
 import { chatCompletion, MistralApiError, type MistralMessage } from "@/lib/mistral"
 import { searchSimilarChunks } from "@/lib/rag"
@@ -53,12 +52,9 @@ const CONTEXTE_MAX = 40_000
 const HISTORIQUE_MAX = 20
 
 export async function POST(request: Request) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  const user = await getSessionUser(token)
-  if (!user) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
+  const garde = await exigerSession()
+  if ("reponse" in garde) return garde.reponse
+  const { user } = garde
 
   const { conversationId, message, context, title, projetId, etapeCode } = (await request.json()) as {
     conversationId?: string

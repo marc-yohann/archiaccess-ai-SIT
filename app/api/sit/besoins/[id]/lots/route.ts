@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { exigerSession } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
 
 // Rattachement Besoin<->Lot (Phase 9/12) — cardinalité N:N confirmée à
@@ -8,11 +7,8 @@ import { getPrisma } from "@/lib/prisma"
 // concerner plusieurs lots. Action explicite uniquement, upsert
 // idempotent.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await getSessionUser(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
+  const garde = await exigerSession()
+  if ("reponse" in garde) return garde.reponse
 
   const { id: besoinId } = await params
   const { lotId } = (await request.json()) as { lotId?: string }

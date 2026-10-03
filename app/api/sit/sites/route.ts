@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, isValidSession } from "@/lib/session"
+import { exigerSession } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
 import type { AddressResult } from "@/lib/data-sources/ban"
 import type { Parcel } from "@/lib/data-sources/cadastre"
@@ -14,11 +13,8 @@ import type { DpeRecord } from "@/lib/data-sources/dpe"
 // fond après une sélection d'adresse — un échec ici ne doit jamais faire
 // échouer la recherche elle-même (voir catch côté appelant).
 export async function POST(request: Request) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await isValidSession(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
+  const garde = await exigerSession()
+  if ("reponse" in garde) return garde.reponse
 
   const { address, parcels, dpeRecords } = (await request.json()) as {
     address: AddressResult

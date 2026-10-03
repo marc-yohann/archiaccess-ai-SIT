@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
+import { exigerAdmin } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
 import { getDepartementsSorted } from "@/lib/ingestion/departements"
 
 // DRY RUN / estimation (Phase 4, section 17 du brief) — jamais un coût
@@ -43,12 +42,8 @@ async function mapWithConcurrency<T, R>(items: T[], concurrency: number, fn: (it
 }
 
 export async function GET(request: Request) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  const user = await getSessionUser(token)
-  if (!user?.isAdmin) {
-    return NextResponse.json({ success: false, error: "Réservé aux administrateurs." }, { status: 403 })
-  }
+  const garde = await exigerAdmin()
+  if ("reponse" in garde) return garde.reponse
 
   const source = new URL(request.url).searchParams.get("source")
   if (source !== "ban" && source !== "cadastre") {

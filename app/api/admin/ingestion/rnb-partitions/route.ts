@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
+import { exigerAdmin } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
 import { getDepartementsSorted } from "@/lib/ingestion/departements"
 
 // Registre technique des 101 partitions RNB (Phase 5E, section 6 du
@@ -52,12 +51,8 @@ function deriveStatus(stageJob: JobLike | undefined, ingestJob: JobLike | undefi
 }
 
 export async function GET() {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  const user = await getSessionUser(token)
-  if (!user?.isAdmin) {
-    return NextResponse.json({ success: false, error: "Réservé aux administrateurs." }, { status: 403 })
-  }
+  const garde = await exigerAdmin()
+  if ("reponse" in garde) return garde.reponse
 
   const prisma = await getPrisma()
   const [departements, jobs, manifests, batimentCounts] = await Promise.all([

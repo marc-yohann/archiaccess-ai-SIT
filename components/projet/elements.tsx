@@ -5,6 +5,7 @@ import Image from "next/image"
 import { ArrowUpRight, Download, Paperclip } from "lucide-react"
 import { formatReply } from "@/lib/format-reply"
 import logoPuce from "@/public/logo-ai-puce.png"
+import { initiales } from "@/lib/initiales"
 
 // Éléments du dossier d'un projet et fil des étapes (2026-09-30, maquette
 // validée « Fil, dossier et études ») : notes signées et datées, fichiers
@@ -31,11 +32,6 @@ export interface ElementProjet {
 
 export const FICHIER_MAX_OCTETS = 4 * 1024 * 1024
 
-export function initialesDe(nom: string | null | undefined): string {
-  const mots = (nom ?? "").trim().split(/\s+/).filter(Boolean)
-  if (!mots.length) return "?"
-  return ((mots[0][0] ?? "") + (mots.length > 1 ? mots[mots.length - 1][0] : "")).toUpperCase()
-}
 
 export function Avatar({ nom, petit = false }: { nom: string | null | undefined; petit?: boolean }) {
   return (
@@ -43,7 +39,7 @@ export function Avatar({ nom, petit = false }: { nom: string | null | undefined;
       className={`chrome-black flex shrink-0 items-center justify-center rounded-full font-semibold text-white ${petit ? "h-6 w-6 text-[9px]" : "h-8 w-8 text-[11px]"}`}
       aria-hidden="true"
     >
-      {initialesDe(nom)}
+      {initiales(nom)}
     </span>
   )
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { SESSION_COOKIE_NAME, exigerSession, getSessionUser } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
 import { lireProfil } from "@/lib/referentiel/profil"
 import { filtreProjetsAccessibles } from "@/lib/projet-acces"
@@ -41,12 +41,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  const user = await getSessionUser(token)
-  if (!user) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
+  const garde = await exigerSession()
+  if ("reponse" in garde) return garde.reponse
+  const { user } = garde
 
   const body = (await request.json()) as Record<string, unknown> & {
     nom?: string

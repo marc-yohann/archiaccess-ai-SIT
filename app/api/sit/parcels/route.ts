@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, isValidSession } from "@/lib/session"
+import { exigerSession } from "@/lib/session"
 import { getParcelsNear } from "@/lib/data-sources/cadastre"
 import { getPrisma } from "@/lib/prisma"
 
@@ -12,11 +11,8 @@ const MAX_CODEINSEE_RESULTS = 500 // même limite que bbox — une commune dense
 // (Phase 4.5, section 15 du brief — recherche par référence cadastrale /
 // code INSEE) lisent le référentiel déjà en base plutôt que l'API externe.
 export async function GET(request: Request) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await isValidSession(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
+  const garde = await exigerSession()
+  if ("reponse" in garde) return garde.reponse
 
   const params = new URL(request.url).searchParams
   const bbox = params.get("bbox")

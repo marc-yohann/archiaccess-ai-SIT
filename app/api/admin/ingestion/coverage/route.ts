@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
+import { exigerAdmin } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
 
 // Couverture SIT — un pourcentage par source avec un dénominateur RÉEL et
 // mesurable (voir CLAUDE.md, section L du brief Phase 3 : "ne fabrique
@@ -17,12 +16,8 @@ export interface SourceCoverage {
 }
 
 export async function GET() {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  const user = await getSessionUser(token)
-  if (!user?.isAdmin) {
-    return NextResponse.json({ success: false, error: "Réservé aux administrateurs." }, { status: 403 })
-  }
+  const garde = await exigerAdmin()
+  if ("reponse" in garde) return garde.reponse
 
   const prisma = await getPrisma()
   const coverage: SourceCoverage[] = []

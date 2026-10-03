@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { exigerSession } from "@/lib/session"
 import { filtreProjetsAccessibles } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
 import { serializeDocumentSit } from "@/lib/documents-sit"
@@ -16,12 +15,9 @@ import { serializeDocumentSit } from "@/lib/documents-sit"
 // 11B, 12) — correction additive uniquement, aucune nouvelle relation,
 // aucune migration.
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  const user = await getSessionUser(token)
-  if (!user) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
+  const garde = await exigerSession()
+  if ("reponse" in garde) return garde.reponse
+  const { user } = garde
 
   const { id } = await params
   const prisma = await getPrisma()

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { exigerSession } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
 
 // Besoin (Phase 12) — une nécessité métier/technique explicitement
@@ -11,11 +10,8 @@ import { getPrisma } from "@/lib/prisma"
 // (aucune taxonomie stable réutilisable trouvée à l'audit) — pas de
 // validation contre un enum ici, à la différence de DocumentSit.type.
 export async function GET() {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await getSessionUser(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
+  const garde = await exigerSession()
+  if ("reponse" in garde) return garde.reponse
 
   const prisma = await getPrisma()
   const besoins = await prisma.besoin.findMany({
@@ -29,11 +25,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await getSessionUser(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
+  const garde = await exigerSession()
+  if ("reponse" in garde) return garde.reponse
 
   const body = (await request.json()) as {
     titre?: string

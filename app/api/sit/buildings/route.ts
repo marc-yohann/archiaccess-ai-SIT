@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, isValidSession } from "@/lib/session"
+import { exigerSession } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
 
 // Lecture du référentiel BÂTIMENT PHYSIQUE (RNB, Phase 5C — voir
@@ -14,11 +13,8 @@ import { getPrisma } from "@/lib/prisma"
 const MAX_BBOX_RESULTS = 500 // même limite que /api/sit/parcels (section 14 du brief Phase 4)
 
 export async function GET(request: Request) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await isValidSession(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
+  const garde = await exigerSession()
+  if ("reponse" in garde) return garde.reponse
 
   const params = new URL(request.url).searchParams
   const bbox = params.get("bbox")

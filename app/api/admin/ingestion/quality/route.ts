@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
+import { exigerAdmin } from "@/lib/projet-acces"
 import { getPrisma } from "@/lib/prisma"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
 
 // Contrôles qualité mesurables (voir CLAUDE.md, section M du brief Phase
 // 3) — chaque métrique est une vraie requête SQL/Prisma, jamais une
@@ -9,12 +8,8 @@ import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
 // impossibles ici (contraintes UNIQUE en base) : exposés pour
 // transparence, pas parce qu'un doublon est réellement possible.
 export async function GET() {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  const user = await getSessionUser(token)
-  if (!user?.isAdmin) {
-    return NextResponse.json({ success: false, error: "Réservé aux administrateurs." }, { status: 403 })
-  }
+  const garde = await exigerAdmin()
+  if ("reponse" in garde) return garde.reponse
 
   const prisma = await getPrisma()
 

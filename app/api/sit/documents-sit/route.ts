@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { exigerSession } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
 import { DocumentSitType } from "@/lib/generated/prisma/client"
 import { serializeDocumentSit } from "@/lib/documents-sit"
@@ -13,11 +12,8 @@ import { serializeDocumentSit } from "@/lib/documents-sit"
 const VALID_TYPES = new Set<string>(Object.values(DocumentSitType))
 
 export async function GET() {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await getSessionUser(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
+  const garde = await exigerSession()
+  if ("reponse" in garde) return garde.reponse
 
   const prisma = await getPrisma()
   const documents = await prisma.documentSit.findMany({
@@ -31,11 +27,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await getSessionUser(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
+  const garde = await exigerSession()
+  if ("reponse" in garde) return garde.reponse
 
   const body = (await request.json()) as {
     titre?: string

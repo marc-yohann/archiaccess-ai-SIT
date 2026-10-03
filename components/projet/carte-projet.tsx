@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { avancementPhases, dateCourte, indexEtats, joursRestants, phaseCourante, prochaineEtape, type EtatEtapeProjet } from "@/lib/referentiel/avancement"
 import { LIBELLES_COURTS, PHASES_COURTES } from "@/lib/referentiel/libelles"
+import { initiales } from "@/lib/initiales"
 
 // Carte d'un projet : profil, barre des 9 phases, prochaine étape. Partagée
 // par le tableau de bord (/sit) et la liste des projets.
@@ -23,10 +24,6 @@ export interface ProjetResume {
   archivedAt?: string | null
 }
 
-function initiales(nom: string): string {
-  const mots = nom.trim().split(/\s+/)
-  return ((mots[0]?.[0] ?? "") + (mots.length > 1 ? mots[mots.length - 1][0] : "")).toUpperCase()
-}
 
 const court = (v: string | null) => (v && v in LIBELLES_COURTS ? LIBELLES_COURTS[v as keyof typeof LIBELLES_COURTS] : null)
 

@@ -1,17 +1,13 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { exigerSession } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
 
 // Rattachement Besoin<->Site — action explicite uniquement, même pattern
 // que ProjetSite/DocumentSitSite (Phase 10/11). upsert : un second
 // rattachement identique est un no-op idempotent, jamais un doublon.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await getSessionUser(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
+  const garde = await exigerSession()
+  if ("reponse" in garde) return garde.reponse
 
   const { id: besoinId } = await params
   const { siteId } = (await request.json()) as { siteId?: string }

@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { exigerSession } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
 
 // Détachement DocumentSit<->Acteur — supprime uniquement le rattachement
 // (DocumentSitActeur), jamais l'Acteur lui-même.
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string; acteurId: string }> }) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await getSessionUser(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
+  const garde = await exigerSession()
+  if ("reponse" in garde) return garde.reponse
 
   const { id: documentSitId, acteurId } = await params
   const prisma = await getPrisma()

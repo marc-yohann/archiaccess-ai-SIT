@@ -1,17 +1,13 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, getSessionUser } from "@/lib/session"
+import { exigerSession } from "@/lib/session"
 import { getPrisma } from "@/lib/prisma"
 import { exigerAccesProjet } from "@/lib/projet-acces"
 
 // Rattachement Besoin<->Projet (Phase 10/12) — action explicite
 // uniquement, upsert idempotent.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await getSessionUser(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
+  const session = await exigerSession()
+  if ("reponse" in session) return session.reponse
 
   const { id: besoinId } = await params
   const { projetId } = (await request.json()) as { projetId?: string }

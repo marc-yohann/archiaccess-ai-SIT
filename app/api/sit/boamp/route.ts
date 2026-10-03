@@ -1,14 +1,10 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { SESSION_COOKIE_NAME, isValidSession } from "@/lib/session"
+import { exigerSession } from "@/lib/session"
 import { getPublicMarketsForDepartment } from "@/lib/data-sources/boamp"
 
 export async function GET(request: Request) {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE_NAME)?.value
-  if (!(await isValidSession(token))) {
-    return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 })
-  }
+  const garde = await exigerSession()
+  if ("reponse" in garde) return garde.reponse
 
   const codeDepartement = new URL(request.url).searchParams.get("codeDepartement")?.trim()
   if (!codeDepartement) {
