@@ -189,7 +189,15 @@ trace de ça dans le code actuel, ne pas la réintroduire.
 - `lib/mistral.ts` — client REST minimal (pas de SDK officiel).
 - `lib/session.ts`, `lib/password.ts` — sessions cookie + hash `scrypt`
   (module `crypto` natif, pas de bcrypt/argon2 à bindings natifs :
-  évite un risque de bundling Lambda).
+  évite un risque de bundling Lambda). Depuis l'audit du 2026-10-03 : la
+  base ne garde que l'empreinte SHA-256 du jeton (`Session.id`) ; un
+  compte `mustChangePassword` n'a accès qu'à `/api/auth/me`,
+  `change-password` et `logout` (`getSessionUser(token, {
+  motDePasseTemporaireAccepte: true })`) ; `/api/auth/login` limite les
+  échecs (5 par adresse, 20 par IP en 15 min, table
+  `TentativeConnexion`). **Toute nouvelle route** commence par
+  `exigerSession()` (lib/session.ts), `exigerAdmin()` ou
+  `exigerAccesProjet()` (lib/projet-acces.ts).
 - `lib/secrets.ts` — lecture AWS Secrets Manager au runtime (jamais de
   variable d'environnement en production).
 - `lib/storage.ts` — upload/download S3.
@@ -379,6 +387,9 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   (« agis, ne redemande pas la permission à chaque petite étape ») —
   documenter et committer au fur et à mesure plutôt que tout faire puis
   livrer d'un bloc.
+- **Vérifications avant commit** : `npx tsc --noEmit` et `npm run lint`
+  (ESLint 9 + eslint-config-next, `eslint.config.mjs` ; 0 erreur attendue,
+  les avertissements des règles du compilateur React sont tolérés).
 - **Migrations Prisma écrites à la main**, jamais générées par `prisma
   migrate diff` (pas de shadow database accessible depuis les
   environnements Claude Code — TCP brut vers une base de données n'est
