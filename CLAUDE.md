@@ -202,7 +202,7 @@ trace de ça dans le code actuel, ne pas la réintroduire.
   variable d'environnement en production).
 - `lib/storage.ts` — upload/download S3.
 - `app/api/sit/*/route.ts` — une route par connecteur, authentifiée par
-  cookie de session (`SESSION_COOKIE_NAME` + `isValidSession()`).
+  cookie de session (`exigerSession()`, lib/session.ts).
   `app/api/sit/documents/bulk` et `.../search-test` sont l'exception :
   authentifiées par jeton `Authorization: Bearer` (secret
   `archiaccess-ai-sit/ingest-token`) plutôt que par session — voir
@@ -559,6 +559,13 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   déployé). Rôle Lambda vérifié pour `projets/*` dans le bucket
   documents ; dépôt de fichier et ajout d'étude réels pas encore
   essayés en production (pas de session de test côté Claude).
+  **Audit du code du 2026-10-03** (commits `bb3dc25`, `cf69810`,
+  `c9105df`) : correctifs serveur (historique d'Archiaccess AI trié et
+  limité, délais maximaux, coffre écrit après la réponse et seulement si
+  changé, pool Prisma), sécurité de la connexion (migration
+  `20261003100000_tentatives_connexion`), maintenance ; **pas encore
+  déployé** (le déploiement invalide toutes les sessions : chacun se
+  reconnecte une fois).
   Lots suivants validés sur maquette, pas commencés : notifications, mentions, circuit de validation ; discussion du projet
   (rafraîchie par interrogation périodique — **pas** de nouveau service
   AWS, décision utilisateur) et actions ; photos de chantier et ajout
