@@ -563,9 +563,13 @@ puis `curl -sS -X POST https://sit.archiaccess.com/api/admin/run-migration -H "A
   `c9105df`) : correctifs serveur (historique d'Archiaccess AI trié et
   limité, délais maximaux, coffre écrit après la réponse et seulement si
   changé, pool Prisma), sécurité de la connexion (migration
-  `20261003100000_tentatives_connexion`), maintenance ; **pas encore
-  déployé** (le déploiement invalide toutes les sessions : chacun se
-  reconnecte une fois).
+  `20261003100000_tentatives_connexion`), maintenance ; **déployé le
+  2026-10-06** (commit `482e388`, avec l'accord de l'utilisateur),
+  migration appliquée juste après via `/api/admin/run-migration`. Les
+  sessions antérieures sont invalides (jetons désormais hachés) : chacun
+  se reconnecte une fois. Les journaux Lambda montrent des erreurs S3
+  404 sur des clés `<BUILD_ID>/….cache` : cache incrémental d'OpenNext
+  sans bucket configuré, bruit connu et sans effet pour les utilisateurs.
   Lots suivants validés sur maquette, pas commencés : notifications, mentions, circuit de validation ; discussion du projet
   (rafraîchie par interrogation périodique — **pas** de nouveau service
   AWS, décision utilisateur) et actions ; photos de chantier et ajout
